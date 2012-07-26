@@ -1,0 +1,8 @@
+Sun, 25 Mar 2012  20:36
+
+Ancient archive
+  ftp://ftp.cse.ohio-state.edu/pub/emacs-lisp/old-archive/misc/
+
+More current archive?
+  http://www.damtp.cam.ac.uk/user/sje30/emacs/ell
+
