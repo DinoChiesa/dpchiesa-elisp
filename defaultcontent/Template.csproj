@@ -1,0 +1,183 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003"
+         DefaultTargets="All"
+         ToolsVersion="3.5"
+         >
+
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <AppName>@@BASEFILENAMELESSEXTENSION@@</AppName>
+    <OutputType>Library</OutputType>
+    <ProjectGuid>{@@LISP((dino-insert-uuid))@@}</ProjectGuid>
+    <ProductVersion>9.0.30729</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <SignAssembly>false</SignAssembly>
+    <AssemblyOriginatorKeyFile/>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+  </PropertyGroup>
+
+
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <Optimize>false</Optimize>
+    <DebugSymbols>true</DebugSymbols>
+    <!-- <OutputPath>.\bin</OutputPath>  -->
+    <OutputPath>.\</OutputPath>
+    <OutDir>.\</OutDir>
+    <IntermediateOutputPath>.\</IntermediateOutputPath>
+  </PropertyGroup>
+
+
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE;AESCRYPTO</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <DocumentationFile>bin\Release\Ionic.Zip.Partial.xml</DocumentationFile>
+  </PropertyGroup>
+
+
+
+  <!-- specify reference assemblies for all builds in this project -->
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Data.Linq" />
+    <!-- LINQ -->
+
+    <!-- Reference Include="PresentationCore" /-->
+    <!-- WPF -->
+    <!-- Reference Include="PresentationFramework" /-->
+    <!-- WPF -->
+    <!-- Reference Include="WindowsBase" /  -->
+    <!-- WPF -->
+
+    <!--Reference Include="System.ServiceModel" /-->
+    <!-- WCF -->
+    <!--Reference Include="System.ServiceModel.Web" /-->
+    <!-- WCF -->
+    <!--Reference Include="System.Runtime.Serialization" /-->
+    <!-- WCF -->
+
+  </ItemGroup>
+
+
+  <!-- Specify the inputs by type and file name -->
+  <ItemGroup>
+    <CSFile      Include="@@DOT@@"/>
+    <CSFile      Include="BuildTimestamp.cs"/>
+    <StampFile   Include="BuildTimestamp.cs"/>
+  </ItemGroup>
+
+
+
+  <Target Name="BuildTimestamp"
+          Outputs="@(StampFile)"
+          >
+    <Message Text="BuildTimestamp" />
+
+    <Touch
+       AlwaysCreate = "true"
+       Files="@(StampFile)" />
+
+    <WriteLinesToFile
+       File="@(StampFile)"
+       Lines='public static class Build { public static string Timestamp = "%(StampFile.CreatedTime)" %3B }'
+       Overwrite="true"/>
+  </Target>
+
+
+
+
+
+  <!-- ============================================================================= -->
+  <Target
+     Name="NotUSed"
+     Inputs="@(CSFile);ConsoleHost.cs;Thinktecture.ServiceModel.Flattener.cs"
+     Outputs="$(OutputPath)\ConsoleHost-$(AppName)-Flat.exe"
+     >
+    <Message Text="Building ConsoleHost (Flat)" />
+
+    <CSC
+       Sources="@(CSFile);ConsoleHost.cs;Thinktecture.ServiceModel.Flattener.cs"
+       References="@(ReferencePath)"
+       OutputAssembly="$(OutputPath)\ConsoleHost-$(AppName)-Flat.exe"
+       EmitDebugInformation="$(DebugSymbols)"
+       DefineConstants="FLATTEN"
+       TargetType="exe"
+       Toolpath="$(MSBuildToolsPath)"
+       Nologo="true"
+       />
+
+  </Target>
+  <!-- ============================================================================= -->
+
+  <!-- ============================================================================= -->
+  <Target
+     Name="@@BASEFILENAMELESSEXTENSION@@"
+     DependsOnTargets="RegisterAssembly;GacAssembly"
+     >
+  </Target>
+  <!-- ============================================================================= -->
+
+
+  <!-- ============================================================================= -->
+  <Target
+     Name="RegisterAssembly"
+     DependsOnTargets="CompileAssembly"
+     >
+    <Message Text="Registering the @@BASEFILENAMELESSEXTENSION@@ assembly" />
+
+    <Exec Command="C:\.net2.0\regasm.exe $(OutputPath)\$(AppName).dll"/>
+
+  </Target>
+  <!-- ============================================================================= -->
+
+
+
+  <!-- ============================================================================= -->
+  <Target
+     Name="GacAssembly"
+     DependsOnTargets="CompileAssembly"
+     >
+    <Message Text="GAC'ing the @@BASEFILENAMELESSEXTENSION@@ assembly" />
+
+    <Exec Command="c:\netsdk2.0\bin\gacutil.exe -i $(OutputPath)\$(AppName).dll"/>
+
+  </Target>
+  <!-- ============================================================================= -->
+
+
+
+
+  <!-- ============================================================================= -->
+  <Target Name="CompileAssembly"
+          DependsOnTargets="ResolveAssemblyReferences"
+          >
+
+    <!--Message Text="Reference = @(Reference)" /-->
+    <!--Message Text="ReferencePath = @(ReferencePath)" /-->
+
+    <!-- Run the Visual C# compilation on the specified .cs file. -->
+
+    <CSC
+       Sources="@(CSFile)"
+       References="@(ReferencePath)"
+       TargetType="library"
+       KeyFile="$(AssemblyOriginatorKeyFile)"
+       Toolpath="$(MSBuildToolsPath)"
+       Nologo="true"
+       TargetType="library"
+       OutputAssembly="$(OutputPath)\$(AppName).dll"
+       />
+
+  </Target>
+  <!-- ============================================================================= -->
+
+
+</Project>
+

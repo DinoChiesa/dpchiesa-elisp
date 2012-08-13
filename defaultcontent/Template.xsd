@@ -1,0 +1,148 @@
+<xs:schema
+   elementFormDefault    ="qualified"
+   targetNamespace       ="urn:Ionic._2009jun.ExampleApp.Data"
+   xmlns:tns             ="urn:Ionic._2009jun.ExampleApp.Data"
+   xmlns:xs              ="http://www.w3.org/2001/XMLSchema"
+   >
+
+  <!-- primitive elements -->
+  <xs:element name="anyType" nillable="true" type="xs:anyType" />
+  <xs:element name="anyURI" nillable="true" type="xs:anyURI" />
+  <xs:element name="base64Binary" nillable="true" type="xs:base64Binary" />
+  <xs:element name="boolean" nillable="true" type="xs:boolean" />
+  <xs:element name="byte" nillable="true" type="xs:byte" />
+  <xs:element name="dateTime" nillable="true" type="xs:dateTime" />
+  <xs:element name="decimal" nillable="true" type="xs:decimal" />
+  <xs:element name="double" nillable="true" type="xs:double" />
+  <xs:element name="float" nillable="true" type="xs:float" />
+  <xs:element name="int" nillable="true" type="xs:int" />
+  <xs:element name="long" nillable="true" type="xs:long" />
+  <xs:element name="QName" nillable="true" type="xs:QName" />
+  <xs:element name="short" nillable="true" type="xs:short" />
+  <xs:element name="string" nillable="true" type="xs:string" />
+  <xs:element name="unsignedByte" nillable="true" type="xs:unsignedByte" />
+  <xs:element name="unsignedInt" nillable="true" type="xs:unsignedInt" />
+  <xs:element name="unsignedLong" nillable="true" type="xs:unsignedLong" />
+  <xs:element name="unsignedShort" nillable="true" type="xs:unsignedShort" />
+
+  <xs:element name="char" nillable="true" type="tns:char" />
+  <xs:simpleType name="char">
+    <xs:restriction base="xs:int" />
+  </xs:simpleType>
+
+  <xs:element name="duration" nillable="true" type="tns:duration" />
+  <xs:simpleType name="duration">
+    <xs:restriction base="xs:duration">
+      <xs:pattern value="\-?P(\d*D)?(T(\d*H)?(\d*M)?(\d*(\.\d*)?S)?)?" />
+      <xs:minInclusive value="-P10675199DT2H48M5.4775808S" />
+      <xs:maxInclusive value="P10675199DT2H48M5.4775807S" />
+    </xs:restriction>
+  </xs:simpleType>
+
+
+  <!-- a GUID . Can do similar restrictions for other subsets of strings (zipcodes or etc)-->
+  <xs:element name="guid" nillable="true" type="tns:guid" />
+  <xs:simpleType name="guid">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="[\da-fA-F]{8}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{12}" />
+    </xs:restriction>
+  </xs:simpleType>
+
+
+  <!-- a complex type or structure -->
+  <xs:complexType name="MyComplexType">
+    <xs:annotation>
+      <xs:documentation>A complex type containing a sequence of
+        elements. Replace this doc with something meaningful.</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="StringValue" nillable="true" type="xs:string"/>
+      <xs:element name="IntValue" type="xs:int"/>
+      <xs:element name="DateTimeValue" nillable="true" type="xs:dateTime"/>
+      <xs:element name="Created" nillable="true" type="xs:dateTime"/>
+      <xs:element name="Id" nillable="true" type="tns:guid"/>
+      <xs:element name="FloatValue" nillable="true" type="xs:float"/>
+      <xs:element maxOccurs="unbounded" name="ChildObjects" nillable="true" type="tns:MyComplexType" />
+    </xs:sequence>
+  </xs:complexType>
+
+
+  <!-- an array of complex type  -->
+  <xs:complexType name="ArrayCt">
+    <xs:annotation>
+      <xs:documentation>An array of complex types.</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element maxOccurs="unbounded" name="item" nillable="true" type="tns:MyComplexType" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- a 2D array of complex type  -->
+  <xs:complexType name="Array2DCt">
+    <xs:annotation>
+      <xs:documentation>a 2D array of complex types.</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element maxOccurs="unbounded" name="item" nillable="true" type="tns:ArrayCt" />
+    </xs:sequence>
+  </xs:complexType>
+
+
+  <!-- an enum -->
+  <xs:element name="Iso3Currency" nillable="true" type="tns:iso3currency" />
+  <xs:simpleType name="iso3currency">
+    <xs:annotation>
+      <xs:documentation>ISO-4217 3-letter currency codes. Only a subset are defined here.</xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:length value="3"/>
+      <xs:enumeration value="AUD"/>
+      <xs:enumeration value="BRL"/>
+      <xs:enumeration value="CAD"/>
+      <xs:enumeration value="CNY"/>
+      <xs:enumeration value="EUR"/>
+      <xs:enumeration value="GBP"/>
+      <xs:enumeration value="INR"/>
+      <xs:enumeration value="JPY"/>
+      <xs:enumeration value="RUR"/>
+      <xs:enumeration value="USD"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+
+  <!-- a length-limited string -->
+  <xs:simpleType name="StringOfFiftyCharsOrLess">
+    <xs:restriction base="xs:string">
+      <xs:maxLength value="50" />
+    </xs:restriction>
+  </xs:simpleType>
+
+
+
+  <!-- an array of stuff, some of which are elements of known type -->
+      <xs:element name="Foo" nillable="true" type="Foo" />
+      <xs:complexType name="Foo">
+        <xs:sequence>
+          <xs:element minOccurs="0" maxOccurs="1" name="Bar" type="xs:string" />
+          <xs:element minOccurs="0" maxOccurs="1" name="Baz" type="UntypedArray" />
+        </xs:sequence>
+      </xs:complexType>
+
+
+      <xs:complexType name="UntypedArray">
+        <xs:choice minOccurs="1" maxOccurs="unbounded">
+          <xs:element name="Type1" type="Type1"                 minOccurs="1" maxOccurs="1"/>
+          <xs:any     namespace="##other" processContents="lax" minOccurs="1" maxOccurs="1"/>
+        </xs:choice>
+      </xs:complexType>
+
+
+      <xs:complexType name="Type1" mixed="true">
+        <xs:sequence>
+          <xs:element minOccurs="0" maxOccurs="1" name="Child" type="xs:string" />
+        </xs:sequence>
+      </xs:complexType>
+
+
+
+</xs:schema>

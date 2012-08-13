@@ -1,0 +1,249 @@
+<definitions
+   xmlns                ="http://schemas.xmlsoap.org/wsdl/"
+   xmlns:wsdl           ="http://schemas.xmlsoap.org/wsdl/"
+   xmlns:soap           ="http://schemas.xmlsoap.org/wsdl/soap/"
+   xmlns:xs             ="http://www.w3.org/2001/XMLSchema"
+   xmlns:data           ="urn:Cheeso._2010jan.ExampleApp.Data"
+   xmlns:msg            ="urn:Cheeso._2010jan.ExampleApp.Message"
+   xmlns:svc            ="urn:Cheeso._2010jan.ExampleApp.Service"
+   xmlns:tns            ="urn:Cheeso._2010jan.ExampleApp.Service"
+   targetNamespace      ="urn:Cheeso._2010jan.ExampleApp.Service"
+   >
+
+  <types>
+    <!-- ==================================================================== -->
+    <schema
+       xmlns              ="http://www.w3.org/2001/XMLSchema"
+       elementFormDefault ="qualified"
+       targetNamespace    ="urn:Cheeso._2010jan.ExampleApp.Data"
+       xmlns:tns          ="urn:Cheeso._2010jan.ExampleApp.Data"
+       >
+
+      <!-- primitive elements -->
+      <element name="anyType" nillable="true" type="xs:anyType" />
+      <element name="anyURI" nillable="true" type="xs:anyURI" />
+      <element name="base64Binary" nillable="true" type="xs:base64Binary" />
+      <element name="boolean" nillable="true" type="xs:boolean" />
+      <element name="byte" nillable="true" type="xs:byte" />
+      <element name="dateTime" nillable="true" type="xs:dateTime" />
+      <element name="decimal" nillable="true" type="xs:decimal" />
+      <element name="double" nillable="true" type="xs:double" />
+      <element name="float" nillable="true" type="xs:float" />
+      <element name="int" nillable="true" type="xs:int" />
+      <element name="long" nillable="true" type="xs:long" />
+      <element name="QName" nillable="true" type="xs:QName" />
+      <element name="short" nillable="true" type="xs:short" />
+      <element name="string" nillable="true" type="xs:string" />
+      <element name="unsignedByte" nillable="true" type="xs:unsignedByte" />
+      <element name="unsignedInt" nillable="true" type="xs:unsignedInt" />
+      <element name="unsignedLong" nillable="true" type="xs:unsignedLong" />
+      <element name="unsignedShort" nillable="true" type="xs:unsignedShort" />
+
+      <element name="char" nillable="true" type="tns:char" />
+      <simpleType name="char">
+        <restriction base="xs:int" />
+      </simpleType>
+
+      <element name="duration" nillable="true" type="tns:duration" />
+      <simpleType name="duration">
+        <restriction base="xs:duration">
+          <pattern value="\-?P(\d*D)?(T(\d*H)?(\d*M)?(\d*(\.\d*)?S)?)?" />
+          <minInclusive value="-P10675199DT2H48M5.4775808S" />
+          <maxInclusive value="P10675199DT2H48M5.4775807S" />
+        </restriction>
+      </simpleType>
+
+
+      <!-- a GUID . Can do similar restrictions for other subsets of strings (zipcodes or etc)-->
+      <element name="guid" nillable="true" type="tns:guid" />
+      <simpleType name="guid">
+        <restriction base="xs:string">
+          <pattern value="[\da-fA-F]{8}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{12}" />
+        </restriction>
+      </simpleType>
+
+
+      <!-- a complex type or structure -->
+      <complexType name="MyComplexType">
+        <annotation>
+          <documentation>A complex type containing a sequence of
+            elements. Replace this doc with something meaningful.</documentation>
+        </annotation>
+        <sequence>
+          <element name="StringValue" nillable="true" type="xs:string"/>
+          <element name="IntValue" type="xs:int"/>
+          <element name="DateTimeValue" nillable="true" type="xs:dateTime"/>
+          <element name="Created" nillable="true" type="xs:dateTime"/>
+          <element name="Id" nillable="true" type="tns:guid"/>
+          <element name="FloatValue" nillable="true" type="xs:float"/>
+          <element maxOccurs="unbounded" name="ChildObjects" nillable="true" type="tns:MyComplexType" />
+        </sequence>
+      </complexType>
+
+
+      <!-- an array of complex type  -->
+      <complexType name="ArrayCt">
+        <annotation>
+          <documentation>An array of complex types.</documentation>
+        </annotation>
+        <sequence>
+          <element maxOccurs="unbounded" name="item" nillable="true" type="tns:MyComplexType" />
+        </sequence>
+      </complexType>
+
+      <!-- a 2D array of complex type  -->
+      <complexType name="Array2DCt">
+        <annotation>
+          <documentation>a 2D array of complex types.</documentation>
+        </annotation>
+        <sequence>
+          <element maxOccurs="unbounded" name="item" nillable="true" type="tns:ArrayCt" />
+        </sequence>
+      </complexType>
+
+
+      <!-- an enum -->
+      <element name="Iso3Currency" nillable="true" type="tns:iso3currency" />
+      <simpleType name="iso3currency">
+        <annotation>
+          <documentation>ISO-4217 3-letter currency codes. Only a subset are defined here.</documentation>
+        </annotation>
+        <restriction base="xs:string">
+          <length value="3"/>
+          <enumeration value="AUD"/>
+          <enumeration value="BRL"/>
+          <enumeration value="CAD"/>
+          <enumeration value="CNY"/>
+          <enumeration value="EUR"/>
+          <enumeration value="GBP"/>
+          <enumeration value="INR"/>
+          <enumeration value="JPY"/>
+          <enumeration value="RUR"/>
+          <enumeration value="USD"/>
+        </restriction>
+      </simpleType>
+
+
+      <simpleType name="StringOfFiftyCharsOrLess">
+        <restriction base="xs:string">
+          <maxLength value="50" />
+        </restriction>
+      </simpleType>
+
+
+    </schema>
+    <!-- ==================================================================== -->
+
+
+    <!-- ==================================================================== -->
+    <schema
+       xmlns              ="http://www.w3.org/2001/XMLSchema"
+       elementFormDefault ="qualified"
+       targetNamespace    ="urn:Cheeso._2010jan.ExampleApp.Message"
+       xmlns:tns          ="urn:Cheeso._2010jan.ExampleApp.Message"
+       >
+
+      <!-- Request and Reply messages, defined as elements.
+           They may reference complexTypes defined in terms
+           of primitives and the data types above -->
+
+      <element name="Op1Request" type="tns:Op1Request"/>
+      <complexType name="Op1Request">
+        <annotation>
+          <documentation>The request msg type for Operation 1.</documentation>
+        </annotation>
+        <sequence>
+          <element name="caller"       type="xs:string"/>
+          <element name="currency"     type="data:iso3currency"/>
+          <element name="allowNesting" type="xs:boolean"      minOccurs="0" maxOccurs="1"  nillable="false" />
+        </sequence>
+      </complexType>
+
+      <element name="Op1Reply" type="tns:Op1Reply"/>
+      <complexType name="Op1Reply">
+        <annotation>
+          <documentation>The reply msg type for Operation 1.</documentation>
+        </annotation>
+        <sequence>
+          <element name="item"       type="data:MyComplexType"/>
+        </sequence>
+      </complexType>
+
+      <!-- etc -->
+      <!-- ==================================================================== -->
+
+    </schema>
+
+
+
+  </types>
+
+
+  <!-- ==================================================================== -->
+  <!-- message types -->
+  <message name="Op1SoapIn">
+    <part name="parameters" element="msg:Op1Request" />
+  </message>
+  <message name="Op1SoapOut">
+    <part name="parameters" element="msg:Op1Reply" />
+  </message>
+
+  <!-- etc -->
+  <!-- ==================================================================== -->
+
+
+  <!-- ==================================================================== -->
+  <!-- the port type -->
+  <!-- each operation gets an input and output message -->
+  <portType name="IService">
+    <operation name="Op1">
+      <input message="svc:Op1SoapIn" />
+      <output message="svc:Op1SoapOut" />
+    </operation>
+    <!-- etc -->
+  </portType>
+  <!-- ==================================================================== -->
+
+
+  <!-- ==================================================================== -->
+  <binding name="MyBinding" type="svc:IService">
+    <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+
+    <operation name="Op1">
+      <soap:operation soapAction=""/>
+      <input>
+        <soap:body use="literal"/>
+      </input>
+      <output>
+        <soap:body use="literal"/>
+      </output>
+    </operation>
+
+    <!-- etc -->
+
+  </binding>
+  <!-- ==================================================================== -->
+
+
+
+  <!-- ==================================================================== -->
+  <service name="ServiceName">
+    <port binding="svc:MyBinding" name="IService">
+      <soap:address location="http://REPLACE.THIS/AppService"/>
+    </port>
+  </service>
+  <!-- ==================================================================== -->
+
+
+  <!--
+       build with:
+       c:\netsdk3.0\bin\svcutil.exe  /language:C#
+               /out:IService.cs /n:*,Cheeso.Samples.Webservices._2010jan Junk.wsdl
+
+    -->
+
+</definitions>
+
+
+
+

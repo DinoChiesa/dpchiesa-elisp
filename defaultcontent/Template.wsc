@@ -1,0 +1,77 @@
+<?xml version="1.0"?>
+
+<package>
+
+<component id="Ionic.Com.@BASEFILENAMELESSEXTENSION@">
+
+  <comment>
+    Descriptive comment goes here.
+  </comment>
+
+<?component error="true" debug="true"?>
+
+<reference object="ADODB.Connection.2.0"/>
+<!-- Referencing a type library in your script component allows you to use constants defined in the type library in scripts. -->
+
+<registration
+  description="WSC Component for @BASEFILENAMELESSEXTENSION@"
+  progid="Ionic.Com.@BASEFILENAMELESSEXTENSION@"
+  version="1.00"
+  classid="{@LISP((cheeso-uuid-gen))@}"
+  remotable="False">
+
+  <!-- boilerplate registration/unregistration logic -->
+  <script language="VBScript">
+  <![CDATA[
+
+    strComponent = "Ionic Component Template"
+
+    Function Register
+      MsgBox strComponent & " - Script Component registered."
+    End Function
+
+    Function Unregister
+      MsgBox strComponent & " - Script Component unregistered."
+    End Function
+
+  ]]>
+  </script>
+</registration>
+
+<!-- methods -->
+
+<public>
+  <method name="ReadTextFile">
+    <parameter name="strInputFile"/>
+  </method>
+  <method name="WriteTextFile">
+    <parameter name="strFileName"/>
+    <parameter name="strOutput"/>
+  </method>
+  <method name="CopyFile">
+    <parameter name="strSource"/>
+    <parameter name="strTarget"/>
+  </method>
+  <property name="mstatus">
+      <get/>
+      <put/>
+  </property>
+  <property name="dateOfBirth">
+      <get internalName="readDOB"/>
+      <put internalName="writeDOB"/>
+  </property>
+</public>
+
+<!-- resources can be retrieved with getResource(id) -->
+<resource id="errMsg1">
+   Non-numeric value passed
+</resource>
+
+
+<script language="JavaScript">
+  @DOT@
+</script>
+
+</component>
+
+</package>

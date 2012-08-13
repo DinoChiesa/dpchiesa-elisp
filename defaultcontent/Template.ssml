@@ -1,0 +1,29 @@
+<speak xmlns              ='http://www.w3.org/2001/10/synthesis' 
+       xmlns:dc           ='http://purl.org/dc/elements/1.1/' 
+       xml:lang           ='en-us'             
+       xmlns:xsi          ='http://www.w3.org/2001/XMLSchema-instance'
+       xsi:schemaLocation ='http://www.w3.org/2001/10/synthesis
+                            http://www.w3.org/TR/speech-synthesis/synthesis.xsd'
+       version            ='1.0'
+> 
+  <metadata>
+    <dc:title>Introduction</dc:title>
+  </metadata>
+  
+  <voice name='Anna' gender='female' age='32'>
+    <p>
+      <s>
+        @@DOT@@
+      </s>
+      <s>
+        Hello.
+      </s>
+      <s>
+        <prosody contour='(0%,20Hz) (10%,30%) (40%,10Hz)'>
+          good morning
+        </prosody>
+      </s>           
+    </p>
+  </voice>
+</speak>
+
