@@ -1,0 +1,4 @@
+# key : reset
+# name : <link href='...yahoo-reset....css'>
+# --
+<link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/3.0.0/build/cssreset/reset-min.css">

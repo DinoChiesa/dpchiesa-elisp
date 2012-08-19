@@ -1,0 +1,11 @@
+# key : ui
+# name : <script src='...jquery-ui.js'> ...</script> <link...>
+# --
+<script type='text/javascript'
+        src='https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.18/jquery-ui.min.js'>
+</script>
+<link rel="stylesheet"
+      href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8/themes/${1:$$(yas/choose-value '("redmond" "humanity" "start" "ui-lightness" "smoothness" "base"))}/jquery-ui.css"
+      type="text/css"
+      media="screen">
+$0

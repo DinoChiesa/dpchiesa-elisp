@@ -1,0 +1,8 @@
+#key : fore
+#name : For Each ... Next
+# --
+Dim ${1:var} As ${2:type}
+For Each $1 In ${3:IEnumerable}
+    ${4:'' body...}
+Next
+

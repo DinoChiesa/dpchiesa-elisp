@@ -1,0 +1,65 @@
+# key : args
+# name : switch on args
+# --
+for (int i=0; i < args.Length; i++)
+{
+    switch (args[i])
+    {
+        case "-f":
+            i++;
+            if (args.Length <= i) throw new ArgumentException(args[i]);
+            _file = args[i];
+            break;
+
+        case "-p":
+            i++;
+            if (args.Length <= i) throw new ArgumentException(args[i]);
+            _password = args[i];
+            break;
+
+        case "-d":
+            i++;
+            if (args.Length <= i) throw new ArgumentException(args[i]);
+            _dir = args[i];
+            break;
+
+        case "-i":
+            i++;
+            if (args.Length <= i) throw new ArgumentException(args[i]);
+            if (_intParam != DefaultIntParamValue)
+                throw new ArgumentException(args[i]);
+            if (args[i].StartsWith("0x"))
+                _intParam = System.Int32.Parse(args[i].Substring(2), System.Globalization.NumberStyles.AllowHexSpecifier );
+            else
+                _intParam = System.Int32.Parse(args[i]);
+            break;
+
+
+        case "-s":
+            i++;
+            if (args.Length <= i) throw new Exception(args[i-1]);
+            if (args[i].ToUpper().EndsWith("K"))
+                _size = System.Int32.Parse(args[i].Substring(0,args[i].Length-1)) * 1024;
+            else if (args[i].ToUpper().EndsWith("KB"))
+                _size = System.Int32.Parse(args[i].Substring(0,args[i].Length-2)) * 1024;
+            else if (args[i].ToUpper().EndsWith("M"))
+                _size = System.Int32.Parse(args[i].Substring(0,args[i].Length-1)) * 1024*1024;
+            else if (args[i].ToUpper().EndsWith("MB"))
+                _size = System.Int32.Parse(args[i].Substring(0,args[i].Length-2)) * 1024*1024;
+            else
+                _size = Int32.Parse(args[i]);
+            break;
+
+
+
+        case "-?":
+            throw new ArgumentException(args[i]);
+
+        default:
+            if (_positionalArg != null)
+                throw new ArgumentException(args[i]);
+
+            _positionalArg = args[i];
+            break;
+    }
+}

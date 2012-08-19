@@ -1,0 +1,5 @@
+# key : sub
+# name : S.substring(...)
+# --
+${1:S}.substring(${2:from},${3:optionalTo});
+

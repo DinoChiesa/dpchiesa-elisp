@@ -1,0 +1,14 @@
+# key : ca
+# name : ConvertAll((s) => { ... });
+# --
+  List<String> values = new List<String>() { "7", "13", "41", "3" };
+
+  // ConvertAll maps the given delegate across all the List elements
+  var foo = values.ConvertAll((s) => { return System.Convert.ToInt32(s); }) ;
+
+  System.Console.WriteLine("typeof(foo) = {0}", foo.GetType().ToString());
+
+  var a = values.ToArray();
+  Array.ForEach(a, Console.WriteLine);
+
+  Array.ConvertAll(a, x=> System.Convert.ToInt32(x));

@@ -1,0 +1,16 @@
+# key : eachLine
+# name : function eachLine(f,fn) {..fso...}
+# --
+function eachLine(filename, fn) {
+    var fso = new ActiveXObject("Scripting.FileSystemObject"),
+        textStream = fso.OpenTextFile(r.outputfile, OpenMode.ForReading),
+        results = [];
+
+    // Read from the file and parse the results.
+    while (!textStream.AtEndOfStream) {
+        oneLine = textStream.ReadLine();
+        results.push(fn(oneLine));
+    }
+    textStream.Close();
+    return results;
+}

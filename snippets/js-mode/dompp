@@ -1,0 +1,14 @@
+# key : dompp
+# name : function prettyPrintXmlDom(dom) {...}
+# --
+function prettyPrintXmlDom(dom) {
+    // dom is MSXML2.DomDocument
+    var writer = new ActiveXObject("MSXML2.MXXMLWriter"),
+        reader = new ActiveXObject("MSXML2.SAXXMLReader");
+    writer.indent = true;
+    writer.omitXMLDeclaration = true;
+    reader.contentHandler = writer;
+    reader.parse(dom);
+    return writer.output;
+}
+$0

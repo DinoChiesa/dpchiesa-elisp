@@ -1,0 +1,6 @@
+# key : style
+# name : <style..> ...</style>
+# --
+<style type='text/css'>
+  $0
+</style>

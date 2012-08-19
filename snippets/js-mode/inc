@@ -1,0 +1,16 @@
+# key : inc
+# name : includeFile
+# --
+function readAllText(filename) {
+    var fso = new ActiveXObject("Scripting.FileSystemObject"),
+        fs = fso.openTextFile(filename),
+        fileData = fs.readAll();
+    fs.Close();
+    return fileData;
+}
+function includeFile(filename) {
+    /*jslint evil: true */
+    eval(readAllText(filename));
+}
+
+includeFile(${1:"c:\\\\dev\\\\js\\\\dateExtensions.js"});

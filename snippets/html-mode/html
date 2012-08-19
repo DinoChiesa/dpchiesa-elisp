@@ -1,0 +1,10 @@
+# key : html
+# name : <html> ...</html>
+# --
+<html>
+  <head>
+  $0
+  </head>
+  <body>
+  </body>
+</html>

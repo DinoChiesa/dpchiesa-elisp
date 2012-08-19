@@ -1,0 +1,21 @@
+# key : xhr
+# name : fn getXhr(){...};
+# --
+function getXhr() {
+  if (typeof XMLHttpRequest != "undefined") {
+    return new XMLHttpRequest();
+  }
+  else if (typeof ActiveXObject != "undefined") {
+    return new ActiveXObject('MSXML2.XMLHTTP');
+  }
+  else {
+    throw {error: "Could not create XMLHttpRequest"};
+  }
+}
+
+var xhr = getXhr();
+
+xhr.open(${1:method}, ${2:url}, ${3:asynchronous});
+xhr.setRequestHeader('X-Requested-With','XMLHttpRequest');
+xhr.setRequestHeader('Something', 'Whatever');
+xhr.send(query);

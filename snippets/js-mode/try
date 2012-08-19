@@ -1,0 +1,9 @@
+#key : try
+#name : try { ... } catch { ... }
+# --
+try {
+  $0
+}
+catch (exc1) {
+  //
+}

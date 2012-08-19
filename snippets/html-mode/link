@@ -1,0 +1,6 @@
+# key : link
+# name : <link..> ...</link>
+# --
+<link rel='stylesheet' type='text/css' media='screen'
+      href='$1'>
+$0

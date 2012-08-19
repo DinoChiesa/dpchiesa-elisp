@@ -1,0 +1,6 @@
+# key : fn
+# name : function fnName (...) { ... }
+# --
+function ${1:fnName} (${2:args}) {
+    ${3:// body...}
+}

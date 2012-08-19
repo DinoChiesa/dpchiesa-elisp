@@ -1,0 +1,8 @@
+#key : ife
+#name : If ... Then  ... Else  ... End If
+# --
+If ${1:predicate} Then
+  ${2:// then clause}
+Else
+  ${3:// else clause}
+End If

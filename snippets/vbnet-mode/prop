@@ -1,0 +1,16 @@
+#key : prop
+#name : property ... { ... }
+# --
+   Private m${1:Name} as ${2:Type}
+   Public Property ${1:Name}() As ${2:Type}
+
+      Get
+         Return m${1:Name}
+      End Get
+
+      Set(ByVal value As ${2:Type})
+            m${1:Name} = value
+      End Set
+
+   End Property ' ${1:Name}
+

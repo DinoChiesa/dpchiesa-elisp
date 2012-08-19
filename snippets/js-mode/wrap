@@ -1,0 +1,6 @@
+#key : wrap
+#name : fn wrapper
+# --
+(function (globalScope) {
+  ${0:...}
+}(this));

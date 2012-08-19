@@ -1,0 +1,6 @@
+# key : body
+# name : <body> ...</body>
+# --
+<body>
+  $0
+</body>

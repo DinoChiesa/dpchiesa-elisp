@@ -1,0 +1,33 @@
+# key : eachFile
+# name : function eachFile (dirName, fn) {...fso...}
+# --
+function eachFile (dirName, a2, a3) {
+    var fso = new ActiveXObject("Scripting.FileSystemObject"),
+        f = fso.GetFolder(dirName),
+        e, fileName, ext,
+        count = 0, regex, fn;
+
+    if (typeof a2 == "function") {
+        fn = a2;
+    }
+    else if (typeof a2 == "string") {
+        regex = (a2) ? new RegExp(a2) : null;
+        if (typeof a3 == "function") {
+            fn = a3;
+        }
+    }
+    if (typeof fn != "function") {
+        throw {'error':'fn must be a function'};
+    }
+
+    for (e= new Enumerator(f.files); !e.atEnd(); e.moveNext()) {
+        fileName = e.item().name;
+        if ( (regex === null) || regex.test(fileName)) {
+            ext = fileName.substring(fileName.lastIndexOf('.') + 1);
+            fn(fileName, count, e.item().path, ext);
+            count++;
+        }
+    }
+}
+$0
+

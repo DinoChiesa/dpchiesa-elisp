@@ -1,0 +1,4 @@
+#key : fs
+#name : fso.OpenTextFile
+# --
+var fileStream = fso.openTextFile(filename);

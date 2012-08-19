@@ -1,0 +1,5 @@
+# key : sub
+# name : S.substr(...)
+# --
+${1:S}.substr(${2:start},${3:optionalLength});
+

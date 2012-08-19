@@ -1,0 +1,8 @@
+# key : fs
+# name : File.OpenRead(...)
+# --
+using(FileStream ${1:src} = File.OpenRead(${2:fname}))
+{
+
+}
+

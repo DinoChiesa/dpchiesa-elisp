@@ -1,0 +1,12 @@
+# key : pump
+# name : File.OpenRead(...)
+# --
+        using(Stream src = File.OpenRead(${1:fname1}),
+              dest= File.Create(${2:fname2}))
+          {
+            if (compress)
+              Compress(src, dest);
+            else
+              Decompress(src, dest);
+          }
+

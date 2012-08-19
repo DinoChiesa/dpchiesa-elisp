@@ -1,0 +1,4 @@
+# key : div
+# name : <div class='...'>...</div>
+# --
+<div class='$1'>$0</div>

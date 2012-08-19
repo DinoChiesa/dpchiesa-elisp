@@ -1,0 +1,17 @@
+# key : prop
+# name : property ... { ... }
+# --
+private $1 _$2;
+public ${1:Type} ${2:Name}
+{
+  get
+  {
+    ${3:get impl};
+  }
+
+  set
+  {
+    ${4:set impl};
+  }
+
+}

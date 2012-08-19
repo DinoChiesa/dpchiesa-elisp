@@ -1,0 +1,17 @@
+#key : ctor
+#name : ctor ... { ... }
+# --
+var ${1:fname} =  function() {
+    var instance = {}; // empty object
+
+    // private members
+    var privateField = 0;
+    var privateMethod = function (a,b,c) {}; // empty fn
+
+    // public members
+    instance.publicField = 39;
+    instance.publicMethod = function(a, b, c) {
+      // can call privateMethod here
+    }
+    return instance;
+}

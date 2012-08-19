@@ -1,0 +1,6 @@
+# key : jqplot
+# name : <script src='...jqplot.js'> ...</script>
+# --
+<script type='text/javascript'
+        src='http://cachedcommons.org/cache/jqplot/0.9.7/javascripts/jqplot.js'>
+</script>

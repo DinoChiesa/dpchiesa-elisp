@@ -1,0 +1,10 @@
+# key : readAll
+# name : function readAll(..) {..fso...}
+# --
+function readAllText(filename) {
+    var fso = new ActiveXObject("Scripting.FileSystemObject"),
+        fs = fso.openTextFile(filename),
+        fileData = fs.readAll();
+    fs.Close();
+    return fileData;
+}

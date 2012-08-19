@@ -1,0 +1,20 @@
+#key : sing
+#name : singleton { ... }
+# --
+var ${1:fname} = (function () {
+    var privateVariable;
+    function privateFunction(x) {
+        ...privateVariable...
+    }
+
+    // return an object, that contains all the
+    // public functions and properties
+    return {
+        firstPublicMethod: function (a, b) {
+            ...privateVariable...
+        },
+        secondPublicMethod: function (c) {
+            ...privateFunction()...
+        }
+    };
+})();

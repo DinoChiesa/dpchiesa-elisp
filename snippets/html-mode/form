@@ -1,0 +1,13 @@
+# key : form
+# name : <form> ...</form>
+# --
+<form action='$1' method='${2:GET}'>
+  <fieldset>
+    <ul>
+      <li>
+        <label>$3</label>
+        <input type='text' id='$4' name='$4' value=''/>
+      </li>
+    </ul>
+  </fieldset>
+</form>

@@ -1,0 +1,5 @@
+# key : fso
+# name : new Scripting.FileSystemObject
+# --
+var fso = new ActiveXObject("Scripting.FileSystemObject");
+

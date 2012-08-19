@@ -1,0 +1,5 @@
+#key : while
+#name : while ... : ...
+# --
+while ${condition}:
+    $0

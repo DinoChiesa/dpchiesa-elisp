@@ -1,0 +1,6 @@
+#key : fori
+#name : for (var x in foo) { ... }
+# --
+for (var ${1:var} in  ${2:object}) {
+    ${3:// body...}
+}

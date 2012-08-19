@@ -1,0 +1,6 @@
+# key : link
+# name : <link..google font> ...</link>
+# --
+<link href='http://fonts.googleapis.com/css?family=$1'
+      rel='stylesheet' type='text/css'>
+$0

@@ -1,0 +1,6 @@
+# key : say
+# name : function say(...)
+# --
+function say(x) {
+    WScript.Echo(x);
+}

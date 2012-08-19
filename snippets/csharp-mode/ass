@@ -1,0 +1,15 @@
+# key : ass
+# name : assembly info
+# --
+
+[assembly: AssemblyTitle("$1")]
+[assembly: AssemblyCompany("${2:Dino Chiesa}")]
+[assembly: AssemblyProduct("$3")]
+[assembly: AssemblyCopyright("Copyright © Dino Chiesa 2009")]
+[assembly: AssemblyTrademark("")]
+[assembly: AssemblyCulture("")]
+[assembly: AssemblyConfiguration("")]
+[assembly: AssemblyDescription("$4")]
+[assembly: AssemblyVersion("${5:1.0.1.0}")]
+[assembly: AssemblyFileVersion("${6:1.0.1.0}")]
+

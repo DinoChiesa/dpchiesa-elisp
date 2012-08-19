@@ -1,0 +1,14 @@
+# key : jqajax
+# name : $.ajax({...});
+# --
+$.ajax({
+  type: 'GET',
+  url: ${1:url},
+  dataType: "${2:$$(yas/choose-value '("html" "json" "jsonp" "script" "text" "xml"))}",
+  cache: ${3:$$(yas/choose-value '("true" "false"))},
+  success: function(data, textStatus, jqXHR) {
+    $0
+  }
+});
+
+

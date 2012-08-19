@@ -1,0 +1,7 @@
+#key : for
+#name : for (...) { ... }
+# --
+For ${1:index} As Integer = 0 To ${2:finish}
+    ${3:''body}
+Next $1
+

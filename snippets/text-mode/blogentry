@@ -1,0 +1,14 @@
+# key : blog
+# contributor : blogger
+# name : blog picture link
+# --
+<a href="http://verylongwebsitename.com/wp-content/uploads/2012/${1:mm}/${2:folder}/fig${3:x}_l.png">
+  <img class="alignnone"
+       title="fig$3"
+       src="http://verylongwebsitename.com/wp-content/uploads/2012/$1/$2/fig$3_m.png"
+       alt="${5:alttext}"
+       width="${6:700}"
+       height="${7:500}"/>
+</a>
+$0
+
