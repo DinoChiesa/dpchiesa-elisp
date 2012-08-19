@@ -1,0 +1,8 @@
+# -*- mode: snippet -*-
+# name: property
+# key: r
+# --
+private ${1:T} ${2:value};
+public $1 get${2:$(capitalize text)}() { return $2; }
+public void set${2:$(capitalize text)}($1 $2) { this.$2 = $2; }
+ $0
