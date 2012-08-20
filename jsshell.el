@@ -8,7 +8,7 @@
 ;; Copyright  : (c) 2012 Dino Chiesa
 ;; License    : New BSD
 ;; URL        : http://www.emacswiki.org/emacs/JSShell
-;; Last-saved : <2012-April-21 07:17:42>
+;; Last-saved : <2012-August-01 21:28:15>
 ;;
 
 ;;; Commentary:
@@ -814,6 +814,7 @@ the specified FILE."
                          ("{\n" "{")
                          ("}\n" "}")
                          (";\n" ";")         ;; replace semi-newline with semi
+                         (",\n" ",")         ;; replace comma-newline with comma
                          ("\n$" ""))))       ;; trailing newline
          (with-temp-buffer
            (insert-file-contents file)

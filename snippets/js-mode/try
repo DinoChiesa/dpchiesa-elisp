@@ -1,5 +1,6 @@
-#key : try
-#name : try { ... } catch { ... }
+# name: try { .. } catch (e) { .. }
+# key: try
+# contributor: dpchiesa@hotmail.com
 # --
 try {
   $0

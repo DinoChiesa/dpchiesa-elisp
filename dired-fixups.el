@@ -26,17 +26,14 @@ which is up to 10gb.  Some files are larger than that.
 
 
 (defun dired-sort-toggle ()
-
   "This is a redefinition of the fn from dired.el. Normally,
 dired sorts on either name or time, and you can swap between them
 with the s key.  This function one sets sorting on name, size,
-time, and extension, and you cycle through those changes with s."
-
+time, and extension. Cycling works the same.
+"
   (setq dired-actual-switches
         (let (case-fold-search)
-
           (cond
-
            ((string-match " " dired-actual-switches) ;; contains a space
             ;; New toggle scheme: add/remove a trailing " -t" " -S",
             ;; or " -U"
@@ -74,14 +71,10 @@ time, and extension, and you cycle through those changes with s."
 
                    (new-sorting-switch
                     (cond
-                     ((string= old-sorting-switch "t")
-                      "X")
-                     ((string= old-sorting-switch "X")
-                      "S")
-                     ((string= old-sorting-switch "S")
-                      "")
-                     (t
-                      "t"))))
+                     ((string= old-sorting-switch "t") "X")
+                     ((string= old-sorting-switch "X") "S")
+                     ((string= old-sorting-switch "S") "")
+                     (t "t"))))
               (concat
                "-l"
                ;; strip -l and any sorting switches
@@ -100,7 +93,6 @@ time, and extension, and you cycle through those changes with s."
 properly provides the modeline in dired mode, supporting the new
 search modes defined in the new `dired-sort-toggle'.
 "
-
   ;; Set modeline display according to dired-actual-switches.
   ;; Modeline display of "by name" or "by date" guarantees the user a
   ;; match with the corresponding regexps.  Non-matching switches are

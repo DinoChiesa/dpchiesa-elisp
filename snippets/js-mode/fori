@@ -1,6 +1,8 @@
-#key : fori
-#name : for (var x in foo) { ... }
+# name : for (var foo in bar) { ... }
+# key : fori
 # --
-for (var ${1:var} in  ${2:object}) {
-    ${3:// body...}
+for (var ${1:prop} in ${2:obj}) {
+  if ($2.hasOwnProperty(prop)) {
+    $0
+  }
 }

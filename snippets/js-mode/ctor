@@ -1,5 +1,5 @@
-#key : ctor
-#name : ctor ... { ... }
+# key : ctor
+# name : ctor ... { ... }
 # --
 var ${1:fname} =  function() {
     var instance = {}; // empty object

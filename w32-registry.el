@@ -81,6 +81,9 @@
 ;; POSSIBILITY OF SUCH DAMAGE.
 ;;
 
+(if (eq system-type 'windows-nt)
+    (progn
+
 (if (not (fboundp 'string/ends-with))
     (defun string/ends-with (s ending)
       "return non-nil if string S ends with ENDING"
@@ -312,6 +315,7 @@ enough to use chakra when it is available.
                      (let ((x (split-string elt "=" t)))
                        (cons (car x) (cadr x))))
                   (split-string (nth 2 proxy) ";" t))))))
+))
 
 
 (provide 'w32-registry)
