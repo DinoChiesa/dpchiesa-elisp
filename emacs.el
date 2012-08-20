@@ -1,6 +1,6 @@
 ;;
 ;; Dino's .emacs setup file.
-;; Last saved: <2012-July-25 17:09:22>
+;; Last saved: <2012-August-14 18:04:32>
 ;;
 ;; Works with v23.3 of emacs.
 ;;
@@ -32,7 +32,7 @@
 ;;  powershell-mode.el, powershell.el, htmlize.el
 ;;  javascript.el, espresso, etc
 
-(add-to-list 'load-path "/users/dino/elisp")
+(add-to-list 'load-path "/Users/Dino/elisp")
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -56,9 +56,9 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; autocomplete
 
-;; (add-to-list 'load-path "/users/dino/elisp/autocomplete")
+;; (add-to-list 'load-path "/Users/Dino/elisp/autocomplete")
 ;; (require 'auto-complete-config)
-;; (add-to-list 'ac-dictionary-directories "/users/dino/elisp/autocomplete/ac-dict")
+;; (add-to-list 'ac-dictionary-directories "/Users/Dino/elisp/autocomplete/ac-dict")
 ;; (ac-config-default)
 
 
@@ -499,19 +499,108 @@
 ;; If I don't set both yas/snippet-dirs and yas/root-directory, I
 ;; get complaints in *Messages*.
 
-(setq yas/snippet-dirs
-      (list "c:/users/dino/elisp/snippets"))
+(setq yas/snippet-dirs (list "/Users/Dino/elisp/snippets"))
 (yas/initialize)
-(setq yas/root-directory "c:/users/dino/elisp/snippets")
+(setq yas/root-directory "/Users/Dino/elisp/snippets")
 (yas/load-directory yas/root-directory)
 
-(defun dino-recompile-snippets ()
-  "recompile all snippets in the snippets directory"
+(defun dino-recompile-then-reload-all-snippets (&optional dir)
+  "Recompile and reload all snippets in a toplevel snippets
+directory specified by DIR, or in `yas/root-directory' if DIR is
+not specified.
+
+It is unbelievable to me that this is as hard as it is. A simple
+reload-all does not re-compile, it reloads the 'precompiled'
+snippets. But not really. Because, precompiling snippets manually
+does not compile them correctly: they lack the correct mode
+specification.
+
+Obviously nobody tested this.
+
+How hard is this?
+
+"
   (interactive)
-  (let ((dir "c:/users/dino/elisp/snippets")
-        (elfile "yasnippet-bundle.el"))
-    (delete-file (concat dir "/" elfile))
-    (yas/compile-snippets  dir elfile)))
+  (let ((top-dir (or dir yas/root-directory)))
+    ;; delete all pre-compiled
+    (dolist (subdir (yas/subdirs top-dir))
+      (let ((fq-elfile (concat subdir "/.yas-compiled-snippets.el")))
+        (message (concat "checking " fq-elfile))
+        (if (file-exists-p fq-elfile)
+            (delete-file fq-elfile))))
+    (yas/compile-top-level-dir top-dir)
+    (yas/load-directory top-dir)))
+
+
+;; This fixes up a defun in yasnippet.
+;; The original does not specify the mode in the yas/define-snippet
+;; call in the generated .el file.
+(defun yas/compile-snippets (input-dir &optional output-file)
+  "Compile snippets files in INPUT-DIR to OUTPUT-FILE file.
+
+Prompts for INPUT-DIR and OUTPUT-FILE if called-interactively"
+  (interactive (let* ((input-dir (read-directory-name "Snippet dir "))
+                      (output-file (let ((ido-everywhere nil))
+                                     (read-file-name "Output file "
+                                                     input-dir nil nil
+                                                     ".yas-compiled-snippets.el"
+                                                     nil))))
+                 (list input-dir output-file)))
+  (let ((default-directory input-dir)
+        (major-mode-and-parents (yas/compute-major-mode-and-parents
+                                 (concat input-dir "/dummy"))))
+    (with-temp-file (setq output-file (or output-file ".yas-compiled-snippets.el"))
+      (flet ((yas/define-snippets
+              (mode snippets &optional parent-or-parents)
+              (insert (format ";;; %s - automatically compiled snippets for `%s' , do not edit!\n"
+                              (file-name-nondirectory output-file) mode))
+              (insert ";;;\n")
+              (let ((literal-snippets (list)))
+                (dolist (snippet snippets)
+                  (let ((key                    (first   snippet))
+                        (template-content       (second  snippet))
+                        (name                   (third   snippet))
+                        (condition              (fourth  snippet))
+                        (group                  (fifth   snippet))
+                        (expand-env             (sixth   snippet))
+                        (file                   nil) ;; (seventh snippet)) ;; omit on purpose
+                        (binding                (eighth  snippet))
+                        (uuid                    (ninth   snippet)))
+                    (push `(,key
+                            ,template-content
+                            ,name
+                            ,condition
+                            ,group
+                            ,expand-env
+                            ,file
+                            ,binding
+                            ,uuid)
+                          literal-snippets)))
+                (insert (pp-to-string `(yas/define-snippets ',mode ',literal-snippets ',parent-or-parents)))
+                (insert "\n\n")
+                (insert (format ";;; %s - automatically compiled snippets for `%s' end here\n"
+                                (file-name-nondirectory output-file) mode))
+                (insert ";;;"))))
+        (yas/load-directory-1 input-dir (car major-mode-and-parents)
+                              nil 'no-compiled-snippets))))
+
+  (if (and (called-interactively-p)
+           (yes-or-no-p (format "Open the resulting file (%s)? "
+                                (expand-file-name output-file))))
+      (find-file-other-window output-file)))
+
+
+;; (defun dino-reload-all-my-snippets ()
+;;   "recompile all snippets in the snippets directory"
+;;   (interactive)
+;;   (let* ((dir "/Users/Dino/elisp/snippets")
+;;          (elfile "yasnippet-bundle.el")
+;;          (fq-elfile (concat dir "/" elfile)))
+;;     (if (file-exists-p fq-elfile)
+;;         (delete-file fq-elfile))
+;;     (dolist (dir (yas/subdirs dir))
+;;       (yas/compile-snippets dir))
+;;     (yas/load-directory dir)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -644,7 +733,7 @@ are the string substitutions (see `format')."
 (require 'defaultcontent)
 
 ;; specify the directory to look in for templates
-(setq dc-auto-insert-directory "c:/users/dino/elisp/defaultcontent")
+(setq dc-auto-insert-directory "/Users/Dino/elisp/defaultcontent")
 (setq dc-fast-variable-handling t)
 
 ;; specify the template to use for various files:
@@ -694,8 +783,10 @@ are the string substitutions (see `format')."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; configure external utilities
 
-(setq archive-zip-use-pkzip nil)   ;i.e. use unzip instead
-(setq archive-zip-extract '("/users/dino/bin/unzip.exe" "-"))
+(if (file-exists-p "/Users/Dino/bin/unzip.exe")
+    (progn
+      (setq archive-zip-use-pkzip nil   ; i.e. use unzip instead
+            archive-zip-extract '("/Users/Dino/bin/unzip.exe" "-"))))
 
 (setq-default grep-command "grep -i ")
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -742,19 +833,18 @@ are the string substitutions (see `format')."
 
   (local-set-key "F" 'dino-dired-do-find))
 
-;; Set time format for Dired
-(custom-set-variables
-  ;; custom-set-variables was added by Custom.
-  ;; If you edit it by hand, you could mess it up, so be careful.
-  ;; Your init file should contain only one such instance.
-  ;; If there is more than one, they won't work right.
- '(ls-lisp-format-time-list (quote ("%Y-%m-%d %H:%M" "%Y-%m-%d %H:%M")))
- '(ls-lisp-use-localized-time-format t))
-
 (add-hook 'dired-mode-hook 'dino-dired-mode-hook-fn)
 
 ;; eliminate the gid in dired on windows
 (setq ls-lisp-verbosity '(links uid))
+
+;; on MacOS, the builtin ls program does not do the -X option.
+;; The MacPorts version of GNU ls does. If it exists, use it.
+(if (file-exists-p "/opt/local/bin/gls")
+    (progn
+      (setq ls-lisp-use-insert-directory-program t)
+      (setq insert-directory-program "/opt/local/bin/gls")
+      ))
 
 ;; nifty utility function
 (defun dino-dired-do-find (&optional arg)
@@ -2028,7 +2118,11 @@ i.e M-x kmacro-set-counter."
   ;; (require 'flymake-for-jslint-for-wsh)
   ;; ;;(setq flyjs-jslintwsh-location "c:\\users\\dino\\bin\\jslint-for-wsh.js")
   ;; (setq flyjs-jslintwsh-location "c:\\users\\dino\\bin\\jshint-for-wsh.js")
-  (require 'fly-jshint-wsh)
+
+  (require
+   (if (eq system-type 'windows-nt)
+       'fly-jshint-wsh 'fly-jshint-node))
+
   ;; ;;(setq flyjs-jslintwsh-location "c:\\users\\dino\\bin\\jslint-for-wsh.js")
   ;; (setq flyjs-jslintwsh-location "c:\\users\\dino\\bin\\jshint-for-wsh.js")
   (flymake-mode 1)
@@ -2047,8 +2141,10 @@ i.e M-x kmacro-set-counter."
   (require 'smart-op) ;; for smart insertion of ++ and == and += etc
   (smart-op-mode)
 
-  (require 'jscomp)
-  (local-set-key "\M-."     'jscomp-complete)
+  (if (eq system-type 'windows-nt)
+      (progn
+        (require 'jscomp)
+        (local-set-key "\M-."     'jscomp-complete)))
 
   ;; jslint-for-wsh.js, produces errors like this:
   ;; file.cs(6,18): JSLINT: The body of a for in should be wrapped in an if statement ...
@@ -2118,16 +2214,10 @@ i.e M-x kmacro-set-counter."
 (setq smart-compile-alist
       (append
        '(
-         ("\\.wxs\\'"       . "%M %n.msi")
-         ("\\.css\\'"       .
-          (concat "cscript.exe c:\\users\\dino\\bin\\csslint-wsh.js "
-                   "--format=compiler %f"))
-
-         ("\\.js\\'"       .
-          "cscript.exe c:\\users\\dino\\bin\\jslint-for-wsh.js %f //E:Chakra")
-
+         ("\\.wxs\\'"      . "%M %n.msi")
+         ("\\.css\\'"      . "~/js/csslint.node.js %f")
+         ("\\.js\\'"       . "~/js/jshint.node.js %f")
          ) smart-compile-alist ))
-
 
 (eval-after-load "compile"
   '(progn
@@ -2144,12 +2234,13 @@ i.e M-x kmacro-set-counter."
 (defalias 'perl-mode 'cperl-mode)
 (require 'cperl-mode)
 
-(autoload 'perl-mode "c:/emacs/lisp/progmodes/cperl-mode" "" t)
+
+(autoload 'perl-mode
+  "/Applications/Emacs.app/Contents/Resources/lisp/progmodes/cperl-mode" "" t)
+;;(autoload 'perl-mode "/emacs/lisp/progmodes/cperl-mode" "" t)
 ;;(autoload 'perl-mode "c:/emacs/lisp/progmodes/perl-mode" "" t)
 
-
-;;(setq
-;; cperl-comment-column   44)                 ; must these be set globally?
+;;(setq cperl-comment-column   44)                 ; must this be set globally?
 
 (defconst my-cperl-style
   '( ("MyPerl"
@@ -2186,19 +2277,24 @@ i.e M-x kmacro-set-counter."
 ;; handy utility functions for various purposes
 ;;
 
-
+;; Windows only
 ;; upon kill, check clipboard, and if exists, put it into the kill ring.
-(defadvice kill-new (before
-                     dino-kill-new-push-xselection-on-kill-ring
-                     activate)
-  "Before putting new kill onto the kill-ring, add the clipboard/external
+(if (eq system-type 'windows-nt)
+    (defadvice kill-new (before
+                         dino-kill-new-push-xselection-on-kill-ring
+                         activate)
+      "Before putting new kill onto the kill-ring, add the clipboard/external
 selection to the kill ring"
-  (let ((have-paste (and interprogram-paste-function
-                         (funcall interprogram-paste-function))))
-    (when have-paste (push have-paste kill-ring))))
+      (let ((have-paste (and interprogram-paste-function
+                             (funcall interprogram-paste-function))))
+        (when have-paste (push have-paste kill-ring)))))
 
 
-
+;; System-specific configuration
+;; Loads system-type config; e.g. "darwin.el" on Mac
+(let ((system-specific-elisp (concat "~/elisp/" (symbol-name system-type) ".el")))
+  (if (file-exists-p system-specific-elisp)
+    (load system-specific-elisp)))
 
 ;; when copying binary files into a clipboard buffer
 (fset 'dinoch-b64-copy
@@ -2315,7 +2411,7 @@ like XML mode or csharp mode."
 
 
 (defvar cheeso-uuidgen-prog
-  "c:/users/dino/bin/uuidgen.exe"
+  "c:/users/Dino/bin/uuidgen.exe"
   "Program to generate one uuid and emit it to stdout.")
 
 (defvar cheeso-base64-prog
@@ -2614,21 +2710,19 @@ emacs doing it for me.
 ;; To make this happen automatically, read the registry before
 ;; each URL retrieval, and set the proxy appropriately.
 ;;
-(eval-after-load "url"
-  '(progn
-     (require 'w32-registry)
-     (defadvice url-retrieve (before
-                              dino-set-proxy-dynamically
-                              activate)
-       "Before retrieving a URL, query the IE Proxy settings, and use them."
-       (let ((proxy (w32reg-get-ie-proxy-config)))
-         (setq url-using-proxy proxy
-               url-proxy-services proxy)))))
+(if (eq system-type 'windows-nt)
+    (eval-after-load "url"
+      '(progn
+         (require 'w32-registry)
+         (defadvice url-retrieve (before
+                                  dino-set-proxy-dynamically
+                                  activate)
+           "Before retrieving a URL, query the IE Proxy settings, and use them."
+           (let ((proxy (w32reg-get-ie-proxy-config)))
+             (setq url-using-proxy proxy
+                   url-proxy-services proxy))))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-
-
-
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -2724,5 +2818,16 @@ emacs doing it for me.
 (setq line-move-visual t    ;; ??
       line-number-mode t    ;; modeline
       column-number-mode t) ;; modeline
+
+(put 'narrow-to-region 'disabled nil)
+
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(ls-lisp-format-time-list (quote ("%Y-%m-%d %H:%M" "%Y-%m-%d %H:%M")))
+ '(ls-lisp-use-localized-time-format t)
+ '(temporary-file-directory "/tmp"))
 
 (message "Done with emacs.el...")

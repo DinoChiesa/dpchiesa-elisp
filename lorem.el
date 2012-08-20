@@ -10,9 +10,14 @@
   "A list of lorem ipsum sentences. Computed at runtime.")
 
 (defvar lorem-text-file
-  (concat (file-name-as-directory (getenv "USERPROFILE"))
+  (concat
+   (file-name-as-directory
+    (if (eq system-type 'windows-nt)
+        (getenv "USERPROFILE")
+        (getenv "HOME")))
           "Documents/Lorem.txt")
   "name of the file containing lorem ipsum text")
+
 
 (defun lorem-string-ends-with (s ending)
   "return non-nil if string S ends with ENDING"

@@ -5,7 +5,7 @@
 ;; Keywords   : javascript js jslint jshint flymake languages jscript
 ;; URL        :
 ;; License    : New BSD
-;; Last-saved : <2012-August-01 21:49:21>
+;; Last-saved : <2012-August-14 10:44:42>
 ;; Package-Requires: ((flymake "0.3"))
 ;;
 
@@ -371,9 +371,7 @@ This is the typical way people will use `fly-jshint-node.el'.
     (flymake-mode 1)
 
 "
-  (if force-download
-      (flyjs-download-script))
-
+  (if force-download (flyjs-download-script))
   (setq
         flymake-err-line-patterns
         (cons '("^[ \t]*\\([-A-Za-z.0-9_:/ ]+\\)(\\([0-9]+\\)[,]\\( *[0-9]+\\))\\( Microsoft JScript runtime error\\| JSLINT\\| JSHINT\\): \\(.+\\)$"
