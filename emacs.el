@@ -1,6 +1,6 @@
 ;;
 ;; Dino's .emacs setup file.
-;; Last saved: <2012-August-14 18:04:32>
+;; Last saved: <2012-September-15 22:24:58>
 ;;
 ;; Works with v23.3 of emacs.
 ;;
@@ -2829,5 +2829,9 @@ emacs doing it for me.
  '(ls-lisp-format-time-list (quote ("%Y-%m-%d %H:%M" "%Y-%m-%d %H:%M")))
  '(ls-lisp-use-localized-time-format t)
  '(temporary-file-directory "/tmp"))
+
+;; auto-revert for all files.
+(add-hook 'find-file-hook
+              (lambda () (turn-on-auto-revert-mode)))
 
 (message "Done with emacs.el...")

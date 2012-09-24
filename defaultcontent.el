@@ -7,7 +7,7 @@
 ;; Keywords   : template
 ;; URL        : http://www.emacswiki.org/emacs/defaultcontent.el
 ;; X-URL      : http://www.emacswiki.org/emacs/defaultcontent.el
-;; Last-saved : <2012-April-17 14:24:11>
+;; Last-saved : <2012-September-15 22:23:10>
 
 ;; Copyright (C) 1993-2001 by Christian Queinnec (University Paris 6)
 ;;
@@ -390,7 +390,6 @@ to determine the initial content of the visited file."
 ;; the correct settings for comment-start and comment-end variables.
 
 (add-hook 'find-file-hooks 'dc-insert-auto-insert-file t)
-
 
 
 (provide 'defaultcontent)

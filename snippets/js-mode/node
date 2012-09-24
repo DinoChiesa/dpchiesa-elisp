@@ -1,0 +1,5 @@
+# name : ! /usr/local/bin/node
+# key : node
+# --
+#! /usr/local/bin/node
+/*jslint node:true */
