@@ -1,9 +1,8 @@
 ;;
 ;; Dino's .emacs setup file.
-;; Last saved: <2012-November-25 11:09:48>
+;; Last saved: <2012-November-25 11:32:00>
 ;;
 ;; Works with v23.3 of emacs.
-;;
 ;;
 
 (message "Running emacs.el...")
@@ -2637,7 +2636,6 @@ emacs doing it for me.
 
 
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; url
 ;;
@@ -2677,7 +2675,6 @@ emacs doing it for me.
 
 
 
-
 ;; ------------------------------------------------------------------
 ;;
 ;; use C-x C-r to open "Recent files"
@@ -2699,15 +2696,12 @@ emacs doing it for me.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; thesaurus
 ;;
 (require 'thesaurus)
 (thesaurus-set-bhl-api-key-from-file "~/BigHugeLabs.apikey.txt")
 (define-key global-map (kbd "C-x t") 'thesaurus-choose-synonym-and-replace)
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
@@ -2716,18 +2710,14 @@ emacs doing it for me.
 ;;
 (require 'spelchek)
 (define-key global-map (kbd "C-x c") 'spelchek-choose-alternative-and-replace)
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; wordnik
+;; wordnik (dictionary)
 ;;
-;; dictionary
 (require 'wordnik)
-
 (wordnik-set-api-key-from-file "~/wordnik.apikey.txt")
 (define-key global-map (kbd "C-c ?") 'wordnik-show-definition)
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
