@@ -270,6 +270,25 @@ message box to the user with that information.
           ;;(setq msg (concat "lookup word " word "\n"))
           (wordnik-msgbox msg)))))
 
+(defun wordnik--trim-trailing-newlines (string)
+  (while (string-match "\\(.*\\)\\(\n\\|\r\\)$" string)
+    (setq string (substring string 0 -1))) ;; remove newline
+  string)
+
+
+;;;###autoload
+(defun wordnik-set-api-key-from-file (filename)
+  "A way to set the API key for Wordnik with the contents of
+a text file. That text file should contain the key obtained from
+Wordnik during registration.
+"
+  (interactive)
+  (setq wordnik-api-key
+        (and (file-exists-p filename)
+             (wordnik--trim-trailing-newlines
+              (with-temp-buffer
+                (insert-file-contents filename)
+                (buffer-substring-no-properties (point-min) (point-max)))))))
 
 (provide 'wordnik)
 

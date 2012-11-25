@@ -1,6 +1,6 @@
 ;;
 ;; Dino's .emacs setup file.
-;; Last saved: <2012-November-21 22:58:42>
+;; Last saved: <2012-November-25 09:32:03>
 ;;
 ;; Works with v23.3 of emacs.
 ;;
@@ -2705,25 +2705,7 @@ emacs doing it for me.
 ;; thesaurus
 ;;
 (require 'thesaurus)
-
-(defun cheeso-get-file-contents (filename)
-  (with-temp-buffer
-    (insert-file-contents filename)
-    (buffer-substring-no-properties (point-min) (point-max))))
-
-(when (not (fboundp 'string/trim-trailing-newlines))
-  (defun string/trim-trailing-newlines (string)
-    (while (string-match "\\(.*\\)\\(\n\\|\r\\)$" string)
-        (setq string (substring string 0 -1))) ;; remove newline
-      string))
-
-;; key obtained from registration.
-(setq thesaurus-bhl-api-key
-      (and (file-exists-p  "~/BigHugeLabs.apikey.txt")
-           (string/trim-trailing-newlines
-            (cheeso-get-file-contents "~/BigHugeLabs.apikey.txt"))))
-
-;; optional key binding
+(thesaurus-set-bhl-api-key-from-file "~/BigHugeLabs.apikey.txt")
 (define-key global-map (kbd "C-x t") 'thesaurus-choose-synonym-and-replace)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -2733,30 +2715,23 @@ emacs doing it for me.
 ;; spelchek
 ;;
 (require 'spelchek)
-;; optional key binding
 (define-key global-map (kbd "C-x c") 'spelchek-choose-alternative-and-replace)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; wordnik
 ;;
 ;; dictionary
+(require 'wordnik)
 
-(setq wordnik-api-key
-      (and (file-exists-p "~/wordnik.apikey.txt")
-      (string/trim-trailing-newlines
-                       (cheeso-get-file-contents "~/wordnik.apikey.txt"))))
-
-;; optional key binding
+(wordnik-set-api-key-from-file "~/wordnik.apikey.txt")
 (define-key global-map (kbd "C-c ?") 'wordnik-show-definition)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
-;; before running a client, need to set the environment variable.
+;; Before running an emacsclient, need to set the environment variable.
 ;; set EMACS_SERVER_FILE=c:\users\dino\elisp\.emacs.d\server\server
 (require 'server)
 (if (not (eq t (server-running-p server-name)))

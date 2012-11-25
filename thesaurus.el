@@ -476,6 +476,27 @@ inserted in its place.
                          (cdr thesaurus-bounds-of-looked-up-word))
           (insert chosen))))
 
+(defun thesaurus--trim-trailing-newlines (string)
+  (while (string-match "\\(.*\\)\\(\n\\|\r\\)$" string)
+    (setq string (substring string 0 -1))) ;; remove newline
+  string)
+
+
+;;;###autoload
+(defun thesaurus-set-bhl-api-key-from-file (filename)
+  "A way to set the API key for BigHugeLabs with the contents of
+a text file. That text file should contain the key obtained from
+BHL during registration.
+"
+  (interactive)
+  (setq thesaurus-bhl-api-key
+        (and (file-exists-p filename)
+             (thesaurus--trim-trailing-newlines
+              (with-temp-buffer
+                (insert-file-contents filename)
+                (buffer-substring-no-properties (point-min) (point-max)))))))
+
+
 
 (defun thesaurus-install ()
   "install `thesaurus.el'"
