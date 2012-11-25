@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# key: here
+# name: Here Document
+# --
+<<-${2:'${1:TOKEN}'}
+        $0
+${1/['"`](.+)['"`]/$1/}

@@ -1,0 +1,13 @@
+# key : usage
+# name : function usage() {...}
+# --
+
+function usage() {
+  local CMD=\`basename \$0\`
+  echo "$CMD: Tickle Apigee Gateway, and maybe change the system admin password."
+  echo "usage: "
+  echo "   $CMD -p password  [-n new_password]"
+  echo
+  exit 1
+}
+$0

@@ -291,7 +291,7 @@ for the current buffer.")
 
 
 (defvar smart-compile-compile-command-in-comments-extension-list
-  '(".c" ".cs" ".vb" ".VB" ".js" )
+  '(".c" ".cs" ".vb" ".VB" ".js" ".java")
 
 "The list of extensions of files for which `smarter-compile' will
 look in the header comments for a specification for `compile-command'.
@@ -622,7 +622,9 @@ A good way to do things is to bind this function to \C-x\C-e.
 
        (not (local-variable-p 'compile-command))
 
-       (not (boundp 'smart-compile-wisdom-has-been-bestowed)))
+       (not (boundp 'smart-compile-wisdom-has-been-bestowed))
+
+       (not smart-compile-wisdom-has-been-bestowed))
 
     (smart-compile-select-compile-command)
     (set (make-local-variable 'smart-compile-wisdom-has-been-bestowed) t))

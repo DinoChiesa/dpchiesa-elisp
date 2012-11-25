@@ -7,10 +7,10 @@
 // created on host: @ENV(COMPUTERNAME)@
 // initialized on: @DATE@
 //
-// last saved: <2012-March-24 02:08:46>
+// last saved: <2012-November-19 16:31:49>
 // ------------------------------------------------------------------
 //
-@INSERTFILE(c:/Users/Dino/elisp/defaultcontent/Copyright.txt)@//
+@INSERTFILE(/Users/Dino/elisp/defaultcontent/Copyright.txt)@//
 // ------------------------------------------------------------------
 
 using System;
@@ -144,5 +144,3 @@ namespace Ionic.ToolsAndTests
 
   }
 }
-
-

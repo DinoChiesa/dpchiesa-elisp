@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# key: forin
+# name: for ... in ... done
+# --
+for ${1:i} in 0..${2:last}; do
+        ${0:#statements}
+done

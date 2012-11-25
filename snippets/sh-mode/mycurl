@@ -1,0 +1,25 @@
+# key : mycurl
+# name : function MYCURL {...}
+# --
+## function MYCURL
+## side effects:
+## 1. puts curl output into file named ${CURL_OUT}. The caller be set the environment
+##    variable prior to calling this function.
+## 2. puts curl http_status into CURL_RC
+function MYCURL() {
+  echo "curl $@"
+  CURL_RC=`curl -s -w "%{http_code}" -o ${CURL_OUT} "$@"`
+  echo "==> ${CURL_RC}"
+}
+
+# usage example:
+#
+#  MYCURL -u ${ID}:${PSWD} -X PUT http://${MSIP}:${MSPORT}/v1/users/${EMAILID}
+#
+#  if [ "x${CURL_RC}" != "x200" ]; then
+#    echo "Error: Failed to change the system admin password."
+#    echo "HTTP status: ${CURL_RC}"
+#    echo "Payload: "
+#    cat ${CURL_OUT}
+#    exit 1
+#  fi

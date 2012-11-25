@@ -1,4 +1,4 @@
-#key : fs
-#name : fso.OpenTextFile
+# key : fs
+# name : require('fs')
 # --
-var fileStream = fso.openTextFile(filename);
+fs = require('fs')

@@ -1,0 +1,11 @@
+# key : getopt
+# name : while getopts...; do...done
+# --
+while getopts "hp:n:" opt; do
+  case $opt in
+    h) usage ;;
+    p) PSWD=$OPTARG ;;
+    n) NEWPSWD=$OPTARG ;;
+    *) usage ;;
+  esac
+done

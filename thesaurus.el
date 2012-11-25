@@ -45,6 +45,9 @@
 ;; eg:
 ;; http://api.wordnik.com//v4/word.json/awry/relatedWords?relationshipTypes=synonym
 ;;
+;;
+;; if you want to proxy, then
+;;   (setq url-proxy-services (list (cons "http" "proxyHost:proxyPort")))
 
 ;;
 ;;; Revisions:
@@ -294,7 +297,7 @@ BigHugeLabs web service."
         (thesaurus-msgbox msg)
         (browse-url "http://words.bighugelabs.com/getkey.php")
         nil)
-  (url-retrieve-synchronously
+    (url-retrieve-synchronously
    (concat "http://words.bighugelabs.com/api/2/"
            thesaurus-bhl-api-key "/" word "/"))))
 

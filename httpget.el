@@ -2,21 +2,24 @@
 
 ;; Author     : Dino Chiesa <dpchiesa@hotmail.com>
 ;; Created    : May 2011
-;; Modified   : Oct 2011
+;; Modified   : Oct 2012
 ;; Version    : 0.2
 ;; Keywords   : http url get
 ;; X-URL      : http://cheeso.members.winisp.net/srcview.aspx?dir=emacs&file=httpget.el
-;; Last-saved : <2012-March-29 11:34:07>
+;; Last-saved : <2012-October-30 23:57:31>
 
 ;;
 ;; This module defines one interactive function, `httpget', along with
 ;; a few helper routines it uses, for doing HTTP GETs easily from the
 ;; minibuffer.
 ;;
-;; THIS MODULE DEPENDS ON AN EXTERNAL WGET PROGRAM, for example see
+;; This module depends on an external wget program.  For an example of
+;; an unencumbered wget that works on Windows, see
 ;; https://cheesoexamples.svn.codeplex.com/svn/wget/wget.cs
 ;;
-;; This function is something like `browse-url-emacs' but more
+;; This module works on Linux, Mac, and Windows.
+;;
+;; The `httpget'function is something like `browse-url-emacs' but more
 ;; convenient and more interactive and helpful.
 ;;
 ;; =======================================================
@@ -61,8 +64,8 @@
   "buffer to recv http output.")
 
 (defvar httpget--wget-prog nil
-  "path to wget program.")
-
+  "path to wget or curl program. If nil, this module tries to use
+curl from the path.")
 
 ;; (defun httpget--fixup-linefeeds ()
 ;;   "function to remove the ^M that show up in downloaded URL content."
@@ -70,7 +73,6 @@
 ;;   (save-excursion
 ;;     (while (search-forward "\xd" nil t)
 ;;       (replace-match "" nil t))))
-
 
 
 (defun string/starts-with (s arg)
@@ -120,16 +122,20 @@ See also `browse-url-emacs', which is not related, but it similar.
 
   (interactive
    (let (url bufname prompt ix suggested-bufname
-             (possible-url (substring-no-properties (current-kill 0 t))))
+             (possible-url (or (thing-at-point 'url)
+                               (substring-no-properties (current-kill 0 t)))))
 
      (setq prompt
-           (if (and possible-url (stringp possible-url)
-                    (or
-                     (string/starts-with possible-url "http://")
-                     (string/starts-with possible-url "https://")))
-               (format "url (%s) ? " possible-url)
+           (cond
+            ((and possible-url (stringp possible-url)
+                  (or
+                   (string/starts-with possible-url "http://")
+                   (string/starts-with possible-url "https://")))
+             (format "url (%s) ? " possible-url))
+            (t
              (setq possible-url nil)
-             "url ? "))
+             "url ? ")))
+
      (setq url (read-from-minibuffer prompt nil nil nil nil nil))
      (if (or (not url) (string= url ""))
          (if possible-url
@@ -151,9 +157,13 @@ See also `browse-url-emacs', which is not related, but it similar.
 
   (let ((buf (generate-new-buffer buffername)))
     (switch-to-buffer buf)
-    (call-process httpget--wget-prog nil t t
-                  "-q" url "-")))
+    (if (not httpget--wget-prog) (setq httpget--wget-prog "curl"))
+    (cond
+     ((not (null (string-match-p "curl" httpget--wget-prog)))
+      (call-process httpget--wget-prog nil t t
+                  "-s" url))
+     (t
+      (call-process httpget--wget-prog nil t t
+                  "-q" url "-")))))
 
 (provide 'httpget)
-
-

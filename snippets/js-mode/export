@@ -1,0 +1,13 @@
+# name : exports.Xxxxx = x;
+# key : export
+# --
+if (typeof exports === "object" && exports) {
+    exports.${1:V} = ${2:v};
+}
+else if (typeof ActiveXObject != "undefined") {
+    $1 = $2;
+}
+else {
+    globalScope.$1 = $2;
+}
+$0

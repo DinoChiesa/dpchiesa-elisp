@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# key: if
+# name: if ... fi
+# --
+if ${2:[[ ${1:condition} ]]}; then
+  ${0:#statements}
+fi

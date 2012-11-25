@@ -1,0 +1,5 @@
+# key : shebang
+# name : !/bin/bash
+# --
+#!/bin/bash
+# -*- mode:shell-script; coding:utf-8; -*-

@@ -1,0 +1,7 @@
+# key : try
+# name: try...except
+# --
+try :
+    $0
+except :
+    print "Exception"

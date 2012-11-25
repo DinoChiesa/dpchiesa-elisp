@@ -1,0 +1,16 @@
+# key : main
+# name : function main(args){...}
+# --
+function main(args) {
+    var i = 0;
+    try {
+        args.forEach(function(arg){
+            $0
+        });
+    }
+    catch (exc1) {
+        say("Exception:" + JSON.stringify(exc1));
+    }
+}
+
+main(process.argv.slice(2));

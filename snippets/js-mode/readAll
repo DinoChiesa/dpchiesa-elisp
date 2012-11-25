@@ -1,10 +1,7 @@
 # key : readAll
-# name : function readAll(..) {..fso...}
+# name : function readAll(..) {..fs.readFile...}
 # --
 function readAllText(filename) {
-    var fso = new ActiveXObject("Scripting.FileSystemObject"),
-        fs = fso.openTextFile(filename),
-        fileData = fs.readAll();
-    fs.Close();
+    var fileData = fs.readFileSync(filename, "binary");
     return fileData;
 }
