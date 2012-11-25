@@ -4,7 +4,7 @@
 ;; Created: Thu, 19 Jul 2012  18:03
 ;; Package-Requires: ()
 ;; URL: http://www.emacswiki.org/cgi-bin/wiki/wordnik.el
-;; X-URL: http://cheeso.members.winisp.net/srcview.aspx?dir=emacs&file=wordnik.el
+;; X-URL: https://raw.github.com/DinoChiesa/dpchiesa-elisp/master/wordnik.el
 ;; Version: 2012.11.25
 ;; Keywords: dictionary lookup
 ;; License: New BSD
@@ -20,14 +20,14 @@
 
 ;;   (require 'wordnik)
 ;;   (setq wordnik-api-key "XXXXXXXXXXXX")  ;; from registration
-;;   ;; optional key binding (suggested)
-;;   (define-key global-map (kbd "C-c ?") 'wordnik-lookup-word)
 
 ;;   -or-
 
 ;;   (require 'wordnik)
 ;;   (wordnik-set-api-key-from-file "~/wordnik.apikey.txt") ;; from registration
-;;   ;; optional key binding (suggested)
+
+;; Optionally, you can also set a key binding:
+
 ;;   (define-key global-map (kbd "C-c ?") 'wordnik-lookup-word)
 
 ;;
