@@ -391,11 +391,18 @@ or, if there is no cache hit, then from the remote service.
 
 
 (defun thesaurus--generate-menu (candidates)
-  "Generate a menu suitable for use in `x-popup-dialog' from the
+  "Generate a menu suitable for use in `x-popup-menu' from the
 list of candidates. Each item in the list of candidates is a
 list, (FORM FLAVOR WORD), where FORM is one of {adjective, verb,
 noun, etc}, FLAVOR is {syn, sim, rel, ant, etc}, and WORD is the
 actual word.
+
+The output is a list like this:
+
+  (\"Replace with...\"
+    (\"Ignored pane title\"
+      (\"thing 1 to display\" \"value to return if thing 1 is selected\")
+      (\"thing 2 to display\" \"value if thing 2 is selected\")))
 
 "
   (let ((items (mapcar '(lambda (elt)
@@ -411,7 +418,7 @@ actual word.
 
 
 (defun thesaurus-prompt-user-with-choices (candidates)
-  "prompt the user with the available replacement choices.
+  "Prompt the user with the available replacement choices.
 In this context the list of choices is the list of synonyms.
 
 See `thesaurus-prompt-mechanism'.
