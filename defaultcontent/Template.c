@@ -7,10 +7,10 @@
  *
  * Last saved:
  *
- * Time-stamp: <2010-January-14 15:27:31>
+ * Time-stamp: <2013-January-22 09:24:40>
  * ------------------------------------------------------------------
  *
- * Copyright (c) Dino Chiesa 2010.  All rights reserved.
+ * Copyright (c) Dino Chiesa 2013.  All rights reserved.
  *
  */
 

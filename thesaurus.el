@@ -303,14 +303,14 @@ BigHugeLabs web service."
   (if (not (and (boundp 'thesaurus-bhl-api-key)
                 (stringp thesaurus-bhl-api-key)))
       (let ((msg (concat "You need to get an \"api key\" from BigHugeLabs.\n"
-                     "Then, set it in your .emacs with a statement like:\n"
-                     "    (setq thesaurus-bhl-api-key \"XXXXXXXXXXXX\") \n")))
+                         "Then, set it in your .emacs with a statement like:\n"
+                         "    (setq thesaurus-bhl-api-key \"XXXXXXXXXXXX\") \n")))
         (thesaurus-msgbox msg)
         (browse-url "http://words.bighugelabs.com/getkey.php")
         nil)
     (url-retrieve-synchronously
-   (concat "http://words.bighugelabs.com/api/2/"
-           thesaurus-bhl-api-key "/" word "/"))))
+     (concat "http://words.bighugelabs.com/api/2/"
+             thesaurus-bhl-api-key "/" word "/"))))
 
 
 
@@ -485,7 +485,7 @@ word in the buffer will be removed and the replacement will be
 inserted in its place.
 
 "
-  (interactive (list (read-string "word: " (thesaurus-word-at-point))))
+  (interactive (list (read-string "Get synonyms for word: " (thesaurus-word-at-point))))
   (let ((chosen (thesaurus-prompt-user-with-choices
                  (thesaurus-get-synonyms word))))
     (when chosen

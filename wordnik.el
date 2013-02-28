@@ -5,7 +5,7 @@
 ;; Package-Requires: ()
 ;; URL: http://www.emacswiki.org/cgi-bin/wiki/wordnik.el
 ;; X-URL: https://raw.github.com/DinoChiesa/dpchiesa-elisp/master/wordnik.el
-;; Version: 2012.11.25
+;; Version: 2012.11.26
 ;; Keywords: dictionary lookup
 ;; License: New BSD
 
@@ -32,6 +32,9 @@
 
 ;;
 ;;; Revisions:
+;;
+;; 2012.11.26  2012-November-25 Dino Chiesa
+;;    Tweaked rendering of Multiline message box on MacOS.
 ;;
 ;; 2012.11.25  2012-November-25 Dino Chiesa
 ;;    Updated to format message boxes with x-popup-menu on MacOS, to
@@ -257,12 +260,11 @@ the DEFN vector. On MacOS, `message-box' does not format
 correctly. It is always 4 lines in height, regardless of the
 number of lines of input. Also, it cannot handle wide lines.
 
-This function can work around the display problems.
-From http://stackoverflow.com/a/9966422/48082
+This function works around the display problems.
+Derived from http://stackoverflow.com/a/9966422/48082
 "
-
-  (flet ((get-item-text (elt)
-                (concat ": "
+  (flet ((get-item-text (elt c)
+                (concat (format "%d" (1+ c)) ": "
                         (wordnik--justify
                          (cdr (assoc 'text elt)))
                         "\n")))
@@ -280,11 +282,17 @@ From http://stackoverflow.com/a/9966422/48082
       ;; add lines to menu-1 in reverse order
       (while (> c 0)
         (setq c (1- c))
-        (define-key menu-1 (vector (intern (format "menu-1-fake-event-%d" c)))
-          `(menu-item ,(purecopy (get-item-text (elt defn c)))
+        (let ((parts (split-string (get-item-text (elt defn c) c) "\n" nil))
+              (z 0))
+          (setq z (length parts))
+          (while (> z 0)
+            (setq z (1- z))
+            (define-key menu-1 (vector (intern (format "menu-1-item-event-%d-%d" c z)))
+
+            `(menu-item ,(purecopy (nth z parts))
                       nil
                       :keys ""
-                      :enable t)))
+                      :enable t)))))
 
       (x-popup-menu t menu-1)))))
 

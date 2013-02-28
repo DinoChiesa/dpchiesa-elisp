@@ -242,42 +242,19 @@ Google Toolbar web service."
                     "<spellrequest textalreadyclipped='0' ignoredups='0' ignoredigits='1' ignoreallcaps='1'><text>" word "</text></spellrequest>")))
 
       (if (not spelchek--curl-prog) (setq spelchek--curl-prog "curl"))
+      ;; FIXME: Shouldn't need to resort to curl; the url package allows post.
+      ;; Can use  `url-retrieve-synchronously'.
+      ;; See http://stackoverflow.com/a/1336975/48082
       (with-current-buffer buf
         (call-process spelchek--curl-prog nil t t
                       "-s" "-d" payload "-X" "POST" url))
       buf)))
 
 
-
 (defun spelchek-cache-reset ()
   "Reset the cache to empty"
   (interactive)
   (setq spelchek-cache (spelchek-cache-initialize)))
-
-
-(defun spelchek-parse-one-line ()
-  "Parse one line in the buffer created by `url-retrieve-synchronously'.
-The format of each line is expected to be:
-
-   form|flavor|word
-
-where
-   form = {adjective,verb,noun,etc}
-   flavor  = {syn,sim,ant,rel}
-   word = the actual word
-
-The return value is a list, with those three items in it,
-in that order.
-
-"
-  (let (start end s parts)
-    (setq start  (point)
-          end (line-end-position)
-          s (buffer-substring-no-properties start end)
-          parts (split-string s "|"))
-    (delete-region start end)
-    (delete-char 1)
-    parts))
 
 
 (defun spelchek-fetch-alternatives (word)
@@ -288,11 +265,11 @@ in that order.
         (progn
           (with-current-buffer buf
             ;;(rename-buffer (concat "*spelchek* - " word) t)
-              (setq xlist
-                    (xml-parse-region (point-min)
-                                      (point-max)
-                                      (current-buffer)
-                                      nil nil)))
+            (setq xlist
+                  (xml-parse-region (point-min)
+                                    (point-max)
+                                    (current-buffer)
+                                    nil nil)))
           (and (kill-buffer buf)
                (listp xlist)
                (setq derp (nth 2 (nth 2 (nth 0 xlist))))

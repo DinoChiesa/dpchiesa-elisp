@@ -1,8 +1,8 @@
 ;;
 ;; Dino's .emacs setup file.
-;; Last saved: <2012-November-25 11:32:00>
+;; Last saved: <2013-February-27 21:21:54>
 ;;
-;; Works with v23.3 of emacs.
+;; Works with v24.2 of emacs.
 ;;
 
 (message "Running emacs.el...")
@@ -32,6 +32,255 @@
 ;;  javascript.el, espresso, etc
 
 (add-to-list 'load-path "~/elisp")
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; handy utility functions for various purposes
+;;
+
+;; Windows only
+;; upon kill, check clipboard, and if exists, put it into the kill ring.
+(if (eq system-type 'windows-nt)
+    (defadvice kill-new (before
+                         dino-kill-new-push-xselection-on-kill-ring
+                         activate)
+      "Before putting new kill onto the kill-ring, add the clipboard/external
+selection to the kill ring"
+      (let ((have-paste (and interprogram-paste-function
+                             (funcall interprogram-paste-function))))
+        (when have-paste (push have-paste kill-ring)))))
+
+
+;; System-specific configuration
+;; Loads system-type config; e.g. "darwin.el" on Mac
+(let ((system-specific-elisp (concat "~/elisp/" (symbol-name system-type) ".el")))
+  (if (file-exists-p system-specific-elisp)
+    (load system-specific-elisp)))
+
+;; when copying binary files into a clipboard buffer
+(fset 'dinoch-b64-copy
+      [escape ?  escape ?> escape ?x ?b ?a ?s ?e ?6 ?4 ?- ?e ?n ?c tab return ?\C-w ?\C-y])
+
+;; when pasting the base64 stuff from binary files
+(fset 'dinoch-b64-paste
+      [escape ?x ?r backspace ?e ?r ?a ?s ?e ?- ?b ?u tab return ?\C-y escape ?x ?b ?a ?s ?e ?6 ?4 ?- ?d ?e ?c ?o tab return ?\C-x ?\C-s])
+
+
+(defun dino-fixup-linefeeds ()
+  "Dino's function to replace the CR-LF of a DOS ASCII file to a LF for Unix."
+  (interactive)
+  (save-excursion
+    (while (search-forward "\xd" nil t)
+      (replace-match "" nil t))))
+
+
+(defun dino-indent-buffer ()
+  "Dino's function to re-indent an entire buffer; helpful in progmodes
+like XML mode or csharp mode."
+  (interactive)
+  (indent-region (point-min) (point-max)))
+
+(defun dino-toggle-buffer-modified ()
+  "Toggles the buffer-modified-p value for the current buffer"
+  (interactive)
+  (set-buffer-modified-p (not (buffer-modified-p))))
+
+
+ (defvar dino-no-untabify-modes '(makefile-mode BSDmakefile)
+  "Normally my setup untabifies buffers before save. This list
+provides a set of modes for which no untabify is desired.")
+
+(setq-default indent-tabs-mode nil) ;Use spaces not tabs!
+
+;;(setq dino-no-untabify-modes '(makefile-mode BSDmakefile))
+
+
+(defun dino-untabify-maybe ()
+  "Untabify the current buffer, if the major-mode of the buffer is not
+in the list `dino-no-untabify-modes'
+"
+  (interactive)
+  (when (or (not dino-no-untabify-modes)
+            (every '(lambda (m) (not (derived-mode-p m)))
+                   dino-no-untabify-modes))
+
+    (untabify 0 (point-max))))
+
+(defun dino-untabify-unconditionally ()
+  "Untabify the current buffer completely and unconditionally."
+  (untabify (point-min) (point-max)))
+
+(add-hook 'before-save-hook 'dino-untabify-maybe)
+
+
+;; put an href around the url at point.
+(fset 'dino-href-url
+      [?< ?  backspace ?a ?  ?h ?r ?e ?f ?= ?\" ?\C-s ?  ?\C-b ?\" ?> ?\C-r ?/ ?\C-f escape ?  ?\C-s ?\" ?\C-b ?\C-w ?\C-y ?\C-f ?\C-f ?\C-y ?< ?/ ?a ?> ?< ?b ?r ?> return])
+
+
+(defun revert-buffer-unconditionally ()
+  "revert the current buffer unconditionally.  See also, the auto-revert minor mode."
+  (interactive)
+  (revert-buffer t t))
+
+(defun dino-resize-big ()
+  "quick resize to 128x72"
+  (interactive)
+  (set-frame-height (selected-frame) 68)
+  (set-frame-width (selected-frame) 128))
+
+(defun dino-toggle-truncation ()
+  "Joe's function to toggle the state of the truncate-lines variable"
+  (interactive)
+  (setq truncate-lines (not truncate-lines))
+  (redraw-display))
+
+;; (defun dino-remove-trailing-whitespace ()
+;; "For each line in region, Convert multiple spaces at end of line to just one."
+;;   (interactive)
+;;   (let ((beg (point-min))
+;;         (end (point-max)))
+;;   (save-excursion
+;;     (goto-char beg)
+;;     (while (and (< (point) end)
+;;                 (re-search-forward " +$" end t))
+;;       (just-one-space)
+;;       (backward-delete-char-untabify 1)
+;;       )
+;; )))
+
+
+(defun dino-insert-timestamp ()
+  "function to insert timestamp at point. format: DayOfWeek, Date Month Year   24hrTime"
+  (interactive)
+  (let (localstring mytime)
+    (setq localstring (current-time-string))
+    (setq mytime (concat "....dinoch...."
+                         (substring localstring 0 3)  ;day-of-week
+                         ", "
+                         (substring localstring 8 10) ;day number
+                         " "
+                         (substring localstring 4 7)  ;month
+                         " "
+                         (substring localstring 20 24 ) ;4-digit year
+                         "...."
+                         (substring localstring 11 16 ) ;24-hr time
+                         "....\n"
+                         ))
+    (insert mytime))
+)
+
+
+
+(defun dino-insert-timeofday ()
+  "function to insert time of day at point . format: DayOfWeek, Date Month Year   24hrTime"
+  (interactive)
+  (let (localstring mytime)
+    (setq localstring (current-time-string))
+    ;; example:
+    ;; Mon, 17 Jun 96  12:52
+    (setq mytime (concat (substring localstring 0 3)  ;day-of-week
+                         ", "
+                         (substring localstring 8 10) ;day number
+                         " "
+                         (substring localstring 4 7)  ;month
+                         " "
+                         (substring localstring 20 24 ) ;4-digit year
+                         "  "
+                         (substring localstring 11 16 ) ;24-hr time
+                         "\n"
+                         ))
+    (insert mytime))
+)
+
+
+(defvar cheeso-uuidgen-prog
+  "c:/users/Dino/bin/uuidgen.exe"
+  "Program to generate one uuid and emit it to stdout.")
+
+(defvar cheeso-base64-prog
+  "c:/dev/dotnet/base64.exe"
+  "Program to generate base64 encoding for a given file, emit to stdout.")
+;; see also `base64-encode-region'
+
+(defun cheeso-uuid-gen ()
+  "function to generate a new UUID and return it."
+  (let ((uuid (shell-command-to-string cheeso-uuidgen-prog)))
+    (substring uuid 0 -1))) ;; remove newline
+
+(defun cheeso-uuid-insert ()
+  "function to insert a new UUID at point."
+  (interactive)
+  (save-excursion
+    (let ((beg (point))
+          (uuid (cheeso-uuid-gen)))
+      ;; If previous cmd was a kill, this separates the
+      ;; kill items:
+      (forward-char 1)
+      (forward-char -1)
+      ;; insert the text
+      (insert uuid)
+      ;; put the uuid in the kill-ring?:
+      (kill-region beg (point))
+      (yank)
+      (exchange-point-and-mark))))
+
+
+(defun cheeso-base64-encode-file (filename)
+  "function to get base64 encoding of a given file, and return it."
+  (let ((command (concat cheeso-base64-prog " " filename)))
+      (shell-command-to-string command)))
+
+
+;; c:/sw/VS2010ImageLibrary/Actions/png_format/Office and VS/Animate.png
+(defun cheeso-base64-insert-file (filename)
+  "Function to insert the base64 encoding of a given file at point.
+Handy for editing .resx files within emacs.
+"
+  (interactive "*fFile? ")
+  (save-excursion
+    (let* ((beg (point))
+          (fname-quoted (concat "\"" filename "\""))
+          (b64
+           (replace-regexp-in-string (char-to-string 13) ""
+                                     (cheeso-base64-encode-file fname-quoted))))
+      ;; If previous cmd was a kill, this separates the
+      ;; kill items:
+      (forward-char 1)
+      (forward-char -1)
+      ;; insert the text
+      (insert b64)
+      ;; put the uuid in the kill-ring?:
+      (kill-region beg (point))
+      (yank)
+      (exchange-point-and-mark))))
+
+
+(defun cheeso-csharp-snippet ()
+  "convert a file into a snippet, just by narrowing. "
+  (interactive)
+  (save-excursion
+    (let ((beg (point))
+          top-of-fn
+          bot-of-fn)
+
+      (re-search-backward "{")
+      (forward-char 1)
+      (set-mark (point))
+      (re-search-forward "}")
+      (forward-char -1)
+      (narrow-to-region (point) (mark)))))
+
+
+(defun cheeso-file-contents-as-string (filename)
+  "Get the contents of a file as a string. Be careful!"
+  (with-temp-buffer
+    (insert-file-contents filename)
+    (buffer-substring-no-properties (point-min) (point-max))))
+
+
+
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -74,19 +323,14 @@
 (set-face-background 'default "black")
 
 
-;; I forget why I made this an after advice??
+;; I couldn't get eval-after-load to work with hl-line, so
+;; I made this an after advice??
 (defadvice hl-line-mode (after
                          dino-advise-hl-line-mode
                          activate compile)
   (set-face-background hl-line-face "gray13"))
 
 (global-hl-line-mode)
-
-;; couldn't get this to work:
-;; (eval-after-load "hl-line"
-;;   '(progn
-;;     ;; hl-line-face is a symbol, value: hl-line
-;;     (set-face-background hl-line-face "gray21")))
 
 ;;(set-face-background 'font-lock-comment-face "black")
 (set-face-foreground 'font-lock-comment-face       "VioletRed1")
@@ -127,7 +371,6 @@
           "Minor mode to count words." t nil)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 
 
 
@@ -312,6 +555,7 @@
          ("\\.ssml$"                          . xml-mode)            ; Speech markup
          ("\\.\\(aml\\|xaml\\)$"              . xml-mode)            ; SHFB markup, XAML
          ("\\.\\(wsc\\|wsf\\)$"               . xml-mode)            ; Windows Script Component, WSCript file.
+         ("\\.\\(xjb\\)$"                     . xml-mode)            ; JAXB bindings file
          ) auto-mode-alist ))
 
 
@@ -337,10 +581,6 @@
 
 
 
-
-
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; htmlize
 
@@ -350,10 +590,16 @@
 
 (eval-after-load "htmlize"
   '(progn
-     (setq htmlize-output-type 'css)
+     (setq htmlize-output-type 'inline-css)
      ))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+
+(eval-after-load "image-dired"
+  '(progn
+     (require 'image-dired-fixups)))
 
 
 
@@ -438,7 +684,6 @@
 
 
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; yasnippet
 ;;
@@ -461,15 +706,20 @@
 directory specified by DIR, or in `yas/root-directory' if DIR is
 not specified.
 
-It is unbelievable to me that this is as hard as it is. A simple
-reload-all does not re-compile, it reloads the 'precompiled'
-snippets. But not really. Because, precompiling snippets manually
-does not compile them correctly: they lack the correct mode
-specification.
+A simple reload-all does not re-compile snippets; instead it
+reloads the 'precompiled' snippets. And, that's not really a good
+idea, because precompiling snippets manually does not compile
+them correctly: they lack the correct mode specification. Huh?
+Obviously nobody tested this. Open-sores software.
 
-Obviously nobody tested this.
+It is unbelievable to me that it takes a custom-written function
+to accomplish this. I'm certain I must be doing something wrong,
+but I was unable to fall into a pit of success after much
+searching, wailing, and gnashing of teeth.
 
-How hard is this?
+So I wrote this function which does what I think it should do,
+which is to recompile and then reload all the snippets in my
+snippets directory.
 
 "
   (interactive)
@@ -929,7 +1179,6 @@ refers to relative paths.
 
 
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; C mode  (common)
 ;
@@ -961,11 +1210,13 @@ refers to relative paths.
     ;; never convert leading spaces to tabs:
     ;;(make-local-variable 'indent-tabs-mode)
     (setq indent-tabs-mode nil)
-    ;; convert all tabs to spaces upon save
-    (add-hook 'before-save-hook
-              (lambda () (untabify (point-min) (point-max))))
 
-    (add-hook 'before-save-hook 'delete-trailing-whitespace)
+    ;; remove trailing whitespace in C files
+    (add-hook 'local-write-file-hooks
+              '(lambda ()
+                 (save-excursion
+                   (delete-trailing-whitespace))))
+
     (message "dino-c-mode-common-hook-fn: done."))))
 
 (add-hook 'c-mode-common-hook 'dino-c-mode-common-hook-fn)
@@ -1026,8 +1277,7 @@ refers to relative paths.
                (c-basic-offset . 4)
                (c-echo-syntactic-information-p . t)
                (c-comment-only-line-offset . (0 . 0))
-               (c-offsets-alist . (
-                                   (c                     . c-lineup-C-comments)
+               (c-offsets-alist . ((c                     . c-lineup-C-comments)
                                    (statement-case-open   . 0)
                                    (case-label            . +)
                                    (substatement-open     . 0)
@@ -1043,9 +1293,8 @@ refers to relative paths.
       [escape ?\C-b escape ?  ?\C-a ?\C-w ?\C-y escape ?\C-f ?  ?/ ?/ ?  ?\C-y ?\C-x ?\C-x ?\C-c ?1])
 
 
-
-    (defun dino-c-get-value-from-comments (marker-string line-limit)
-        "gets a string from the header comments in the current buffer.
+(defun dino-c-get-value-from-comments (marker-string line-limit)
+  "gets a string from the header comments in the current buffer.
 
     This is used to extract the compile command from the comments. It
     could be used for other purposes too.
@@ -1096,7 +1345,6 @@ refers to relative paths.
                   (buffer-substring-no-properties
                    (match-beginning 1)
                    (match-end 1))))))))
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -1283,7 +1531,6 @@ refers to relative paths.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; csharp mode
 
-
 (c-add-style
  "myC#Style"
  '("C#"  ; this must be defined elsewhere
@@ -1297,18 +1544,18 @@ refers to relative paths.
                        (class-open            . 0)
                        (class-close           . 0)
                        (inclass               . +)
-                       (block-open            . 0)    ; eg, open a block under a function name or if stmt;
-                                        ; want this to be flush with prev line.
+                       (block-open            . 0)  ;; eg, open a block under a function name or if stmt;
+                                                    ;; want this to be flush with prev line.
                        (arglist-cont          . +)
-                       (substatement-open     . 0)  ; I think this is for a try {} or if{} or etc. why this is not block open, I don't know!
-                       (defun-open            . 0)  ; method defn? (but no!)
-                       (defun-block-intro     . +)  ;0 ; block within a function????
-                       (inline-open           . 0)  ; eg, opening a function? ??
-                       (statement-block-intro . +)  ; unknown what this is
-                       (brace-list-open       . 0)  ; list open (like an enum, array initializer)
-                       (brace-list-intro      . +)  ; first item in the list
-                       (brace-list-entry      . 0)  ; subsequent items in the list
-                       (brace-list-close      . 0)  ; list close
+                       (substatement-open     . 0)  ;; I think this is for a try {} or if{} or etc. why this is not block open, I don't know!
+                       (defun-open            . 0)  ;; method defn? (but no!)
+                       (defun-block-intro     . +)  ;;0 ; block within a function????
+                       (inline-open           . 0)  ;; eg, opening a function? ??
+                       (statement-block-intro . +)  ;; unknown what this is
+                       (brace-list-open       . 0)  ;; list open (like an enum, array initializer)
+                       (brace-list-intro      . +)  ;; first item in the list
+                       (brace-list-entry      . 0)  ;; subsequent items in the list
+                       (brace-list-close      . 0)  ;; list close
                        (cpp-macro             . (csharp-lineup-region 0))    ;; align region/endregion
                        ;;(cpp-macro             . (csharp-lineup-if-and-region 0))    ;; align region/endregion and if/else/endif
                        (statement-cont        . (dinoch-csharp-lineup-string-continuations +))
@@ -1837,13 +2084,14 @@ This gets called by flymake itself."
        'flymake-allowed-file-name-masks
        (list key 'dino-php-flymake-init 'dino-php-flymake-cleanup))))))
 
-
 ;; use PHP CodeSniffer instead of just regular PHP.exe
 (require 'flyphpcs)
-(setq fly/phpcs-phpcs-dir "c:\\dev\\phpcs"
+
+(if (file-exists-p "c:\\php\\php.exe")
+    (setq fly/phpcs-phpcs-dir "c:\\dev\\phpcs"
       fly/phpcs-phpexe "c:\\php\\php.exe"
       fly/phpcs-standard "Dino" ;; Zend, PEAR, PHPCS, etc
-      fly/phpcs-phpinc "c:\\dev\\phplibs" )
+      fly/phpcs-phpinc "c:\\dev\\phplibs" ))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -1867,7 +2115,8 @@ This gets called by flymake itself."
   (local-set-key (kbd "C->")  'nxml-forward-element)
 
   ;; C-M-f will jump over complete elements
-  (setq nxml-sexp-element-flag t)
+  (setq nxml-sexp-element-flag t
+        nxml-child-indent 2)
 
   ;; never convert leading spaces to tabs:
   ;;(make-local-variable 'indent-tabs-mode)
@@ -1878,7 +2127,8 @@ This gets called by flymake itself."
   ;; I guess because xml-mode is derived from text-mode where
   ;; it's an apostrophe used in contractions.
   ;; But treating it as part of a word is counter-productive in an XML buffer.
-  (modify-syntax-entry ?' "\"'" sgml-mode-syntax-table)
+  (if (boundp 'sgml-mode-syntax-table)
+      (modify-syntax-entry ?' "\"'" sgml-mode-syntax-table))
 
   (add-hook 'before-save-hook 'delete-trailing-whitespace)
 
@@ -1899,22 +2149,47 @@ This gets called by flymake itself."
                sgml-skip-tag-forward
                nil))
 
-(defun dino-xml-pretty-print-buffer ()
-  "Pretty format XML markup in the buffer. The function inserts
-linebreaks to separate elements that have nothing but whitespace
-between them.  It then indents the markup by using the
-indentation rules for sgml-mode."
-  (interactive)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; pretty print xml region
+;; http://stackoverflow.com/a/5198243/48082
+(defun dino-pretty-print-xml-region (begin end)
+  "Pretty format XML markup in region. You need to have nxml-mode
+    http://www.emacswiki.org/cgi-bin/wiki/NxmlMode installed to do
+    this. The function inserts linebreaks to separate tags that have
+    nothing but whitespace between them. It then indents the markup
+    by using nxml's indentation rules."
+  (interactive "r")
   (save-excursion
-    ;;(nxml-mode)
-    (goto-char (point-min))
-    (while (search-forward-regexp "\>[ \\t]*\<" nil t)
-      (backward-char) (insert "\n"))
-    (goto-char (point-max))
-    (newline-and-indent)
-    (indent-region (point-min) (point-max))
-    (delete-trailing-whitespace))
-  (message "Ah, much better!"))
+    (nxml-mode)
+    ;; split <foo><bar> or </foo><bar>, but not <foo></foo>
+    (goto-char begin)
+    (while (search-forward-regexp ">[ \t]*<[^/]" end t)
+      (backward-char 2) (insert "\n") (incf end))
+    ;; split <foo/></foo> and </foo></foo>
+    (goto-char begin)
+    (while (search-forward-regexp "<.*?/.*?>[ \t]*<" end t)
+      (backward-char) (insert "\n") (incf end))
+    ;; put xml namespace decls on newline
+    (goto-char begin)
+    (while (search-forward-regexp "\\(<\\([a-zA-Z][-:A-Za-z0-9]*\\)\\|['\"]\\) \\(xmlns[=:]\\)" end t)
+      (goto-char (match-end 0))
+      (backward-char 6) (insert "\n") (incf end))
+    (indent-region begin end nil)
+    (normal-mode))
+  (message "All indented!"))
+
+(defun dino-escape-html-in-region (start end)
+  (interactive "r")
+  (save-excursion
+    (save-restriction
+      (narrow-to-region start end)
+      (goto-char (point-min))
+      (replace-string "&" "&amp;")
+      (goto-char (point-min))
+      (replace-string "<" "&lt;")
+      (goto-char (point-min))
+      (replace-string ">" "&gt;")
+      )))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -2035,7 +2310,7 @@ i.e M-x kmacro-set-counter."
   (set (make-local-variable 'indent-tabs-mode) nil)
 
   ;; indent increment
-  (setq js-indent-level 2)
+  (setq js-indent-level 4)
 
   ;; interactive javascript shell
   ;;(local-set-key "\C-x\C-e" 'jsshell-send-last-sexp)
@@ -2174,7 +2449,6 @@ i.e M-x kmacro-set-counter."
 (defalias 'perl-mode 'cperl-mode)
 (require 'cperl-mode)
 
-
 (autoload 'perl-mode
   "/Applications/Emacs.app/Contents/Resources/lisp/progmodes/cperl-mode" "" t)
 ;;(autoload 'perl-mode "/emacs/lisp/progmodes/cperl-mode" "" t)
@@ -2212,234 +2486,6 @@ i.e M-x kmacro-set-counter."
 
 
 
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; handy utility functions for various purposes
-;;
-
-;; Windows only
-;; upon kill, check clipboard, and if exists, put it into the kill ring.
-(if (eq system-type 'windows-nt)
-    (defadvice kill-new (before
-                         dino-kill-new-push-xselection-on-kill-ring
-                         activate)
-      "Before putting new kill onto the kill-ring, add the clipboard/external
-selection to the kill ring"
-      (let ((have-paste (and interprogram-paste-function
-                             (funcall interprogram-paste-function))))
-        (when have-paste (push have-paste kill-ring)))))
-
-
-;; System-specific configuration
-;; Loads system-type config; e.g. "darwin.el" on Mac
-(let ((system-specific-elisp (concat "~/elisp/" (symbol-name system-type) ".el")))
-  (if (file-exists-p system-specific-elisp)
-    (load system-specific-elisp)))
-
-;; when copying binary files into a clipboard buffer
-(fset 'dinoch-b64-copy
-      [escape ?  escape ?> escape ?x ?b ?a ?s ?e ?6 ?4 ?- ?e ?n ?c tab return ?\C-w ?\C-y])
-
-;; when pasting the base64 stuff from binary files
-(fset 'dinoch-b64-paste
-      [escape ?x ?r backspace ?e ?r ?a ?s ?e ?- ?b ?u tab return ?\C-y escape ?x ?b ?a ?s ?e ?6 ?4 ?- ?d ?e ?c ?o tab return ?\C-x ?\C-s])
-
-
-
-
-(defun dino-fixup-linefeeds ()
-  "Dino's function to replace the CR-LF of a DOS ASCII file to a LF for Unix."
-  (interactive)
-  (save-excursion
-    (while (search-forward "\xd" nil t)
-      (replace-match "" nil t))))
-
-
-(defun dino-indent-buffer ()
-  "Dino's function to re-indent an entire buffer; helpful in progmodes
-like XML mode or csharp mode."
-  (interactive)
-  (indent-region (point-min) (point-max)))
-
-(defun dino-toggle-buffer-modified ()
-  "Toggles the buffer-modified-p value for the current buffer"
-  (interactive)
-  (set-buffer-modified-p (not (buffer-modified-p))))
-
-
-
-
-;; put an href around the url at point.
-(fset 'dino-href-url
-      [?< ?  backspace ?a ?  ?h ?r ?e ?f ?= ?\" ?\C-s ?  ?\C-b ?\" ?> ?\C-r ?/ ?\C-f escape ?  ?\C-s ?\" ?\C-b ?\C-w ?\C-y ?\C-f ?\C-f ?\C-y ?< ?/ ?a ?> ?< ?b ?r ?> return])
-
-
-(defun revert-buffer-unconditionally ()
-  "revert the current buffer unconditionally.  See also, the auto-revert minor mode."
-  (interactive)
-  (revert-buffer t t))
-
-(defun dino-resize-big ()
-  "quick resize to 128x72"
-  (interactive)
-  (set-frame-height (selected-frame) 68)
-  (set-frame-width (selected-frame) 128))
-
-(defun dino-toggle-truncation ()
-  "Joe's function to toggle the state of the truncate-lines variable"
-  (interactive)
-  (setq truncate-lines (not truncate-lines))
-  (redraw-display))
-
-;; (defun dino-remove-trailing-whitespace ()
-;; "For each line in region, Convert multiple spaces at end of line to just one."
-;;   (interactive)
-;;   (let ((beg (point-min))
-;;         (end (point-max)))
-;;   (save-excursion
-;;     (goto-char beg)
-;;     (while (and (< (point) end)
-;;                 (re-search-forward " +$" end t))
-;;       (just-one-space)
-;;       (backward-delete-char-untabify 1)
-;;       )
-;; )))
-
-
-(defun dino-insert-timestamp ()
-  "function to insert timestamp at point. format: DayOfWeek, Date Month Year   24hrTime"
-  (interactive)
-  (let (localstring mytime)
-    (setq localstring (current-time-string))
-    (setq mytime (concat "....dinoch...."
-                         (substring localstring 0 3)  ;day-of-week
-                         ", "
-                         (substring localstring 8 10) ;day number
-                         " "
-                         (substring localstring 4 7)  ;month
-                         " "
-                         (substring localstring 20 24 ) ;4-digit year
-                         "...."
-                         (substring localstring 11 16 ) ;24-hr time
-                         "....\n"
-                         ))
-    (insert mytime))
-)
-
-
-
-(defun dino-insert-timeofday ()
-  "function to insert time of day at point . format: DayOfWeek, Date Month Year   24hrTime"
-  (interactive)
-  (let (localstring mytime)
-    (setq localstring (current-time-string))
-    ;; example:
-    ;; Mon, 17 Jun 96  12:52
-    (setq mytime (concat (substring localstring 0 3)  ;day-of-week
-                         ", "
-                         (substring localstring 8 10) ;day number
-                         " "
-                         (substring localstring 4 7)  ;month
-                         " "
-                         (substring localstring 20 24 ) ;4-digit year
-                         "  "
-                         (substring localstring 11 16 ) ;24-hr time
-                         "\n"
-                         ))
-    (insert mytime))
-)
-
-
-(defvar cheeso-uuidgen-prog
-  "c:/users/Dino/bin/uuidgen.exe"
-  "Program to generate one uuid and emit it to stdout.")
-
-(defvar cheeso-base64-prog
-  "c:/dev/dotnet/base64.exe"
-  "Program to generate base64 encoding for a given file, emit to stdout.")
-;; see also `base64-encode-region'
-
-(defun cheeso-uuid-gen ()
-  "function to generate a new UUID and return it."
-  (let ((uuid (shell-command-to-string cheeso-uuidgen-prog)))
-    (substring uuid 0 -1))) ;; remove newline
-
-(defun cheeso-uuid-insert ()
-  "function to insert a new UUID at point."
-  (interactive)
-  (save-excursion
-    (let ((beg (point))
-          (uuid (cheeso-uuid-gen)))
-      ;; If previous cmd was a kill, this separates the
-      ;; kill items:
-      (forward-char 1)
-      (forward-char -1)
-      ;; insert the text
-      (insert uuid)
-      ;; put the uuid in the kill-ring?:
-      (kill-region beg (point))
-      (yank)
-      (exchange-point-and-mark))))
-
-
-(defun cheeso-base64-encode-file (filename)
-  "function to get base64 encoding of a given file, and return it."
-  (let ((command (concat cheeso-base64-prog " " filename)))
-      (shell-command-to-string command)))
-
-
-;; c:/sw/VS2010ImageLibrary/Actions/png_format/Office and VS/Animate.png
-(defun cheeso-base64-insert-file (filename)
-  "Function to insert the base64 encoding of a given file at point.
-Handy for editing .resx files within emacs.
-"
-  (interactive "*fFile? ")
-  (save-excursion
-    (let* ((beg (point))
-          (fname-quoted (concat "\"" filename "\""))
-          (b64
-           (replace-regexp-in-string (char-to-string 13) ""
-                                     (cheeso-base64-encode-file fname-quoted))))
-      ;; If previous cmd was a kill, this separates the
-      ;; kill items:
-      (forward-char 1)
-      (forward-char -1)
-      ;; insert the text
-      (insert b64)
-      ;; put the uuid in the kill-ring?:
-      (kill-region beg (point))
-      (yank)
-      (exchange-point-and-mark))))
-
-
-(defun cheeso-csharp-snippet ()
-  "convert a file into a snippet, just by narrowing. "
-  (interactive)
-  (save-excursion
-    (let ((beg (point))
-          top-of-fn
-          bot-of-fn)
-
-      (re-search-backward "{")
-      (forward-char 1)
-      (set-mark (point))
-      (re-search-forward "}")
-      (forward-char -1)
-      (narrow-to-region (point) (mark)))))
-
-
-(defun cheeso-file-contents-as-string (filename)
-  "Get the contents of a file as a string. Be careful!"
-  (with-temp-buffer
-    (insert-file-contents filename)
-    (buffer-substring-no-properties (point-min) (point-max))))
-
-
-
-
-
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;(require 'ediff)
 (autoload 'ediff-buffers "ediff" nil t)
@@ -2455,7 +2501,6 @@ Handy for editing .resx files within emacs.
     (with-current-buffer file-buf-name
       (insert-file-contents file t nil nil t))
     (ediff-buffers buf-buf-name file-buf-name)))
-
 
 
 
@@ -2727,10 +2772,8 @@ emacs doing it for me.
 (if (not (eq t (server-running-p server-name)))
     (server-start))
 
-;; for some reason, the font-face reverts during load of various elisp libraries.
-;; So I set it again, here.
-
-
+;; For some reason, the font-face reverts during load of various elisp
+;; libraries above.  So I set it again, here.
 
 (set-face-foreground 'default "white")
 (set-face-background 'default "black")
@@ -2740,6 +2783,7 @@ emacs doing it for me.
       line-number-mode t    ;; modeline
       column-number-mode t) ;; modeline
 
+;; do I want this to be disabled?
 (put 'narrow-to-region 'disabled nil)
 
 (custom-set-variables

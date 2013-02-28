@@ -1,0 +1,11 @@
+#key : try
+#name : try { ... } catch { ... }
+# --
+try {
+  $0
+}
+catch (java.lang.Exception exc1) {
+  System.out.println("Exception:" + exc1.toString());
+  exc1.printStackTrace();
+  throw new Exception("uncaught exception", exc1);
+}
