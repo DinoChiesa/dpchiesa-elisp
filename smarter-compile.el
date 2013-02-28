@@ -632,7 +632,6 @@ A good way to do things is to bind this function to \C-x\C-e.
   ;; local compile command has now been set
   (call-interactively 'compile))
 
-
 (provide 'smarter-compile)
 
 ;;; smarter-compile.el ends here
