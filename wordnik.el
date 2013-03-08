@@ -5,7 +5,7 @@
 ;; Package-Requires: ()
 ;; URL: http://www.emacswiki.org/cgi-bin/wiki/wordnik.el
 ;; X-URL: https://raw.github.com/DinoChiesa/dpchiesa-elisp/master/wordnik.el
-;; Version: 2012.11.26
+;; Version: 2012.03.08
 ;; Keywords: dictionary lookup
 ;; License: New BSD
 
@@ -23,15 +23,24 @@
 
 ;;   -or-
 
+;; Alternatively, if you don't want to embed the wordnik API key into
+;; your .emacs file, you can store the key into a text file (one line only).
+;; Then from your .emacs file, you can set the key like this:
+
 ;;   (require 'wordnik)
 ;;   (wordnik-set-api-key-from-file "~/wordnik.apikey.txt") ;; from registration
 
-;; Optionally, you can also set a key binding:
+;; In addition to one of the prior two steps, you may wish to set a key binding:
 
 ;;   (define-key global-map (kbd "C-c ?") 'wordnik-lookup-word)
 
+
 ;;
 ;;; Revisions:
+;;
+;; 2013.03.08  2013-March-08 Dino Chiesa
+;;    Fixed handling of Content-Type header in wordnik response.
+;;    Implemented caching to avoid going to the web for each lookup.
 ;;
 ;; 2012.11.26  2012-November-25 Dino Chiesa
 ;;    Tweaked rendering of Multiline message box on MacOS.
@@ -105,9 +114,80 @@ Get one by visiting  http://developer.wordnik.com/
   :type 'boolean
   :group 'wordnik)
 
+(defcustom wordnik-want-save-cache t
+  "whether to save the cache of looked-up words. The library always
+uses a cache, and optionally saves the cache to the filesystem.
+It's about 1k-2k per word, and would save time on subsequent
+invocations of emacs.
+"
+  :type 'boolean
+  :group 'wordnik)
 
 (defvar wordnik---load-path (or load-file-name "~/wordnik.el")
   "For internal use only. ")
+
+(defvar wordnik-cache-dir (file-name-directory wordnik---load-path))
+(defvar wordnik-cache-basefilename ".wordnik.cache")
+
+(defvar wordnik-can-save-cache-p (or
+       (and (>= emacs-major-version 23)
+            (>= emacs-minor-version 1)
+            (null (string-match "23.1.1" (version))))
+       (> emacs-major-version 23))
+  "Whether it is possible to save the cache")
+
+(defvar wordnik-cache nil)
+
+(defun wordnik-cache-filename ()
+  (concat wordnik-cache-dir wordnik-cache-basefilename))
+
+(defun wordnik-cache-initialize ()
+  (make-hash-table :test 'equal))
+
+(defun wordnik-cache-get (key)
+  (gethash key wordnik-cache))
+
+(defun wordnik-cache-put (key value)
+  (when value
+    (puthash key value wordnik-cache)
+    ;; saving the cache may get expensive as it gets larger
+    (when wordnik-want-save-cache
+      (wordnik-cache-save)))
+  value)
+
+(defun wordnik-hashtable-to-alist (hash)
+  "Return an association-list representation of the hashtable HASH."
+   (let ((alist nil))
+     (maphash
+      (lambda (key value)
+        (setq alist (cons (cons key value) alist)))
+      hash)
+     alist))
+
+(defun wordnik-hashtable-from-alist (alist &rest options)
+  "Build a hashtable from the values in the association list ALIST."
+  (let ((ht (apply 'make-hash-table options)))
+    (mapc
+     (lambda (kv-pair) (puthash (car kv-pair) (cdr kv-pair) ht))
+     alist)
+     ht))
+
+(defun wordnik-cache-save ()
+  (with-temp-buffer
+    (let (print-level print-length)
+      (insert (pp-to-string (wordnik-hashtable-to-alist wordnik-cache)))
+      (write-region (point-min) (point-max) (wordnik-cache-filename)))))
+
+(defun wordnik-cache-load ()
+  (wordnik-hashtable-from-alist
+   (with-temp-buffer
+     (insert-file-contents (wordnik-cache-filename))
+     (car (read-from-string (buffer-substring-no-properties
+                             (point-min) (point-max)))))
+   :test 'equal))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 
 (defun wordnik-get-buffer-for-word (word)
   "Retrieve a definition for the given word, from the
@@ -253,7 +333,6 @@ The output is a list like this:
     (list "Definitions:" (cons "Ignored pane title" items))))
 
 
-
 (defun wordnik--show-defns-via-multiline-message-box (defn)
   "Display a multiline message box containing the definitions in
 the DEFN vector. On MacOS, `message-box' does not format
@@ -326,6 +405,14 @@ headers and the beginning of the message content.
 
 ;;;###autoload
 (defun wordnik-get-definition (word)
+  "retrieve the definition for the given word, either from the cache,
+or, if there is no cache hit, then from the remote service.
+"
+  (or (wordnik-cache-get word)
+      (wordnik-cache-put word (wordnik-fetch-definition word))))
+
+
+(defun wordnik-fetch-definition (word)
   "retrieve the definition for the given word, from the remote service.
 "
   (let ((defn nil)
@@ -336,9 +423,10 @@ headers and the beginning of the message content.
             (rename-buffer (concat "*wordnik* - " word) t)
             (goto-char (point-min))
             (setq head (wordnik-process-http-headers))
-            (if (string= (substring (nth 0 head) -4) "json")
+            (let ((mimetype "application/json"))
+            (if (string= (substring (nth 0 head) 0 (length mimetype)) mimetype)
                 (setq defn (json-read)) ;; a vector
-              (message-box "No definition found.")))
+              (message-box "No definition found."))))
           (kill-buffer buf)
           defn))))
 
@@ -411,6 +499,16 @@ Wordnik during registration.
               (with-temp-buffer
                 (insert-file-contents filename)
                 (buffer-substring-no-properties (point-min) (point-max)))))))
+
+
+(defun wordnik-install ()
+  "install `wordnik.el'"
+  (setq wordnik-cache
+        (if (file-exists-p (wordnik-cache-filename))
+            (wordnik-cache-load)
+          (wordnik-cache-initialize))))
+
+(wordnik-install)
 
 (provide 'wordnik)
 

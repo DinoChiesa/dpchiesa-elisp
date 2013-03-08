@@ -6,7 +6,7 @@
 ;; modifications in linum-ex.el provided by: Dino Chiesa
 
 ;; Author: Markus Triska <markus.triska@gmx.at>
-;; Last saved: <2011-May-24 09:19:16>
+;; Last saved: <2013-March-05 11:59:56>
 ;;
 ;; Keywords: convenience
 
@@ -170,6 +170,8 @@ and you have to scroll or press C-l to update the numbers."
 (define-globalized-minor-mode global-linum-mode linum-mode linum-on)
 
 (defun linum-on ()
+  "Turn on linum (line numbering) mode."
+  (interactive)
   (unless (minibufferp)
     (linum-mode 1)))
 
@@ -284,4 +286,3 @@ and you have to scroll or press C-l to update the numbers."
 
 (provide 'linum-ex)
 ;;; linum-ex.el ends here
-

@@ -1,6 +1,6 @@
 ;;
 ;; Dino's .emacs setup file.
-;; Last saved: <2013-February-27 21:21:54>
+;; Last saved: <2013-March-08 08:44:27>
 ;;
 ;; Works with v24.2 of emacs.
 ;;
@@ -2009,6 +2009,49 @@ again, I haven't see that as a problem."
 ;; PHP mode
 ;;
 
+(defun mark-current-word ()
+  "Select the word under cursor.
+'word' here is considered any alphanumeric sequence or _ .
+
+Does not consider word syntax tables.
+"
+ (interactive)
+ (let (pt)
+   (skip-chars-backward "_A-Za-z0-9")
+   (setq pt (point))
+   (skip-chars-forward "_A-Za-z0-9")
+   (set-mark pt)))
+
+
+(defun un-camelcase-word-at-point ()
+  "un-camelcase the word at point, replacing uppercase chars with
+    the lowercase version preceded by an underscore.
+
+    The first char, if capitalized (eg, PascalCase) is just
+    downcased, no preceding underscore.
+    "
+  (interactive)
+  (save-excursion
+    (let ((bounds (bounds-of-thing-at-point 'word)))
+      (replace-regexp "\\([A-Z]\\)" "_\\1" nil
+                      (1+ (car bounds)) (cdr bounds))
+      (downcase-region (car bounds) (cdr bounds)))))
+
+
+;; (defun un-camelcase-string (s &optional sep start)
+;;   "Convert CamelCase string S to lower case with word separator SEP.
+;; Default for SEP is a underscore \"_\".
+;;
+;; If third argument START is non-nil, convert words after that
+;; index in STRING."
+;;   (let ((case-fold-search nil))
+;;     (while (string-match "[A-Z]" s (or start 1))
+;;       (setq s (replace-match (concat (or sep "_")
+;;                                      (downcase (match-string 0 s)))
+;;                              t nil s)))
+;;     (downcase s)))
+
+
 (defun dino-php-mode-fn ()
   "Function to run when php-mode is initialized for a buffer."
   (require 'flymake)
@@ -2016,6 +2059,9 @@ again, I haven't see that as a problem."
 
   (setq c-default-style "bsd"
         c-basic-offset 2)
+
+  (local-set-key "\M-\C-R"  'indent-region)
+  (local-set-key "\M-\C-C"  'un-camelcase-word-at-point)
 
   ;; not sure if necessary or not.
   (modify-syntax-entry ?/ ". 124b" php-mode-syntax-table)
@@ -2037,13 +2083,15 @@ again, I haven't see that as a problem."
      (add-hook 'php-mode-hook 'dino-php-mode-fn t)))
 
 
+(defvar dc-php-program "/usr/bin/php" "PHP interpreter")
+
 (defun dino-php-flymake-get-cmdline  (source base-dir)
   "Gets the cmd line for running a flymake session in a PHP buffer.
 This gets called by flymake itself."
 
        (dino-log "PHP" "flymake cmdline for %s" source)
 
-        (list "c:\\php\\php.exe"
+        (list dc-php-program
               (list "-f" (expand-file-name source)  "-l")))
 
 
@@ -2074,24 +2122,25 @@ This gets called by flymake itself."
 
 (eval-after-load "flymake"
   '(progn
+     (if (file-exists-p dc-php-program)
+         ;; 1. add a PHP entry to the flymake-allowed-file-name-masks
+         (let* ((key "\\.php\\'")
+                (phpentry (assoc key flymake-allowed-file-name-masks)))
+           (if phpentry
+               (setcdr phpentry '(dino-php-flymake-init dino-php-flymake-cleanup))
+             (add-to-list
+              'flymake-allowed-file-name-masks
+              (list key 'dino-php-flymake-init 'dino-php-flymake-cleanup)))))))
 
-  ;; 1. add a PHP entry to the flymake-allowed-file-name-masks
-  (let* ((key "\\.php\\'")
-         (phpentry (assoc key flymake-allowed-file-name-masks)))
-    (if phpentry
-        (setcdr phpentry '(dino-php-flymake-init dino-php-flymake-cleanup))
-      (add-to-list
-       'flymake-allowed-file-name-masks
-       (list key 'dino-php-flymake-init 'dino-php-flymake-cleanup))))))
 
-;; use PHP CodeSniffer instead of just regular PHP.exe
-(require 'flyphpcs)
-
-(if (file-exists-p "c:\\php\\php.exe")
-    (setq fly/phpcs-phpcs-dir "c:\\dev\\phpcs"
-      fly/phpcs-phpexe "c:\\php\\php.exe"
-      fly/phpcs-standard "Dino" ;; Zend, PEAR, PHPCS, etc
-      fly/phpcs-phpinc "c:\\dev\\phplibs" ))
+;; ;; use PHP CodeSniffer instead of just regular PHP.exe
+;; (require 'flyphpcs)
+;;
+;; (if (file-exists-p dc-php-program)
+;;     (setq fly/phpcs-phpcs-dir "c:\\dev\\phpcs"
+;;       fly/phpcs-phpexe "c:\\php\\php.exe"
+;;       fly/phpcs-standard "Dino" ;; Zend, PEAR, PHPCS, etc
+;;       fly/phpcs-phpinc "c:\\dev\\phplibs" ))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -2310,7 +2359,7 @@ i.e M-x kmacro-set-counter."
   (set (make-local-variable 'indent-tabs-mode) nil)
 
   ;; indent increment
-  (setq js-indent-level 4)
+  (setq js-indent-level 2)
 
   ;; interactive javascript shell
   ;;(local-set-key "\C-x\C-e" 'jsshell-send-last-sexp)
@@ -2319,6 +2368,8 @@ i.e M-x kmacro-set-counter."
   (local-set-key "\C-c\C-b" 'jsshell-send-buffer-and-pop)
   (local-set-key "\C-cl"    'jsshell-load-file-and-pop)
   (local-set-key "\C-c\C-e" 'jsshell-send-region)
+
+  (linum-on)
 
   ;; use autopair for curlies, parens, square brackets.
   ;; electric mode doesn't provide auto-typeover of the ending char
@@ -2621,6 +2672,42 @@ i.e M-x kmacro-set-counter."
     (delete-region (car bounds) (cdr bounds))
     (insert (format "%d" (+ old-num amount)))))
 
+
+(defun buffer-mode-histogram ()
+  "Display a histogram of emacs buffer modes."
+  (interactive)
+  (let* ((totals '())
+         (buffers (buffer-list()))
+         (total-buffers (length buffers))
+         (ht (make-hash-table :test 'equal)))
+    (save-excursion
+      (dolist (buffer buffers)
+        (set-buffer buffer)
+        (let
+            ((mode-name (symbol-name major-mode)))
+          (puthash mode-name (1+ (gethash mode-name ht 0)) ht))))
+    (maphash (lambda (key value)
+               (setq totals (cons (list key value) totals)))
+             ht)
+    (setq totals (sort totals (lambda (x y) (> (cadr x) (cadr y)))))
+    (with-output-to-temp-buffer "Buffer mode histogram"
+      (princ (format "%d buffers open, in %d distinct modes\n\n"
+                      total-buffers (length totals)))
+      (dolist (item totals)
+        (let
+            ((key (car item))
+             (count (cadr item)))
+          (if (equal (substring key -5) "-mode")
+              (setq key (substring key 0 -5)))
+          (princ (format "%2d %20s %s\n" count key
+                         (make-string count ?+))))))))
+
+
+(defun open-in-finder ()
+  "Open current folder in Finder. Works in dired mode."
+  (interactive)
+  (shell-command "open ."))
+(global-set-key (kbd "<f8>") 'open-in-finder)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
