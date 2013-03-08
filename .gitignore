@@ -8,6 +8,7 @@ not-used/*
 
 .spelchek.cache
 .thesaurus.cache
+.wordnik.cache
 
 replicate.sh
 
