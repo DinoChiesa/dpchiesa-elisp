@@ -1,0 +1,4 @@
+# key : refresh
+# name : <meta http-equiv="refresh" content="2;url=...">
+# --
+<meta http-equiv="refresh" content="${1:2};url=${2:index.php}">
