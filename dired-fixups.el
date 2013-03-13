@@ -1,9 +1,25 @@
 ;;; dired-fixups.el --- fixups for dired mode
-
+;;
 ;; Author: Dino Chiesa
 ;; Created: Sat, 31 Mar 2012  10:31
-;; Version: 0.1
+;; Package-Requires: ()
+;; Version: 2013.03.14
+;; URL: https://github.com/DinoChiesa/dpchiesa-elisp/blob/master/dired-fixups.el
+;; License: Public Domain
+;; Keywords: dired
+
+;;; Commentary:
+
+;; This module extends the basic dired to do sorting on extension and
+;; size, in addition to name and timestamp. Use the s key to cycle through
+;; sort modes.
+
+;; To use it, place this in your .emacs file:
 ;;
+;; (require 'dired)
+;; (require 'dired-fixups)
+;;
+
 
 (require 'ls-lisp)
 
@@ -24,12 +40,22 @@ which is up to 10gb.  Some files are larger than that.
          (post-fixes (list "k" "M" "G" "T" "P" "E") (cdr post-fixes)))
         ((< file-size 1024) (format " %10.0f%s"  file-size (car post-fixes))))))
 
+;; On MacOS, the builtin ls program does not do the -X option. (lame)
+;; The MacPorts version of GNU ls does. If it exists, use it.
+;; the -X is used by dired-fixups for sorting by extension.
+(if (eq system-type 'darwin)
+    (if (file-exists-p "/opt/local/bin/gls")
+        (progn
+          (setq ls-lisp-use-insert-directory-program t)
+          (setq insert-directory-program "/opt/local/bin/gls")
+          )))
+
 
 (defun dired-sort-toggle ()
   "This is a redefinition of the fn from dired.el. Normally,
 dired sorts on either name or time, and you can swap between them
-with the s key.  This function one sets sorting on name, size,
-time, and extension. Cycling works the same.
+with the s key. This function allows sorting on name, size,
+time, and extension. Cycling works the same, with the s key.
 "
   (setq dired-actual-switches
         (let (case-fold-search)
