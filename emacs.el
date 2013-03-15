@@ -1,6 +1,6 @@
 ;;
 ;; Dino's .emacs setup file.
-;; Last saved: <2013-March-08 08:44:27>
+;; Last saved: <2013-March-13 15:48:34>
 ;;
 ;; Works with v24.2 of emacs.
 ;;
@@ -639,7 +639,11 @@ Handy for editing .resx files within emacs.
   ;;(setq powershell-indent-width 2)
   (local-set-key "\C-c1" 'just-one-space)
 
-  ;; make sure this is OFF
+  (local-set-key (kbd "<f7>") 'find-file-at-point)
+
+  ;; Make sure this is OFF.
+  ;; For some reason this is not working. When I open
+  ;; an HTML buffer, refill (autofill) is ON. ???
   (require 'refill)
   (refill-mode 0) )
 
@@ -1028,9 +1032,9 @@ are the string substitutions (see `format')."
 (defun dino-dired-mode-hook-fn ()
   (hl-line-mode 1)
 
-  ;; not sure I want or need auto-revert.
+  ;; do not want auto-revert.
   ;; It doesn't work completely, and it may have side effects.
-  ;; (turn-on-auto-revert-mode)
+  ;; ;; (turn-on-auto-revert-mode)
 
   (local-set-key "F" 'dino-dired-do-find))
 
@@ -1039,14 +1043,6 @@ are the string substitutions (see `format')."
 ;; eliminate the gid in dired on windows
 (setq ls-lisp-verbosity '(links uid))
 
-;; on MacOS, the builtin ls program does not do the -X option.
-;; The MacPorts version of GNU ls does. If it exists, use it.
-(if (file-exists-p "/opt/local/bin/gls")
-    (progn
-      (setq ls-lisp-use-insert-directory-program t)
-      (setq insert-directory-program "/opt/local/bin/gls")
-      ))
-
 ;; nifty utility function
 (defun dino-dired-do-find (&optional arg)
   "Visit each of the marked files, or the file under the point, or when
@@ -1054,8 +1050,7 @@ prefix arg, the next N files "
   (interactive "P")
   (let* ((fn-list
     (dired-get-marked-files nil arg)))
-    (mapc 'find-file fn-list))
-  )
+    (mapc 'find-file fn-list)))
 
 (require 'dired-fixups)
 
@@ -2708,6 +2703,7 @@ i.e M-x kmacro-set-counter."
   (interactive)
   (shell-command "open ."))
 (global-set-key (kbd "<f8>") 'open-in-finder)
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
