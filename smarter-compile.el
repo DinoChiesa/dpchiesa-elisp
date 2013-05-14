@@ -584,6 +584,7 @@ It does not call `compile'.
     ;; with "#!", set compile-command to filename.
     (if (and not-done
              (not (memq system-type '(windows-nt ms-dos)))
+             (stringp name)
              (not (string-match "/\\.[^/]+$" name))
              (not
               (and (local-variable-p 'compile-command)

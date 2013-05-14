@@ -7,8 +7,8 @@
 
 
 ;; fixups
-(eval-after-load "js"
-  '(progn
+;; (eval-after-load "js"
+;;   '(progn
 
      ;; fix broken sorting of imenus
      (defadvice imenu--split-menu (around
@@ -44,7 +44,8 @@
          ;; else
          ad-do-it))
 
-     ;; redefine this fn to recurse on nested function creation
+     ;; redefine this fn to recurse on nested function creation,
+     ;; To allow imenu to see those fns as well.
      (defun js--pitems-to-imenu (pitems unknown-ctr)
        "Convert list of pitems PITEMS to imenu format"
 
@@ -160,8 +161,7 @@
 
      ;; new helper fn
      (defun js--first-stmt-in-curly ()
-       "Helper function for `js--proper-indentation'.
-"
+       "Helper function for `js--proper-indentation'."
        (let (cur-indent close-curly)
          (save-excursion
            (back-to-indentation)
@@ -172,9 +172,8 @@
                (progn
                  (back-to-indentation)
                  (setq cur-indent (current-column))
-                 (+ cur-indent js-indent-level (if close-curly -4 0)))
+                 (+ cur-indent (if close-curly 0 js-indent-level)))
              nil))))
-
 
      ;; new helper fn to aid in handling commas in var statements
      (defun js--continued-var-decl ()
@@ -198,7 +197,7 @@ a var declaration. otherwise nil.
                       (t
                        nil)))))))
 
-     ;; redefine this to properly handle commas in var statements
+     ;; Redefine this to properly handle commas in var statements.
      (defun js--proper-indentation (parse-status)
        "Return the proper indentation for the current line."
        (save-excursion
@@ -236,7 +235,47 @@ a var declaration. otherwise nil.
                ((js--continued-expression-p)
                 (+ js-indent-level js-expr-indent-offset))
                (t 0))))
-))
+;;))
+
+
+     (defun js--proper-indentation (parse-status)
+       "Return the proper indentation for the current line."
+       (save-excursion
+         (back-to-indentation)
+         (cond ((nth 4 parse-status)
+                (js--get-c-offset 'c (nth 8 parse-status)))
+               ((nth 8 parse-status) 0) ; inside string
+               ((js--ctrl-statement-indentation))
+               ((js--first-stmt-in-curly))
+               ((js--continued-var-decl))
+               ((eq (char-after) ?#) 0)
+               ((save-excursion (js--beginning-of-macro)) 4)
+               ((nth 1 parse-status)
+                (let ((same-indent-p (looking-at
+                                      "[]})]\\|\\_<case\\_>\\|\\_<default\\_>"))
+                      (continued-expr-p (js--continued-expression-p)))
+                  (goto-char (nth 1 parse-status))
+                  (if (looking-at "[({[]\\s-*\\(/[/*]\\|$\\)")
+                      (progn
+                        (skip-syntax-backward " ")
+                        (when (eq (char-before) ?\)) (backward-list))
+                        (back-to-indentation)
+                        (cond (same-indent-p
+                               (current-column))
+                              (continued-expr-p
+                               (+ (current-column) (* 2 js-indent-level)
+                                  js-expr-indent-offset))
+                              (t
+                               (+ (current-column) js-indent-level))))
+                    (unless same-indent-p
+                      (forward-char)
+                      (skip-chars-forward " \t"))
+                    (current-column))))
+
+               ((js--continued-expression-p)
+                (+ js-indent-level js-expr-indent-offset))
+               (t 0))))
+
 
 (provide 'js-mode-fixups)
 

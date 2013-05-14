@@ -1,6 +1,6 @@
 ;;
 ;; Dino's .emacs setup file.
-;; Last saved: <2013-March-13 15:48:34>
+;; Last saved: <2013-May-13 21:36:47>
 ;;
 ;; Works with v24.2 of emacs.
 ;;
@@ -74,6 +74,13 @@ selection to the kill ring"
     (while (search-forward "\xd" nil t)
       (replace-match "" nil t))))
 
+(defun dino-2-windows-vertical-to-horizontal ()
+  "When displaying exactly 2 buffers, flip from top/bottom orientation
+to side-by-side display."
+  (let ((buffers (mapcar 'window-buffer (window-list))))
+    (when (= 2 (length buffers))
+      (delete-other-windows)
+      (set-window-buffer (split-window-horizontally) (cadr buffers)))))
 
 (defun dino-indent-buffer ()
   "Dino's function to re-indent an entire buffer; helpful in progmodes
@@ -154,9 +161,8 @@ in the list `dino-no-untabify-modes'
 (defun dino-insert-timestamp ()
   "function to insert timestamp at point. format: DayOfWeek, Date Month Year   24hrTime"
   (interactive)
-  (let (localstring mytime)
-    (setq localstring (current-time-string))
-    (setq mytime (concat "....dinoch...."
+  (let* ((localstring (current-time-string))
+        (mytime (concat "....dinoch...."
                          (substring localstring 0 3)  ;day-of-week
                          ", "
                          (substring localstring 8 10) ;day number
@@ -167,7 +173,7 @@ in the list `dino-no-untabify-modes'
                          "...."
                          (substring localstring 11 16 ) ;24-hr time
                          "....\n"
-                         ))
+                         )))
     (insert mytime))
 )
 
@@ -697,6 +703,8 @@ Handy for editing .resx files within emacs.
 
 
 (require 'yasnippet)
+(require 's) ;; string library
+
 ;; If I don't set both yas/snippet-dirs and yas/root-directory, I
 ;; get complaints in *Messages*.
 
@@ -2194,9 +2202,9 @@ This gets called by flymake itself."
                nil))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; pretty print xml region
+;; pretty print xml in region
 ;; http://stackoverflow.com/a/5198243/48082
-(defun dino-pretty-print-xml-region (begin end)
+(defun dino-xml-pretty-print-region (begin end)
   "Pretty format XML markup in region. You need to have nxml-mode
     http://www.emacswiki.org/cgi-bin/wiki/NxmlMode installed to do
     this. The function inserts linebreaks to separate tags that have
@@ -2222,6 +2230,13 @@ This gets called by flymake itself."
     (normal-mode))
   (message "All indented!"))
 
+
+(defun dino-xml-pretty-print-buffer ()
+  "pretty print the XML in a buffer."
+  (interactive)
+  (dino-xml-pretty-print-region (point-min) (point-max)))
+
+
 (defun dino-escape-html-in-region (start end)
   (interactive "r")
   (save-excursion
@@ -2233,6 +2248,19 @@ This gets called by flymake itself."
       (replace-string "<" "&lt;")
       (goto-char (point-min))
       (replace-string ">" "&gt;")
+      )))
+
+(defun dino-unescape-html-in-region (start end)
+  (interactive "r")
+  (save-excursion
+    (save-restriction
+      (narrow-to-region start end)
+      (goto-char (point-min))
+      (replace-string "&amp;" "&")
+      (goto-char (point-min))
+      (replace-string "&lt;" "<")
+      (goto-char (point-min))
+      (replace-string "&gt;" ">")
       )))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -2382,7 +2410,9 @@ i.e M-x kmacro-set-counter."
 
   (require
    (if (eq system-type 'windows-nt)
-       'fly-jshint-wsh 'fly-jshint-node))
+       'fly-jshint-wsh 'fly-jshint-npm))
+
+  ;;(setq fly/jshint/npm-jshint-exe "/usr/local/bin/jshint")
 
   ;; ;;(setq flyjs-jslintwsh-location "c:\\users\\dino\\bin\\jslint-for-wsh.js")
   ;; (setq flyjs-jslintwsh-location "c:\\users\\dino\\bin\\jshint-for-wsh.js")
@@ -2405,24 +2435,41 @@ i.e M-x kmacro-set-counter."
   (if (eq system-type 'windows-nt)
       (progn
         (require 'jscomp)
-        (local-set-key "\M-."     'jscomp-complete)))
+        (local-set-key "\M-."     'jscomp-complete))))
 
-  ;; jslint-for-wsh.js, produces errors like this:
-  ;; file.cs(6,18): JSLINT: The body of a for in should be wrapped in an if statement ...
-  (if (boundp 'compilation-error-regexp-alist-alist)
-      (progn
-        (add-to-list
-         'compilation-error-regexp-alist-alist
-         '(jslint-for-wsh
-           "^[ \t]*\\([A-Za-z.0-9_: \\-]+\\)(\\([0-9]+\\)[,]\\( *[0-9]+\\)) \\(Microsoft JScript runtime error\\|JSLINT\\|JSHINT\\): \\(.+\\)$" 1 2 3))
-        (add-to-list
-         'compilation-error-regexp-alist
-         'jslint-for-wsh))))
+  ;; The following needs to be in jslint-for-wsh.el or whatever
+  ;; ;; jslint-for-wsh.js, produces errors like this:
+  ;; ;; file.cs(6,18): JSLINT: The body of a for in should be wrapped in an if statement ...
+  ;; (if (and (eq system-type 'windows-nt)
+  ;;          (boundp 'compilation-error-regexp-alist-alist))
+  ;;     (progn
+  ;;       (add-to-list
+  ;;        'compilation-error-regexp-alist-alist
+  ;;        '(jslint-for-wsh
+  ;;          "^[ \t]*\\([A-Za-z.0-9_: \\-]+\\)(\\([0-9]+\\)[,]\\( *[0-9]+\\)) \\(Microsoft JScript runtime error\\|JSLINT\\|JSHINT\\): \\(.+\\)$" 1 2 3))
+  ;;       (add-to-list
+  ;;        'compilation-error-regexp-alist
+  ;;        'jslint-for-wsh))))
+
+;; ;; to allow jshint to work?
+;;(setenv "PATH" (concat "/usr/local/bin:" (getenv "PATH")))
+(add-to-list 'exec-path "/usr/local/bin")
+;;     "/usr/bin"
 
 (add-hook 'js-mode-hook   'dino-javascript-mode-fn)
 
-
 (require 'js-mode-fixups)
+(require 'json-reformat)
+
+;; function alias
+(defalias 'json-prettify-region 'json-reformat-region)
+
+(defun json-prettify-buffer ()
+  "prettifies a json buffer."
+  (interactive)
+  (save-excursion
+    (json-prettify-region (point-min) (point-max))))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -2740,6 +2787,15 @@ are broken, but I'm not sure why g:\ would be treated any
 differently than c:\.  In any case it isn't worth my time to find
 out.
 
+All these problems happened on Windows, but I still have weird
+behavior from tramp on MAcOS.  I have no idea why, but it's very
+unpleasant and requires me to stop and restart emacs
+periodically, because tramp goes haywire. Keep in mind that I
+never purposely invoke tramp.  I suppose sometimes I fat-finger
+something and it causes tramp to wake up and go crazy. It
+perpetually generates errors complaining about tramp-ftp-method
+being an unknown variable. WTF? It's a scourge.
+
 Tramp is documented as providing the ability to do remote file
 editing, via things like rsh/rcp and ssh/scp.  I don't want or
 need that.  I'll map my own drives, thanks, and I don't need
@@ -2755,7 +2811,7 @@ emacs doing it for me.
           (setq new-alist
                 (cons pair new-alist)))))
     (setq file-name-handler-alist (reverse new-alist)))
-  (tramp-unload-tramp))
+  (tramp-unload-tramp)) ;;; please! go away!
 
 ;; not sure this really works
 (eval-after-load "tramp" '(dino-disable-tramp))

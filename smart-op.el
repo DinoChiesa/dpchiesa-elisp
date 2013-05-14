@@ -73,8 +73,8 @@
     ( ?, t t t)
     )
 "A list of lists; each sublist has three elements. The first
-element is a char that gets smart insertion behavior, which
-means, when the operator is typed, insert one space, then insert
+element is a char that gets smart insertion behavior. This often
+that when the operator is typed, insert one space, then insert
 the operator, then insert one more space. The second and third
 elements in each list are strings, regexes that are passed to
 `looking-at' and `looking-back', respectively. Insertion of a
@@ -157,13 +157,17 @@ See also `smart-op-self-insert-helper'.
   (setq smart-op--last-cmd-was-space nil)
   (let ((op last-command-event)
         (face (plist-get (text-properties-at (point)) 'face)))
-        (if (or (and (listp face)
-                     (or (memq 'font-lock-string-face face)
-                         (memq 'font-lock-comment-face face)))
-                (and (symbolp face)
-                     (or (eq 'font-lock-string-face face)
-                         (eq 'font-lock-comment-face face))))
-        (insert (string op))
+    (if (or (and (listp face)
+                 (or (memq 'font-lock-string-face face)
+                     (memq 'font-lock-comment-face face)))
+            (and (symbolp face)
+                 (or (eq 'font-lock-string-face face)
+                     (eq 'font-lock-comment-face face))))
+        ;; special case double-slash comments
+        (progn
+        (if (looking-back "/ ")
+            (backward-delete-char 1))
+        (insert (string op)))
 
       (smart-op-self-insert-helper op))))
 
@@ -192,10 +196,14 @@ injected.
            (or (and (stringp rex2) (looking-back rex2))
                (and (not (stringp rex2)) rex2)))
 
-          ;; yes, we do.
+          ;; yes, we do. (unless it's the beginning of line)
           (progn
-            (if (and (not no-preceding-space) (not (looking-back " "))) (insert " "))
-            (insert (concat s-op " ")))
+            (if (bolp)
+                (insert s-op)
+              (if (and (not no-preceding-space)
+                       (not (looking-back " ")))
+                  (insert " "))
+              (insert (concat s-op " "))))
 
         ;; no, we do not. But, maybe delete the intervening space,
         ;; as when using compound assignment operators like *=.

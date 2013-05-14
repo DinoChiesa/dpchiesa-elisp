@@ -5,7 +5,7 @@
 ;; Keywords   : javascript js jslint jshint flymake languages jscript
 ;; URL        :
 ;; License    : New BSD
-;; Last-saved : <2012-August-14 10:44:42>
+;; Last-saved : <2013-April-16 23:25:02>
 ;; Package-Requires: ((flymake "0.3"))
 ;;
 
@@ -153,8 +153,12 @@ Or you can customize this variable.
 "
   :group 'flyjs)
 
-(defvar flyjs-jshint-src "https://raw.github.com/jshint/jshint/master/jshint.js"
+;; https://raw.github.com/jshint/jshint/master/jshint.js
+(defvar flyjs-jshint-src "https://raw.github.com/jshint/jshint/master/src/stable/jshint.js"
   "Source URL for JSHint")
+
+(defvar flyjs-jsBeautify "~/dev/js/jsBeautify.js"
+  "source location for node-compatible jsBeautify.js")
 
 (defvar flyjs-jslint-src "https://raw.github.com/douglascrockford/JSLint/master/jslint.js"
   "Source URL for JSLint")
@@ -282,23 +286,40 @@ around the problem by using curl which is known good.
     (with-temp-file target-f
         (call-process flyjs-curl-exe nil t nil "-s" url)))
 
+
 (defun flyjs-download-script ()
   "Download the jslint or jshint script from the intertubes,
 and then modify it to insert the WSH integration glue.
 "
   (let ((loc (flyjs-script-location t))
-        (url (flyjs-choose-script-url) ))
+        (url (flyjs-choose-script-url) )
+        (bplt-loc (make-temp-file "node-boilerplate-" nil ".js")))
 
-    (message (format "downloaing %s to %s" url loc))
-    (flyjs-wget-via-curl url loc)
-    (with-temp-buffer
-      (insert-file-contents loc)
-      (goto-char (point-max))
-      ;; augment with node boilerplate
-      (insert "\n")
-      (insert flyjs-node-boilerplate)
-      (insert "\n")
-      (write-region (point-min) (point-max) loc))))
+    (let ((bplt
+           (if (file-exists-p flyjs-jsBeautify)
+               (progn
+                 (with-temp-buffer
+                   (insert "\n//-- BEGIN nodejs boilerplate -- \n")
+                   (insert flyjs-node-boilerplate)
+                   (insert "\n//-- END nodejs boilerplate --\n")
+                   (write-region (point-min) (point-max) bplt-loc))
+                 (shell-command-to-string (concat flyjs-node-exe " " flyjs-jsBeautify " " bplt-loc)))
+             flyjs-node-boilerplate)))
+
+      (delete-file bplt-loc)
+
+      (message (format "downloading %s to %s" url loc))
+      (flyjs-wget-via-curl url loc)
+
+      (with-temp-buffer
+        (insert-file-contents loc)
+        (goto-char (point-max))
+        ;; augment with node boilerplate
+        (insert "\n")
+        (insert bplt)
+        (insert "\n")
+        (write-region (point-min) (point-max) loc)))))
+
 
 
 (defun flyjshint-init ()
