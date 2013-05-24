@@ -6,9 +6,9 @@
 ;;
 
 
-;; fixups
-;; (eval-after-load "js"
-;;   '(progn
+fixups
+(eval-after-load "js"
+  '(progn
 
      ;; fix broken sorting of imenus
      (defadvice imenu--split-menu (around
@@ -193,7 +193,9 @@ a var declaration. otherwise nil.
                      (or (js--backto-beginning-of-expression) t);; skip back
                      (cond
                       ((looking-at "var ")
-                       (+ (current-column) js-indent-level))
+                       ;;(+ (current-column) js-indent-level)
+                       (+ (current-column) 4) ;; because var always gets +4
+                       )
                       (t
                        nil)))))))
 
@@ -235,46 +237,7 @@ a var declaration. otherwise nil.
                ((js--continued-expression-p)
                 (+ js-indent-level js-expr-indent-offset))
                (t 0))))
-;;))
-
-
-     (defun js--proper-indentation (parse-status)
-       "Return the proper indentation for the current line."
-       (save-excursion
-         (back-to-indentation)
-         (cond ((nth 4 parse-status)
-                (js--get-c-offset 'c (nth 8 parse-status)))
-               ((nth 8 parse-status) 0) ; inside string
-               ((js--ctrl-statement-indentation))
-               ((js--first-stmt-in-curly))
-               ((js--continued-var-decl))
-               ((eq (char-after) ?#) 0)
-               ((save-excursion (js--beginning-of-macro)) 4)
-               ((nth 1 parse-status)
-                (let ((same-indent-p (looking-at
-                                      "[]})]\\|\\_<case\\_>\\|\\_<default\\_>"))
-                      (continued-expr-p (js--continued-expression-p)))
-                  (goto-char (nth 1 parse-status))
-                  (if (looking-at "[({[]\\s-*\\(/[/*]\\|$\\)")
-                      (progn
-                        (skip-syntax-backward " ")
-                        (when (eq (char-before) ?\)) (backward-list))
-                        (back-to-indentation)
-                        (cond (same-indent-p
-                               (current-column))
-                              (continued-expr-p
-                               (+ (current-column) (* 2 js-indent-level)
-                                  js-expr-indent-offset))
-                              (t
-                               (+ (current-column) js-indent-level))))
-                    (unless same-indent-p
-                      (forward-char)
-                      (skip-chars-forward " \t"))
-                    (current-column))))
-
-               ((js--continued-expression-p)
-                (+ js-indent-level js-expr-indent-offset))
-               (t 0))))
+))
 
 
 (provide 'js-mode-fixups)

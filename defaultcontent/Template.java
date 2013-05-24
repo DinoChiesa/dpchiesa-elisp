@@ -6,7 +6,7 @@
 // Author: @AUTHOR@
 // Created @DATE@
 //
-// Last saved: <2013-February-10 10:43:02>
+// Last saved: <2013-April-22 18:56:35>
 // ------------------------------------------------------------------
 //
 @INSERTFILE(/Users/Dino/elisp/defaultcontent/Copyright.txt)@
@@ -19,29 +19,28 @@ import java.util.Hashtable;
 import java.util.Enumeration;
 
 public class @BASEFILENAMELESSEXTENSION@ {
-    private final String patternString = "-([cv])"; // cmd line args supported
+    private final String optString = "vu:p:s:"; // getopt style
 
     // public @BASEFILENAMELESSEXTENSION@ () {} // uncomment if wanted
 
     public @BASEFILENAMELESSEXTENSION@ (String[] args)
         throws java.lang.Exception {
-        SetCommandLineArgs(args, patternString);
+        GetOpts(args, optString);
     }
 
+    private Hashtable<String, Object> Options = new Hashtable<String, Object> ();
 
-    private java.util.Hashtable<String, String> CommandLineArgs =
-        new java.util.Hashtable<String, String> ();
-
-    private void SetCommandLineArgs(String[] args, String patternString)
+    private void GetOpts(String[] args, String optString)
         throws java.lang.Exception {
-        // Don't bother if no command line args were passed
+        // Parse command line args for args in the following format:
+        //   -a value -b value2 ... ...
+
+        // sanity checks
         if (args == null) return;
         if (args.length == 0) return;
-
-        // Parse command line args for args in the following format:
-        //   /argname:argvalue /argname:argvalue /argname:argvalue ...
-
-        // String patternString = "\\/([^:]+):(\\S+)";
+        if (optString == null) return;
+        final String argPrefix = "-";
+        String patternString = "^" + argPrefix + "([" + optString.replaceAll(":","") + "])";
 
         java.util.regex.Pattern p = java.util.regex.Pattern.compile(patternString);
 
@@ -50,45 +49,53 @@ public class @BASEFILENAMELESSEXTENSION@ {
             String arg = args[i];
             java.util.regex.Matcher m = p.matcher(arg);
             if (!m.matches()) {
-                throw new java.lang.Exception("The command line arguments are improperly formed. Use a form like '-name value'.");
+                throw new java.lang.Exception("The command line arguments are improperly formed. Use a form like '-a value' or just '-b' .");
             }
 
-            if (i+1 < L) {
-                i++;
-                CommandLineArgs.put(m.group(1), args[i]);
+            char ch = arg.charAt(1);
+            int pos = optString.indexOf(ch);
+
+            if ((pos != optString.length() - 1) && (optString.charAt(pos+1) == ':')) {
+                if (i+1 < L) {
+                    i++;
+                    Options.put(m.group(1), args[i]);
+                }
+                else {
+                    throw new java.lang.Exception("Incorrect arguments.");
+                }
             }
             else {
-                throw new java.lang.Exception("Incorrect arguments.");
+                // a "no-value" argument, like -v for verbose
+                Options.put(m.group(1), (Boolean) true);
             }
         }
     }
 
-    private void MaybeShowCommandLineArgs() {
-        String verbose = CommandLineArgs.get("v");
-        if (verbose != null) {
-            Enumeration e = CommandLineArgs.keys();
+    private void MaybeShowOptions() {
+        Boolean verbose = (Boolean) Options.get("v");
+        if (verbose != null && verbose) {
+            System.out.println("options:");
+            Enumeration e = Options.keys();
             while(e.hasMoreElements()) {
                 // iterate through Hashtable keys Enumeration
-                String s = (String) e.nextElement();
-                System.out.println(s + ": " + CommandLineArgs.get(s));
+                String k = (String) e.nextElement();
+                Object o = Options.get(k);
+                String v = null;
+                v = (o.getClass().equals(Boolean.class)) ?  "true" : (String) o;
+                System.out.println("  " + k + ": " + v);
             }
+
+            // enumerate properties here?
         }
     }
+
 
     public void Run() {
 
-        MaybeShowCommandLineArgs();
-
-        Enumeration e = CommandLineArgs.keys();
-        String s;
-        // iterate through Hashtable keys Enumeration
-        while(e.hasMoreElements()) {
-            s = (String) e.nextElement();
-            System.out.println(s + ": " + CommandLineArgs.get(s));
-        }
+        MaybeShowOptions();
+        Boolean verbose = (Boolean) Options.get("v");
 
         @DOT@
-
     }
 
 

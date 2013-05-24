@@ -5,9 +5,7 @@
  * Author:  @@AUTHOR@@
  * Created:  @@DATE@@
  *
- * Last saved:
- *
- * Time-stamp: <2013-January-22 09:24:40>
+ * Last updated: <2013-March-19 12:39:36>
  * ------------------------------------------------------------------
  *
  * Copyright (c) Dino Chiesa 2013.  All rights reserved.

@@ -61,7 +61,7 @@
 
 (defvar smart-op-smartoperators-alist
   '(
-    ( ?= t "[^=\+\-/*%&!|^ ]")
+    ( ?= "[^=]" "[^=\+\-/*%&!|^ ]")
     ( ?+ t "[^\+ ]")
     ( ?- t "[^\- ]")
     ( ?* t "[^/ ]")
@@ -78,7 +78,7 @@ that when the operator is typed, insert one space, then insert
 the operator, then insert one more space. The second and third
 elements in each list are strings, regexes that are passed to
 `looking-at' and `looking-back', respectively. Insertion of a
-space before ans after the char occurs if both of those calls
+space before and after the char occurs if both of those calls
 evaluate to true. Either of the regexi can be replaced with
 non-string non-nil (eg, t) to always vote yes.
 
@@ -176,8 +176,8 @@ See also `smart-op-self-insert-helper'.
 (defun smart-op-self-insert-helper (op)
   "Intelligently insert spaces around the given operator e.g.,
 '=' will become ' = '. This happens except when the previous char is an
-operator that can precede '=', in which case no prior space is
-injected.
+operator that can precede '=', in which case no preceding space is
+inserted.
 
 "
   ;; (b-o-l (save-excursion (beginning-of-line) (point)))
@@ -226,7 +226,10 @@ injected.
 
               ;; insert the operator and maybe a space
               (insert s-op)
-              (if (not (looking-at " "))
+              (if (and (not (looking-at " "))
+                       (and
+                        (eq op ?=)
+                        (not (looking-at "="))))
                   (insert " ")))
 
           ;; no fixup needed, just insert the operator

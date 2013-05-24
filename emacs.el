@@ -1,6 +1,6 @@
 ;;
 ;; Dino's .emacs setup file.
-;; Last saved: <2013-May-13 21:36:47>
+;; Last saved: <2013-May-23 17:45:00>
 ;;
 ;; Works with v24.2 of emacs.
 ;;
@@ -16,6 +16,12 @@
 (setq inhibit-splash-screen t)
 (tool-bar-mode -1) ;; we don't need no steenking icons
 (setq user-mail-address "dpchiesa@hotmail.com")
+
+
+;; for tetris
+(setq tetris-score-file "~/elisp/tetris-scores")
+(defadvice tetris-end-game (around zap-scores activate)
+  (save-window-excursion ad-do-it))
 
 ;; To change the coding system of a visited file,
 ;; `C-x RET r utf-8-with-signature RET'.
@@ -74,13 +80,32 @@ selection to the kill ring"
     (while (search-forward "\xd" nil t)
       (replace-match "" nil t))))
 
-(defun dino-2-windows-vertical-to-horizontal ()
-  "When displaying exactly 2 buffers, flip from top/bottom orientation
-to side-by-side display."
-  (let ((buffers (mapcar 'window-buffer (window-list))))
-    (when (= 2 (length buffers))
-      (delete-other-windows)
-      (set-window-buffer (split-window-horizontally) (cadr buffers)))))
+;; (defun dino-2-windows-toggle-vertical-and-horizontal ()
+;;   "When displaying exactly 2 buffers, flip from top/bottom orientation
+;; to side-by-side display. Or vice versa."
+;;   (interactive)
+;;   (let ((buffers (mapcar 'window-buffer (window-list))))
+;;     (when (= 2 (length buffers))
+;;       (let ((split-f (if (window-full-height-p (nth 0 (window-list)))
+;;                          'split-window-vertically
+;;                        'split-window-horizontally)))
+;;         (delete-other-windows)
+;;         (set-window-buffer (funcall split-f)
+;;                            (cadr buffers))))))
+
+
+(defun dino-toggle-frame-split ()
+  "If the frame is split vertically, split it horizontally or vice versa.
+Assumes that the frame is only split into two."
+  (interactive)
+  (unless (= (length (window-list)) 2) (error "Can only toggle a frame split in two"))
+  (let ((split-vertically-p (window-combined-p)))
+    (delete-window) ; closes current window
+    (if split-vertically-p
+        (split-window-horizontally)
+      (split-window-vertically)) ; gives us a split with the other window twice
+    (switch-to-buffer nil))) ; restore the original window in this part of the frame
+
 
 (defun dino-indent-buffer ()
   "Dino's function to re-indent an entire buffer; helpful in progmodes
@@ -158,24 +183,24 @@ in the list `dino-no-untabify-modes'
 ;; )))
 
 
-(defun dino-insert-timestamp ()
-  "function to insert timestamp at point. format: DayOfWeek, Date Month Year   24hrTime"
-  (interactive)
-  (let* ((localstring (current-time-string))
-        (mytime (concat "....dinoch...."
-                         (substring localstring 0 3)  ;day-of-week
-                         ", "
-                         (substring localstring 8 10) ;day number
-                         " "
-                         (substring localstring 4 7)  ;month
-                         " "
-                         (substring localstring 20 24 ) ;4-digit year
-                         "...."
-                         (substring localstring 11 16 ) ;24-hr time
-                         "....\n"
-                         )))
-    (insert mytime))
-)
+;; (defun dino-insert-timestamp ()
+;;   "function to insert timestamp at point. format: DayOfWeek, Date Month Year   24hrTime"
+;;   (interactive)
+;;   (let* ((localstring (current-time-string))
+;;         (mytime (concat "....dinoch...."
+;;                          (substring localstring 0 3)  ;day-of-week
+;;                          ", "
+;;                          (substring localstring 8 10) ;day number
+;;                          " "
+;;                          (substring localstring 4 7)  ;month
+;;                          " "
+;;                          (substring localstring 20 24 ) ;4-digit year
+;;                          "...."
+;;                          (substring localstring 11 16 ) ;24-hr time
+;;                          "....\n"
+;;                          )))
+;;     (insert mytime))
+;; )
 
 
 
@@ -202,7 +227,9 @@ in the list `dino-no-untabify-modes'
 
 
 (defvar cheeso-uuidgen-prog
-  "c:/users/Dino/bin/uuidgen.exe"
+  (if (eq system-type 'windows-nt)
+      "c:/users/Dino/bin/uuidgen.exe"
+    "/usr/bin/uuidgen")
   "Program to generate one uuid and emit it to stdout.")
 
 (defvar cheeso-base64-prog
@@ -401,6 +428,7 @@ Handy for editing .resx files within emacs.
 (global-set-key "\C-xg"     'insert-register)
 (global-set-key "\C-xp"     'previous-window)
 (global-set-key "\C-x\C-p"  'previous-window)
+(global-set-key "\C-c\C-x\C-c"  'calendar)
 (global-set-key "\C-xn"     'other-window)
 (global-set-key "\C-x\C-e"  'smarter-compile)
 (global-set-key "\C-x\C-g"  'auto-fill-mode)
@@ -419,7 +447,8 @@ Handy for editing .resx files within emacs.
 (global-set-key "\C-cc"     'goto-char)
 (global-set-key "\C-cr"     'replace-regexp)
 (global-set-key "\C-ct"     'dino-insert-timeofday)
-(global-set-key "\C-c\C-t"  'dino-insert-timestamp)
+;;(global-set-key "\C-c\C-t"  'dino-insert-timestamp)
+(global-set-key "\C-c\C-t"  'dino-toggle-frame-split)
 (global-set-key "\C-cw"     'where-is)
 (global-set-key "\C-c\C-w"  'compare-windows)
 (global-set-key "\C-c!"     'revert-buffer-unconditionally)
