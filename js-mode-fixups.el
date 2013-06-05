@@ -6,7 +6,6 @@
 ;;
 
 
-fixups
 (eval-after-load "js"
   '(progn
 

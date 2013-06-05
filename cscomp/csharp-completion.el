@@ -7,7 +7,7 @@
 ;; Version:    2012.4.8
 ;; Keywords:   c# languages oop mode
 ;; X-URL:      http://code.google.com/p/csharpmode/
-;; Last saved: <2012-April-17 14:26:09>
+;; Last saved: <2013-June-04 15:23:39>
 ;;
 
 
