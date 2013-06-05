@@ -11,12 +11,17 @@
 ;; Requires   : s.el
 ;; License    : New BSD
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2013-May-07 09:29:10>
+;; Last-saved : <2013-June-04 19:43:56>
 ;;
 ;;; Commentary:
 ;;
 ;; This module defines a few elisp functions that are handy for working
-;; with API PRoxy definition bundles within emacs.
+;; with API Proxy definition bundles within emacs. Per ejemplo,
+;;  - creating a new blank proxy
+;;  - zipping and importing a bundle
+;;  - validaitng a bundle (coming soon)
+;;  - adding a new policy to a bundle (coming soon)
+;;
 ;;
 ;;; License
 ;;
@@ -50,10 +55,20 @@
 ;; POSSIBILITY OF SUCH DAMAGE.
 ;;
 
-(require 's) ;; magnars long lost string library
+(require 's) ;; magnars' long lost string library
 
 (defgroup apigee nil
   "Utility fns for use with the Apigee platform.")
+
+(defcustom apigee-apiproxies-home "~/dev/apiproxies/"
+  "The directory to contain newly-created API proxy bundle directories.
+
+   (require 'apigee)
+   (setq apigee-apiproxies-home \"~/dev/apiproxies/\")
+
+Or you can customize this variable.
+"
+  :group 'apigee)
 
 (defcustom apigee-upload-bundle-pgm "~/dev/apiproxies/pushapi"
   "The script or program that uploads proxies to the Apigee gateway.
@@ -61,7 +76,7 @@ Can be a python or bash script or other program. Should be executable.
 Specify the full path. Use this in your emacs:
 
    (require 'apigee)
-   (setq apigee-upload-bundle-pgm \"~/dev/apiproxies\"
+   (setq apigee-upload-bundle-pgm \"~/dev/apiproxies/pushapi\"
          apigee-upload-bundle-args \"-v\")
 
 Or you can customize this variable.
@@ -87,6 +102,20 @@ Or you can customize this variable.
   :group 'apigee)
 
 
+(defcustom apigee-prompt-mechanism 'x-popup-menu
+  "The mechanism used to prompt the user for his choice.
+Options: 'x-popup-menu, or 'dropdown-list.  When setting
+this, set it to the symbol, not to the string or the actual
+function.  Eg
+
+  (setq apigee-prompt-mechanism 'x-popup-menu)
+
+"
+  :type 'symbol
+  :options '('x-popup-menu 'dropdown-list)
+  :group 'apigee)
+
+
 ;; The command "template" to use when creating the API bundle zip. In
 ;; this template, the %f is replaced with the name of the zip file to
 ;; create. This template probably never needs to be customized.
@@ -97,7 +126,8 @@ Or you can customize this variable.
 
 (defun apigee-path-of-apiproxy ()
   "Returns the path of apiproxy that acts as the parent of
-the current file or directory. "
+the current file or directory.
+"
   (interactive)
   (let ((elts (reverse (split-string (file-name-directory default-directory) "/")))
         r)
@@ -107,7 +137,6 @@ the current file or directory. "
         (setq elts (cdr elts))))
     (if r
         (mapconcat 'identity r "/"))))
-
 
 
 (defun apigee-get-name-for-api-bundle-zip ()
@@ -192,6 +221,579 @@ that contains the file or directory currently being edited.
                     apigee-upload-bundle-args " "
                     proxy-dir))
               (call-interactively 'compile))))))
+
+
+(defun apigee--is-directory (dir-name)
+  "Tests to see whether a name refers to a directory"
+  (and
+   (file-exists-p dir-name)
+   (car (file-attributes dir-name))))
+
+(defun apigee--java-get-time-in-millis ()
+  "This returns a string that contains a number equal in value to
+what is returned from the java snippet:
+      (new GregrianCalendar()).getTimeInMillis()
+"
+  (let ((ct (current-time)))
+    (format "%d" (+ (* (+ (* (car ct) 65536) (cadr ct)) 1000) (/ (caddr ct) 1000)))))
+
+
+
+(defun apigee--random-string (&optional len)
+  "produce a string of length LEN containing random characters,
+or of length 8 if the len is not specified.
+"
+  (let (s '())
+    (if (not len) (setq len 8))
+    (if (> len 144) (setq len 8)) ;; sanity
+    (while (> len 0)
+      (setq s (cons (+ (random 26) 97) s)
+            len (- len 1)))
+    (mapconcat 'string s "")))
+
+
+(defun apigee-new-proxy (proxy-name)
+  "Interactive fn that creates a new exploded proxy bundle directory
+structure, in the `apigee-apiproxies-home' directory.
+"
+  (interactive "Mproxy name: ")
+  (if (not (s-ends-with-p "/" apigee-apiproxies-home))
+      (setq apigee-apiproxies-home (concat apigee-apiproxies-home "/")))
+
+  (let ((proxy-dir (concat apigee-apiproxies-home proxy-name))
+        apiproxy-dir
+        file-attrs)
+
+    (if (file-exists-p proxy-dir)
+        (error "proxy dir already exists")
+      (if (not (apigee--is-directory apigee-apiproxies-home))
+          (error "set apigee-apiproxies-home to the name of an existing directory.")
+        (setq apiproxy-dir (concat proxy-dir "/apiproxy/"))
+        (make-directory apiproxy-dir t)
+        ;; create the sub-directories
+        (let ((subdirs (list "proxies" "targets" "resources" "policies"
+                             "resources/java" "resources/xsl"
+                             "resources/node" "resources/jsc" )))
+          (while subdirs
+            (make-directory (concat apiproxy-dir (car subdirs)))
+            (setq subdirs (cdr subdirs))))
+        ;; create the toplevel xml file
+        (with-temp-file (concat apiproxy-dir proxy-name ".xml")
+          (insert
+           (concat
+            "<APIProxy revision='1' name='" proxy-name "'>\n"
+            "  <ConfigurationVersion minorVersion='0' majorVersion='4'/>\n"
+            "  <CreatedAt>" (apigee--java-get-time-in-millis) "</CreatedAt>\n"
+            "  <CreatedBy>orgAdmin</CreatedBy>\n"
+            "  <Description></Description>\n"
+            "  <DisplayName>" proxy-name "</DisplayName>\n"
+            "  <LastModifiedAt>" (apigee--java-get-time-in-millis) "</LastModifiedAt>\n"
+            "  <LastModifiedBy>orgAdmin</LastModifiedBy>\n"
+            "  <TargetEndpoints>\n"
+            "    <TargetEndpoint>default</TargetEndpoint>\n"
+            "  </TargetEndpoints>\n"
+            "</APIProxy>\n")))
+
+        (with-temp-file (concat apiproxy-dir "targets/default.xml")
+          (insert "<TargetEndpoint name='default'>
+  <Description>Apigee auto generated target endpoint</Description>
+  <FaultRules/>
+  <Flows/>
+  <PreFlow name='PreFlow'>
+    <Request>
+      <Step>
+        <FaultRules/>
+        <Name>RaiseFault.For.Unknown.Request</Name>
+      </Step>
+    </Request>
+    <Response/>
+  </PreFlow>
+
+  <HTTPTargetConnection>
+    <Properties/>
+    <URL>http://internal.advance.net/v1/RDS/something</URL>
+  </HTTPTargetConnection>
+</TargetEndpoint>\n"))
+
+        (with-temp-file (concat apiproxy-dir "proxies/default.xml")
+          (insert
+           "<ProxyEndpoint name='default'>
+  <Description>Default Proxy</Description>
+  <HTTPProxyConnection>
+    <BasePath>/v1/" (apigee--random-string) "</BasePath>
+    <Properties/>
+    <VirtualHost>default</VirtualHost>
+  </HTTPProxyConnection>
+
+  <FaultRules/>
+
+  <Flows>
+    <Flow name='test " (apigee--random-string) " " (apigee--random-string) "'>
+      <Description>insert description here</Description>
+      <Request>
+        <Step>
+          <FaultRules/>
+          <Name>InsertPolicyNameHere</Name>
+        </Step>
+      </Request>
+      <Response/>
+      <Condition>(proxy.pathsuffix MatchesPath '/foo') and (request.verb = 'GET')</Condition>
+    </Flow>
+  </Flows>
+
+  <RouteRule name='InvokeRouteRule'>
+    <TargetEndpoint>default</TargetEndpoint>
+  </RouteRule>
+
+</ProxyEndpoint>\n"))
+
+        (find-file-existing apiproxy-dir)
+        ))))
+
+
+
+(defconst apigee--policy-alist
+    (list
+     '("AssignMessage"
+       "AssignMessage"
+       "<AssignMessage name='##'>
+  <AssignTo createNew='false' type='${1:$$(yas/choose-value '(\"request\" \"response\"))}'/>
+  <Set>
+    <QueryParams>
+      <QueryParam name='${2:outgoingParamName}'>{request.queryparam.url}</QueryParam>
+      <QueryParam name='apiKey'>Something</QueryParam>
+    </QueryParams>
+    <Verb>GET</Verb>
+  </Set>
+  <!-- Set other flow variables for use in the final response -->
+  <AssignVariable>
+    <Name>urlshortener.longUrl</Name>
+    <Ref>request.queryparam.url</Ref>
+  </AssignVariable>
+</AssignMessage>\n")
+
+     '("AssignMessage - Store Original Accept"
+     "AssignMessage"
+     "<AssignMessage name='##'>
+  <AssignVariable>
+    <Name>${1}.originalAccept</Name>
+    <Ref>request.header.Accept</Ref>
+  </AssignVariable>
+</AssignMessage>\n")
+
+     '("AssignMessage - Set Content-Type"
+       "AssignMessage"
+       "<AssignMessage name='##'>
+  <AssignTo createNew='false' type='response'/>
+  <!-- force content-type. This allows ExtractVariables to work. -->
+  <Set>
+    <Headers>
+      <Header name='Content-Type'>application/json</Header>
+    </Headers>
+  </Set>
+</AssignMessage>\n")
+
+     '("KVM - Put"
+       "KVM-PUT"
+       "<KeyValueMapOperations name='##'
+                       mapIdentifier='${1:nameOfMap}'>
+  <Scope>${2:$$(yas/choose-value '(\"organization\" \"environment\" \"apiproxy\"))}</Scope>
+  <Put override='true'>
+    <Key>
+      <Parameter ref='${3:variable.containing.key}'/>
+    </Key>
+    <Value ref='${4:variable.containing.value.to.store}'/>
+    <Value ref='${5:another.variable.with.a.value.to.store}'/>
+  </Put>
+</KeyValueMapOperations>\n")
+
+     '("KVM - Get"
+       "KVM-Get"
+       "<KeyValueMapOperations name='##'
+                       mapIdentifier='${1:nameOfMap}'>
+  <Scope>${2:$$(yas/choose-value '(\"organization\" \"environment\" \"apiproxy\"))}</Scope>
+  <Get assignTo='${3:variable.to.set}' index='2'>
+    <Key>
+      <Parameter ref='${4:variable.containing.key}'/>
+    </Key>
+  </Get>
+
+</KeyValueMapOperations>\n")
+
+     '("Quota"
+       "Quota"
+       "<Quota name='##'>
+    <Allow count='${1:1000}'/>
+    <Interval>1</Interval>
+    <TimeUnit>${2:$$(yas/choose-value '(\"second\" \"minute\" \"hour\" \"day\" \"month\"))}</TimeUnit>
+</Quota>")
+
+     '("Quota - Product"
+       "Quota"
+     "<Quota name='##'>
+  <Interval ref='apiproduct.developer.quota.interval'/>
+  <TimeUnit ref='apiproduct.developer.quota.timeunit'/>
+  <Allow countRef='apiproduct.developer.quota.limit'/>
+  <Identifier ref='client_id'/>
+</Quota>\n")
+
+     '("GetAPIProduct - fixed"
+       "GetAPIProduct"
+       "<GetAPIProduct name='##'>
+    <!-- http://apigee.com/docs/api-platform/content/retrieve-api-product-settings-using-getapiproduct -->
+    <!-- values will be stored in getapiproduct.##.apiproduct.name ... etc -->
+    <APIProduct>${1:PremiumAPIProductName}</APIProduct>
+</GetAPIProduct>\n")
+
+     '("GetAPIProduct - variable"
+       "GetAPIProduct"
+       "<GetAPIProduct name='##'>
+    <APIProduct ref='{${1:variable.name}'/>
+</GetAPIProduct>\n")
+
+     '("JSONToXML"
+       "JSONToXML"
+       "<JSONToXML name='##'>
+  <Options>
+  </Options>
+</JSONToXML>")
+
+     '("XMLToJSON"
+       "XMLToJSON"
+       "<XMLToJSON name='##'>
+    <DisplayName>XML2JSON Mediation</DisplayName>
+    <Description>This policy converts the XML returned by origin servers
+    to JSON Message. it can be applied on the response when the Accept
+    Encoding on the original request is application/json</Description>
+        <Format>yahoo</Format>
+    <!--<Options>
+        <RecognizeNumber>true</RecognizeNumber>
+        <RecognizeBoolean>true</RecognizeBoolean>
+        <RecognizeNull>true</RecognizeNull>
+        <NullValue>NULL</NullValue>
+        <NamespaceSeparator>***</NamespaceSeparator>
+        <NamespaceBlockName>#namespaces</NamespaceBlockName>
+        <DefaultNamespaceNodeName>&amp;</DefaultNamespaceNodeName>
+        <TextAlwaysAsProperty>false</TextAlwaysAsProperty>
+        <TextNodeName>TEXT</TextNodeName>
+        <AttributeBlockName>ATT_BLOCK</AttributeBlockName>
+        <AttributePrefix>ATT_</AttributePrefix>
+    </Options>-->
+</XMLToJSON>\n")
+
+
+     '("ExtractVariables - JSON"
+       "Extract"
+       "<ExtractVariables name='##'>
+  <VariablePrefix>$1</VariablePrefix>
+  <JSONPayload>
+    <Variable name='$2'>
+       <JSONPath>\\$.$3</JSONPath>
+    </Variable>
+  </JSONPayload>
+</ExtractVariables>")
+
+     '("ExtractVariables - OpenID Connect"
+       "Extract"
+       "<ExtractVariables name='##'>
+  <VariablePrefix>openidconnect</VariablePrefix>
+  <Header name='Authorization'>
+    <Pattern>Bearer {access_token}</Pattern>
+  </Header>
+  <QueryParam name='access_token'>
+    <Pattern>{access_token}</Pattern>
+  </QueryParam>
+  <QueryParam name='token'>
+    <Pattern>{access_token}</Pattern>
+  </QueryParam>
+  <IgnoreUnresolvedVariables>false</IgnoreUnresolvedVariables>
+</ExtractVariables>\n")
+
+     '("ServiceCallout"
+       "ServiceCallout"
+       "<ServiceCallout continueOnError='false' async='false' name='##'>
+    <DisplayName>##</DisplayName>
+    <FaultRules/>
+    <Properties/>
+      <Request variable='authenticationRequest' clearPayload='false'>
+        <IgnoreUnresolvedVariables>false</IgnoreUnresolvedVariables>
+    </Request>
+    <Response>authenticationResponse</Response>
+    <HTTPTargetConnection>
+        <Properties/>
+        <URL>${1:https://api.usergrid.com/globo/sandbox/token}</URL>
+    </HTTPTargetConnection>
+</ServiceCallout>\n")
+
+     '("OAuthV2 - GenerateAccessToken"
+       "OAuthV2"
+       "<OAuthV2 name='##'>
+    <DisplayName>RefreshAccessToken</DisplayName>
+    <FaultRules/>
+    <Properties/>
+    <Operation>GenerateAccessToken</Operation>
+    <ExpiresIn>2400000</ExpiresIn>
+    <SupportedGrantTypes>
+        <GrantType>authorization_code</GrantType>
+        <GrantType>password</GrantType>
+        <GrantType>client_credentials</GrantType>
+    </SupportedGrantTypes>
+    <GenerateResponse/>
+</OAuthV2>\n")
+
+     '("OAuthV2 - RefreshAccessToken"
+       "OAuthV2"
+       "<OAuthV2 name='##' enabled='true' continueOnError='false' async='false' >
+    <DisplayName>RefreshAccessToken</DisplayName>
+    <FaultRules/>
+    <Properties/>
+    <Attributes/>
+    <ExpiresIn>100000000000</ExpiresIn>
+    <ExternalAuthorization>false</ExternalAuthorization>
+    <GrantType>request.formparam.grant_type</GrantType>
+    <Operation>RefreshAccessToken</Operation>
+    <RefreshToken>request.formparam.refresh_token</RefreshToken>
+    <GenerateResponse enabled='true'>
+        <Format>FORM_PARAM</Format>
+    </GenerateResponse>
+    <SupportedGrantTypes/>
+</OAuthV2>\n")
+
+
+     '("GetOAuthV2Info"
+       "GetOAuthV2Info"
+     "<GetOAuthV2Info name='##'>
+  <AccessToken ref='openidconnect.access_token'/>
+</GetOAuthV2Info>\n")
+
+     '("LookupCache"
+       "LookupCache"
+       "<LookupCache enabled='true' continueOnError='false' async='false' name='##'>
+    <CacheResource>${1:ApigeeCache}</CacheResource>
+    <AssignTo>${2:flowvariable}</AssignTo> <!-- name of flow variable -->
+    <Scope>${3:$$(yas/choose-value '(\"Exclusive\" \"Global\" \"Application\" \"Proxy\" \"Target\"))}</Scope>
+    <CacheKey>
+      <KeyFragment ref='${4:flowvariable.name}' />
+    </CacheKey>
+</LookupCache>")
+
+     '("PopulateCache"
+       "PopulateCache"
+       "<PopulateCache name='##'>
+  <CacheResource>${1:ApigeeCache}</CacheResource>
+  <Source>${2:variable.containing.value}</Source>
+  <Scope>${3:$$(yas/choose-value '(\"Exclusive\" \"Global\" \"Application\" \"Proxy\" \"Target\"))}</Scope>
+  <CacheKey>
+    <KeyFragment ref='${4:variable.containing.keyfrag' />
+  </CacheKey>
+  <ExpirySettings>
+    <TimeoutInSec>864000</TimeoutInSec> <!-- 864000 = 10 days -->
+  </ExpirySettings>
+</PopulateCache>\n")
+
+
+     '("RaiseFault"
+       "RaiseFault"
+       "<RaiseFault name='##'>
+  <DisplayName>$1</DisplayName>
+  <Description>$2</Description>
+  <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+  <FaultResponse>
+   <Set>
+    <Payload contentType='application/json' variablePrefix='%' variableSuffix='#'><![CDATA[
+{
+%jsonResponse#
+    $0
+}
+]]></Payload>
+     <StatusCode>${3:$$(yas/choose-value '(\"200\" \"400\" \"404\" \"500\" \"503\"))}</StatusCode>
+     <ReasonPhrase>OK</ReasonPhrase>
+   </Set>
+ </FaultResponse>
+</RaiseFault>")
+
+
+     '("RaiseFault - Redirect"
+       "RaiseFault"
+       "<RaiseFault name='##' enabled='true' continueOnError='false' async='false'>
+    <DisplayName>Redirect To...</DisplayName>
+    <FaultRules/>
+    <Properties/>
+    <FaultResponse>
+      <Set>
+        <Headers>
+          <Header name='Location'>${1:http://target.to-redirect.to}</Header>
+        </Headers>
+        <Payload contentType='text/plain'>
+$1
+</Payload>
+            <StatusCode>302</StatusCode>
+            <ReasonPhrase>Redirect</ReasonPhrase>
+        </Set>
+    </FaultResponse>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+</RaiseFault>\n")
+
+
+     '("JavaScript"
+       "JavaScript"
+       "<Javascript enabled='true' continueOnError='false' async='false' name='##'>
+  <FaultRules/>
+  <Properties/>
+  <ResourceURL>jsc://${1:doWork}.js</ResourceURL>
+</Javascript>")
+
+     '("ResponseCache"
+     "ResponseCache"
+     "<ResponseCache enabled='true' continueOnError='false' async='false' name='##'>
+  <DisplayName>$1</DisplayName>
+  <FaultRules/>
+  <Properties/>
+  <CacheKey>
+    <Prefix></Prefix>
+    <KeyFragment ref='${2:request.uri}' /> <!-- item to use as cache key -->
+  </CacheKey>
+  <CacheResource>${3:ApigeeCache}</CacheResource>
+  <Scope>${4:$$(yas/choose-value '(\"Exclusive\" \"Global\" \"Application\" \"Proxy\" \"Target\"))}</Scope>
+  <ExpirySettings>
+    <ExpiryDate></ExpiryDate>
+    <TimeOfDay></TimeOfDay>
+    <TimeoutInSec ref=''>${5:6000}</TimeoutInSec>
+  </ExpirySettings>
+  <SkipCacheLookup>request.header.x-bypass-cache = 'true'</SkipCacheLookup>
+  <SkipCachePopulation>request.header.x-bypass-cache = 'true'</SkipCachePopulation>
+</ResponseCache>")
+
+     '("XSL"
+       "XSL"
+       "<XSL enabled='true' continueOnError='false' async='false' name='##'>
+  <DisplayName>XSL - $1</DisplayName>
+  <FaultRules/>
+  <Properties/>
+  <OutputVariable>request.content</OutputVariable>
+  <ResourceURL>xsl://$2.xsl</ResourceURL>
+  <Source>${3:$$(yas/choose-value '(\"request\" \"response\"))}</Source>
+</XSL>\n")
+
+
+     '("JavaCallout"
+       "JavaCallout"
+       "<JavaCallout name='##' enabled='true'
+             continueOnError='false' async='false'>
+  <DisplayName>$1</DisplayName>
+  <Properties/>
+  <FaultRules/>
+  <ClassName>$2</ClassName>
+  <ResourceURL>java://$3.jar</ResourceURL>
+</JavaCallout>")
+
+))
+
+
+(defun apigee-get-menu-position ()
+  "get the position for the popup menu"
+  (if (fboundp 'posn-at-point)
+      (let ((x-y (posn-x-y (posn-at-point (point)))))
+        (list (list (+ (car x-y) 10)
+                    (+ (cdr x-y) 20))
+              (selected-window)))
+    t))
+
+
+(defun apigee--generate-menu (candidates)
+  "Generate a menu suitable for use in `x-popup-menu' from the
+list of candidates. Each item in the list of candidates is a
+list, (KEY TEMPLATE), where KEY is one of {Quota, XMLToJSON,
+Javascript, etc}, TEMPLATE is the template to fill in a new policy file.
+
+The output is a list like this:
+
+  (\"Insert...\"
+    (\"Ignored pane title\"
+      (\"Quota\" \"value to return if thing 1 is selected\")
+      (\"Javascript\" \"value if thing 2 is selected\")
+      ....))
+
+"
+  (let ((items (mapcar '(lambda (elt)
+                          (cons
+                           (nth 0 elt)
+                           elt))
+                        candidates)))
+
+    ;; this works with x-popup-menu
+    (setq items (cons "Ignored pane title" items))
+    (list "Insert..." items)))
+
+
+
+(defun apigee-prompt-user-with-choices (candidates)
+  "Prompt the user with the available choices.
+In this context the list of choices is the list of available Policies.
+
+"
+  (cond
+   ((not candidates)
+    nil)
+   ((and (eq apigee-prompt-mechanism 'dropdown-list)
+         (featurep 'dropdown-list))
+    (let ((choice-n (dropdown-list (mapcar '(lambda (elt) (nth 0 elt)) candidates))))
+      (if choice-n
+          (nth choice-n candidates)
+        (keyboard-quit))))
+
+   (t
+    ;; NB:
+    ;; x-popup-menu displays in the proper location, near
+    ;; the cursor.
+    ;;
+    ;; x-popup-dialog always displays in the center
+    ;; of the frame, which makes for an annoying
+    ;; user-experience.
+    (x-popup-menu (apigee-get-menu-position)
+                  (apigee--generate-menu candidates)))))
+
+
+
+
+;;;###autoload
+(defun apigee-add-policy ()
+  "Invoke this interactively, and the fn will prompt the user to
+choose a policy type to insert.  It will then ask for a name for the policy,
+create the appropriate XML file, and yas/snippet expand the template for
+that policy file.
+
+"
+  (interactive)
+  (let ((apiproxy-dir (apigee-path-of-apiproxy)))
+    (if apiproxy-dir
+        (progn
+          (if (not (s-ends-with-p "/" apiproxy-dir))
+              (setq apiproxy-dir (concat apiproxy-dir "/")))
+          (let ((chosen (apigee-prompt-user-with-choices
+                         apigee--policy-alist)))
+            (when chosen
+              (let ((policy-dir (concat apiproxy-dir "apiproxy/policies/"))
+                    (ptype (cadr chosen))
+                    (raw-template (caddr chosen))
+                    (policy-name (read-string "policy name: ")))
+                (let* ((elaborated-name (concat ptype "." policy-name))
+                       (elaborated-template
+                        (if (string-match "##" raw-template)
+                            (progn
+                            (while (string-match "##" raw-template)
+                              (setq raw-template
+                            (replace-match elaborated-name t t raw-template)))
+                            raw-template)
+                          raw-template)))
+                  (let* ((filename (concat policy-dir
+                                           elaborated-name
+                                           ".xml"))
+                         (myBuffer (find-file filename)))
+                    (yas/expand-snippet elaborated-template (point) (point)))))))))))
+
+
+
 
 
 (provide 'apigee)
