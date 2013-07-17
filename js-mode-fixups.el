@@ -6,6 +6,25 @@
 ;;
 
 
+(defun dino-js-varify (start end)
+  "Turn the selection into a string var declaration terminated with a semicolon."
+  (interactive "r")
+  (goto-char end)
+  (insert "';")
+  (goto-char start)
+  (insert "var x = '")
+  (backward-char 5)
+  (js-indent-line))
+  ;; (yas/expand-snippet elaborated-template (point) (point)))))))))))
+
+
+(defun dino-js-beautify ()
+  "replace the current buffer with the jsBeautify'd version."
+  (interactive)
+  (shell-command-on-region (point-min) (point-max) "~/js/jsBeautify.js" nil t))
+
+
+
 (eval-after-load "js"
   '(progn
 
@@ -42,6 +61,9 @@
                          (nconc (nreverse keep-at-top) menulist))))
          ;; else
          ad-do-it))
+
+
+
 
      ;; redefine this fn to recurse on nested function creation,
      ;; To allow imenu to see those fns as well.

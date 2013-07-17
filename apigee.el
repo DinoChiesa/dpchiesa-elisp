@@ -11,7 +11,7 @@
 ;; Requires   : s.el
 ;; License    : New BSD
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2013-June-04 19:43:56>
+;; Last-saved : <2013-July-17 11:59:03>
 ;;
 ;;; Commentary:
 ;;
@@ -124,9 +124,26 @@ function.  Eg
 ;;(setq apigee-create-bundle-zip-command-template "zip %f -r apiproxy/ -x \"*.*~\"")
 
 
+
 (defun apigee-path-of-apiproxy ()
   "Returns the path of apiproxy that acts as the parent of
 the current file or directory.
+
+If the apiproxy is defined in a dir structure like:
+
+~/dev/apiproxies/APINAME/apiproxy
+~/dev/apiproxies/APINAME/apiproxy/APINAME.xml
+~/dev/apiproxies/APINAME/apiproxy/resources
+~/dev/apiproxies/APINAME/apiproxy/resources/...
+~/dev/apiproxies/APINAME/apiproxy/targets
+~/dev/apiproxies/APINAME/apiproxy/targets/..
+~/dev/apiproxies/APINAME/apiproxy/proxies
+~/dev/apiproxies/APINAME/apiproxy/proxies/..
+..
+
+then the return value is: ~/dev/apiproxies/APINAME
+
+
 "
   (interactive)
   (let ((elts (reverse (split-string (file-name-directory default-directory) "/")))
@@ -136,7 +153,18 @@ the current file or directory.
           (setq r (reverse (cdr elts)))
         (setq elts (cdr elts))))
     (if r
-        (mapconcat 'identity r "/"))))
+        (mapconcat 'identity r "/") )))
+
+
+
+(defun apigee-apiproxy-name ()
+  "Get a name for the API Proxy bundle that contains
+the file or directory currently being edited.
+"
+  (interactive)
+  (let ((apiproxy-dir (apigee-path-of-apiproxy)))
+    (if apiproxy-dir
+        (file-name-nondirectory apiproxy-dir))))
 
 
 (defun apigee-get-name-for-api-bundle-zip ()
@@ -151,6 +179,9 @@ the file or directory currently being edited.
           (concat api-name "-" timestamp ".zip")))))
 
 
+;; The following fn can be used to help create the zip and upload from
+;; emacs.  Currently this module delegates that to the pushapi script,
+;; so this fn is unnecessary.
 (defun apigee-get-create-api-bundle-zip-cmd ()
   "Get the command that creates an API bundle zip. for the file
 or directory currently being edited.
@@ -165,7 +196,20 @@ or directory currently being edited.
          api-bundle-name
          (match-string 3 txt)))))
 
+(defun apigee-insure-trailing-slash (path)
+  "Insure the given path ends with a slash.
+This is usedful with `default-directory'.  Setting
+`default-directory' to a value that does not end with a slash
+causes it to use the parent directory.
+"
+  (if (s-ends-with? "/" path)
+      path)
+  (concat path "/"))
 
+
+;; The following fn can be used to create the zip and upload from emacs.
+;; Currently this module delegates that to the pushapi script, so this
+;; fn is unnecessary.
 (defun apigee-create-api-bundle-zip ()
   "Create the API bundle zip that contains the file or directory
 currently being edited.
@@ -190,18 +234,6 @@ currently being edited.
       (shell-command cmd t nil))
 
     (switch-to-buffer-other-window buffer)))
-
-
-
-(defun apigee-insure-trailing-slash (path)
-  "Insure the given path ends with a slash.
-This is usedful with `default-directory'.  Setting
-`default-directory' to a value that does not end with a slash
-causes it to use the parent directory.
-"
-  (if (s-ends-with? "/" path)
-      path)
-  (concat path "/"))
 
 
 
@@ -230,12 +262,45 @@ that contains the file or directory currently being edited.
    (car (file-attributes dir-name))))
 
 (defun apigee--java-get-time-in-millis ()
-  "This returns a string that contains a number equal in value to
+  "Returns a string that contains a number equal in value to
 what is returned from the java snippet:
       (new GregrianCalendar()).getTimeInMillis()
 "
   (let ((ct (current-time)))
     (format "%d" (+ (* (+ (* (car ct) 65536) (cadr ct)) 1000) (/ (caddr ct) 1000)))))
+
+
+(defun apigee-policy-name-is-available (pname)
+  "Return true if the passed policy name is unused, in other words
+if no file exists by that name in the given proxy.
+"
+  (let* ((proxy-dir (apigee-path-of-apiproxy))
+         (policy-dir (concat proxy-dir "/apiproxy/policies/"))
+         (filename-to-check (concat policy-dir pname ".xml")))
+    (not (file-exists-p filename-to-check))))
+
+
+(defun apigee--default-val-for-policy-name (ptype)
+  "Returns a string that contains a default policy name, uses a counter
+that is indexed per policy type within each API Proxy.
+"
+  (let* ((proxy-name (apigee-apiproxy-name))
+         (key (concat proxy-name "." ptype))
+         (val 1)
+         (pname (concat ptype "-" (format "%d" val))))
+
+    (while (not (apigee-policy-name-is-available pname))
+      (setq val (1+ val)
+            pname (concat ptype "-" (format "%d" val))))
+
+    pname))
+
+
+(defun apigee--get-createdby ()
+  "Returns a string that contains a username, useful for
+applying as the CreatedBy element in an API Proxy.
+"
+  (or (getenv "LOGNAME") (getenv "USER") "orgAdmin"))
 
 
 
@@ -284,7 +349,7 @@ structure, in the `apigee-apiproxies-home' directory.
             "<APIProxy revision='1' name='" proxy-name "'>\n"
             "  <ConfigurationVersion minorVersion='0' majorVersion='4'/>\n"
             "  <CreatedAt>" (apigee--java-get-time-in-millis) "</CreatedAt>\n"
-            "  <CreatedBy>orgAdmin</CreatedBy>\n"
+            "  <CreatedBy>" (apigee--get-createdby) "</CreatedBy>\n"
             "  <Description></Description>\n"
             "  <DisplayName>" proxy-name "</DisplayName>\n"
             "  <LastModifiedAt>" (apigee--java-get-time-in-millis) "</LastModifiedAt>\n"
@@ -311,7 +376,7 @@ structure, in the `apigee-apiproxies-home' directory.
 
   <HTTPTargetConnection>
     <Properties/>
-    <URL>http://internal.advance.net/v1/RDS/something</URL>
+    <URL>http://internal.example.com/v1/XYZ/something</URL>
   </HTTPTargetConnection>
 </TargetEndpoint>\n"))
 
@@ -323,9 +388,19 @@ structure, in the `apigee-apiproxies-home' directory.
     <BasePath>/v1/" (apigee--random-string) "</BasePath>
     <Properties/>
     <VirtualHost>default</VirtualHost>
+    <VirtualHost>secure</VirtualHost>
   </HTTPProxyConnection>
 
   <FaultRules/>
+
+  <PostFlow name=\"PostFlow\">
+      <Request/>
+      <Response/>
+  </PostFlow>
+  <PreFlow name=\"PreFlow\">
+      <Request/>
+      <Response/>
+  </PreFlow>
 
   <Flows>
     <Flow name='test " (apigee--random-string) " " (apigee--random-string) "'>
@@ -337,7 +412,7 @@ structure, in the `apigee-apiproxies-home' directory.
         </Step>
       </Request>
       <Response/>
-      <Condition>(proxy.pathsuffix MatchesPath '/foo') and (request.verb = 'GET')</Condition>
+      <Condition>(proxy.pathsuffix MatchesPath \"/foo\") and (request.verb = \"GET\")</Condition>
     </Flow>
   </Flows>
 
@@ -349,7 +424,6 @@ structure, in the `apigee-apiproxies-home' directory.
 
         (find-file-existing apiproxy-dir)
         ))))
-
 
 
 (defconst apigee--policy-alist
@@ -422,10 +496,16 @@ structure, in the `apigee-apiproxies-home' directory.
 
      '("Quota"
        "Quota"
-       "<Quota name='##'>
-    <Allow count='${1:1000}'/>
-    <Interval>1</Interval>
-    <TimeUnit>${2:$$(yas/choose-value '(\"second\" \"minute\" \"hour\" \"day\" \"month\"))}</TimeUnit>
+
+       "<Quota async='false' continueOnError='false' enabled='true' name='##'>
+    <DisplayName>##</DisplayName>
+    <FaultRules/>
+    <Properties/>
+    <Allow count='${1:1000}' countRef='request.header.allowed_quota'/>
+    <Interval ref='request.header.quota_count'>1</Interval>
+    <Distributed>false</Distributed>
+    <Synchronous>false</Synchronous>
+    <TimeUnit ref='request.header.quota_timeout'>${2:$$(yas/choose-value '(\"second\" \"minute\" \"hour\" \"day\" \"month\"))}</TimeUnit>
 </Quota>")
 
      '("Quota - Product"
@@ -763,6 +843,8 @@ choose a policy type to insert.  It will then ask for a name for the policy,
 create the appropriate XML file, and yas/snippet expand the template for
 that policy file.
 
+Bug: Does not check for name clashes by newly added policies.
+
 "
   (interactive)
   (let ((apiproxy-dir (apigee-path-of-apiproxy)))
@@ -770,29 +852,36 @@ that policy file.
         (progn
           (if (not (s-ends-with-p "/" apiproxy-dir))
               (setq apiproxy-dir (concat apiproxy-dir "/")))
-          (let ((chosen (apigee-prompt-user-with-choices
-                         apigee--policy-alist)))
+          (let ((chosen (apigee-prompt-user-with-choices apigee--policy-alist)))
             (when chosen
               (let ((policy-dir (concat apiproxy-dir "apiproxy/policies/"))
                     (ptype (cadr chosen))
-                    (raw-template (caddr chosen))
-                    (policy-name (read-string "policy name: ")))
-                (let* ((elaborated-name (concat ptype "." policy-name))
+                    (have-name nil)
+                    (policy-name-prompt "policy name: ")
+                    (raw-template (caddr chosen)))
+
+                (let* ((default-value (apigee--default-val-for-policy-name ptype))
+                       (policy-name
+                        (let (n)
+                          (while (not have-name)
+                            (setq n (read-string policy-name-prompt default-value nil default-value)
+                                  have-name (apigee-policy-name-is-available n)
+                                  policy-name-prompt "That name is in use. Policy name: " ))
+                          n))
+
                        (elaborated-template
                         (if (string-match "##" raw-template)
                             (progn
                             (while (string-match "##" raw-template)
                               (setq raw-template
-                            (replace-match elaborated-name t t raw-template)))
+                            (replace-match policy-name t t raw-template)))
                             raw-template)
                           raw-template)))
                   (let* ((filename (concat policy-dir
-                                           elaborated-name
+                                           policy-name
                                            ".xml"))
                          (myBuffer (find-file filename)))
                     (yas/expand-snippet elaborated-template (point) (point)))))))))))
-
-
 
 
 
