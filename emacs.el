@@ -1,6 +1,6 @@
 ;;
 ;; Dino's .emacs setup file.
-;; Last saved: <2013-July-17 12:04:58>
+;; Last saved: <2013-July-17 12:09:21>
 ;;
 ;; Works with v24.2 of emacs.
 ;;
@@ -70,6 +70,13 @@ selection to the kill ring"
 ;; a bunch of random utility functions
 ;;
 (require 'dino-utility)
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; apigee stuff
+;;
+(require 'apigee)
+(setq apigee-apiproxies-home "~/dev/apiproxies/")
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

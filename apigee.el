@@ -11,7 +11,7 @@
 ;; Requires   : s.el
 ;; License    : New BSD
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2013-July-17 11:59:03>
+;; Last-saved : <2013-July-17 12:09:59>
 ;;
 ;;; Commentary:
 ;;
@@ -835,11 +835,10 @@ In this context the list of choices is the list of available Policies.
 
 
 
-
 ;;;###autoload
 (defun apigee-add-policy ()
   "Invoke this interactively, and the fn will prompt the user to
-choose a policy type to insert.  It will then ask for a name for the policy,
+choose a policy type to insert. It will then ask for a name for the policy,
 create the appropriate XML file, and yas/snippet expand the template for
 that policy file.
 
