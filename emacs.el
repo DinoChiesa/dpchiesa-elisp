@@ -1,6 +1,6 @@
 ;;
 ;; Dino's .emacs setup file.
-;; Last saved: <2013-July-17 12:09:21>
+;; Last saved: <2013-July-25 16:17:56>
 ;;
 ;; Works with v24.2 of emacs.
 ;;
@@ -341,7 +341,7 @@ selection to the kill ring"
          ("\\.s?html?\\'"                     . html-mode)
          ("\\.html$"                          . html-mode)
          ("\\.htm$"                           . html-mode)
-         ("\\.md$"                            . emacs-lisp-mode)     ; what the hell is an .md file?
+         ("\\.md$"                            . fundamental-mode)  ;; markdown
          ("\\.el$"                            . emacs-lisp-mode)
          ;; ("\\.\\(js\\|jsi\\)$"                . javascript-mode)
          ;; ("\\.\\(js\\|jsi\\)$"                . espresso-mode)
@@ -801,6 +801,7 @@ Prompts for INPUT-DIR and OUTPUT-FILE if called-interactively"
 ;; Dired mode
 
 (require 'dired)
+(require 'dired-fixups)
 
 (defun dino-dired-mode-hook-fn ()
   (hl-line-mode 1)
@@ -809,6 +810,8 @@ Prompts for INPUT-DIR and OUTPUT-FILE if called-interactively"
   ;; It doesn't work completely, and it may have side effects.
   ;; ;; (turn-on-auto-revert-mode)
 
+  (local-set-key "\C-c\C-c"  'dino-dired-copy-file-to-dir-in-other-window)
+
   (local-set-key "F" 'dino-dired-do-find))
 
 (add-hook 'dired-mode-hook 'dino-dired-mode-hook-fn)
@@ -816,16 +819,6 @@ Prompts for INPUT-DIR and OUTPUT-FILE if called-interactively"
 ;; eliminate the gid in dired on windows
 (setq ls-lisp-verbosity '(links uid))
 
-;; nifty utility function
-(defun dino-dired-do-find (&optional arg)
-  "Visit each of the marked files, or the file under the point, or when
-prefix arg, the next N files "
-  (interactive "P")
-  (let* ((fn-list
-    (dired-get-marked-files nil arg)))
-    (mapc 'find-file fn-list)))
-
-(require 'dired-fixups)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -985,10 +978,8 @@ refers to relative paths.
     (setq indent-tabs-mode nil)
 
     ;; remove trailing whitespace in C files
-    (add-hook 'local-write-file-hooks
-              '(lambda ()
-                 (save-excursion
-                   (delete-trailing-whitespace))))
+    ;; http://stackoverflow.com/questions/1931784
+    (add-hook 'write-contents-functions 'dino-delete-trailing-whitespace)
 
     (message "dino-c-mode-common-hook-fn: done."))))
 
@@ -1954,7 +1945,8 @@ This gets called by flymake itself."
   (if (boundp 'sgml-mode-syntax-table)
       (modify-syntax-entry ?' "\"'" sgml-mode-syntax-table))
 
-  (add-hook 'before-save-hook 'delete-trailing-whitespace)
+    ;; http://stackoverflow.com/questions/1931784
+  (add-hook 'write-contents-functions 'dino-delete-trailing-whitespace)
 
   ;; when `nxml-slash-auto-complete-flag' is non-nil, get completion
   (setq nxml-slash-auto-complete-flag t)
@@ -2009,7 +2001,8 @@ This gets called by flymake itself."
   (hl-line-mode 1)
   (turn-on-auto-revert-mode)
 
-  (add-hook 'before-save-hook 'delete-trailing-whitespace))
+  (add-hook 'write-contents-functions 'dino-delete-trailing-whitespace))
+
 
 (add-hook 'emacs-lisp-mode-hook 'dino-elisp-mode-fn)
 

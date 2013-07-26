@@ -139,6 +139,54 @@ search modes defined in the new `dired-sort-toggle'.
     (force-mode-line-update)))
 
 
+;; nifty utility function
+(defun dino-dired-do-find (&optional arg)
+  "Visit each of the marked files, or the file under the point, or when
+prefix arg, the next N files "
+  (interactive "P")
+  (let* ((fn-list
+    (dired-get-marked-files nil arg)))
+    (mapc 'find-file fn-list)))
+
+
+(defun mode-for-buffer (&optional buffer-or-string)
+  "Returns the major mode associated with a buffer."
+  (with-current-buffer (or buffer-or-string (current-buffer))
+     major-mode))
+
+
+(defun dino-dired-copy-file-to-dir-in-other-window (&optional arg)
+"If there are two or more windows, and the current one is in
+dired-mode, and one of the others is also dired-mode, then copy
+the file under cursor to the directory shown in the other dired
+window. If the current buffer is not in dired-mode, or if not
+exactly 2 windows show dired, then message and quit.
+"
+  (interactive "P")
+  (unless (eq major-mode 'dired-mode)
+    (error "works only when current-buffer is in dired-mode"))
+  (let ((other-visible-dired-buffers
+         (delq nil (mapcar '(lambda (w)
+                              (let* ((b (window-buffer w))
+                                     (m (mode-for-buffer b)))
+                                (and (eq m 'dired-mode)
+                                     (not (eq b (current-buffer)))
+                                     b)))
+                           (window-list)))))
+
+    (unless (= (length other-visible-dired-buffers) 1)
+      (error "Can copy only if exactly 2 dired windows are visible"))
+
+    (let ((dst-dir (expand-file-name (with-current-buffer (car other-visible-dired-buffers)
+                                       default-directory))))
+
+      (mapcar '(lambda (f) (copy-file f dst-dir 1))
+              (dired-get-marked-files nil arg))
+       (with-current-buffer (car other-visible-dired-buffers)
+         (revert-buffer)))))
+
+
+
 (provide 'dired-fixups)
 
 ;;; dired-fixups.el ends here

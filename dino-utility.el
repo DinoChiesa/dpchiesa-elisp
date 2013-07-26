@@ -84,13 +84,16 @@
   "If the frame is split vertically, split it horizontally or vice versa.
 Assumes that the frame is only split into two."
   (interactive)
-  (unless (= (length (window-list)) 2) (error "Can only toggle a frame split in two"))
+  (unless (= (length (window-list)) 2)
+    (error "Can toggle only if the frame is split in two"))
   (let ((split-vertically-p (window-combined-p)))
     (delete-window) ; closes current window
     (if split-vertically-p
         (split-window-horizontally)
       (split-window-vertically)) ; gives us a split with the other window twice
     (switch-to-buffer nil))) ; restore the original window in this part of the frame
+
+
 
 
 (defun dino-indent-buffer ()
@@ -103,6 +106,21 @@ like XML mode or csharp mode."
   "Toggles the buffer-modified-p value for the current buffer"
   (interactive)
   (set-buffer-modified-p (not (buffer-modified-p))))
+
+(defun dino-do-markdown ()
+  "removes the `delete-trailing-whitespace' fn from the `before-save-hook'.
+This is important when editing markdown files which use trailing whitespace
+to indicate a newline.
+"
+  (interactive)
+  ;; see http://stackoverflow.com/questions/1931784
+  (remove-hook 'write-contents-functions 'dino-delete-trailing-whitespace))
+
+
+(defun dino-delete-trailing-whitespace ()
+  (save-excursion
+    (delete-trailing-whitespace)))
+
 
 
  (defvar dino-no-untabify-modes '(makefile-mode BSDmakefile)
