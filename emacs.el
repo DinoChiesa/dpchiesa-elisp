@@ -1,6 +1,6 @@
 ;;
 ;; Dino's .emacs setup file.
-;; Last saved: <2013-July-25 18:03:47>
+;; Last saved: <2013-July-25 21:53:25>
 ;;
 ;; Works with v24.2 of emacs.
 ;;
@@ -445,11 +445,9 @@ selection to the kill ring"
 
   (local-set-key (kbd "<f7>") 'find-file-at-point)
 
-  ;; Make sure this is OFF.
-  ;; For some reason this is not working. When I open
-  ;; an HTML buffer, refill (autofill) is ON. ???
-  (require 'refill)
-  (refill-mode 0) )
+  ;; Make sure autofill is OFF.
+  (auto-fill-mode -1)
+  )
 
 (add-hook 'html-mode-hook 'dino-html-mode-fn)
 
