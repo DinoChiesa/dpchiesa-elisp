@@ -122,7 +122,6 @@ to indicate a newline.
     (delete-trailing-whitespace)))
 
 
-
  (defvar dino-no-untabify-modes '(makefile-mode BSDmakefile)
   "Normally my setup untabifies buffers before save. This list
 provides a set of modes for which no untabify is desired.")

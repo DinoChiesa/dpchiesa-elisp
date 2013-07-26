@@ -1,6 +1,6 @@
 ;;
 ;; Dino's .emacs setup file.
-;; Last saved: <2013-July-25 16:17:56>
+;; Last saved: <2013-July-25 18:03:47>
 ;;
 ;; Works with v24.2 of emacs.
 ;;
@@ -979,7 +979,11 @@ refers to relative paths.
 
     ;; remove trailing whitespace in C files
     ;; http://stackoverflow.com/questions/1931784
-    (add-hook 'write-contents-functions 'dino-delete-trailing-whitespace)
+    ;;(add-hook 'write-contents-functions 'dino-delete-trailing-whitespace)
+    (add-hook 'local-write-file-hooks
+              '(lambda ()
+                 (save-excursion
+                   (delete-trailing-whitespace))))
 
     (message "dino-c-mode-common-hook-fn: done."))))
 
@@ -1945,8 +1949,12 @@ This gets called by flymake itself."
   (if (boundp 'sgml-mode-syntax-table)
       (modify-syntax-entry ?' "\"'" sgml-mode-syntax-table))
 
-    ;; http://stackoverflow.com/questions/1931784
-  (add-hook 'write-contents-functions 'dino-delete-trailing-whitespace)
+  ;; http://stackoverflow.com/questions/1931784
+  ;;(add-hook 'write-contents-functions 'dino-delete-trailing-whitespace)
+  (add-hook 'local-write-file-hooks
+              '(lambda ()
+                 (save-excursion
+                   (delete-trailing-whitespace))))
 
   ;; when `nxml-slash-auto-complete-flag' is non-nil, get completion
   (setq nxml-slash-auto-complete-flag t)
@@ -2001,7 +2009,18 @@ This gets called by flymake itself."
   (hl-line-mode 1)
   (turn-on-auto-revert-mode)
 
-  (add-hook 'write-contents-functions 'dino-delete-trailing-whitespace))
+  ;; This write-contents-functions hook seems awesome except it wasn't
+  ;; working for me.  It's possible that it was not working because of a
+  ;; side-effect of the markdown fn (dino-do-markdown), which I created
+  ;; to prevent the deletion of trailing whitespace in markdown
+  ;; buffers. I don't have time for all this nonsense.
+
+  ;;(add-hook 'write-contents-functions 'dino-delete-trailing-whitespace)
+  (add-hook 'local-write-file-hooks
+              '(lambda ()
+                 (save-excursion
+                   (delete-trailing-whitespace))))
+  )
 
 
 (add-hook 'emacs-lisp-mode-hook 'dino-elisp-mode-fn)
@@ -2138,6 +2157,11 @@ i.e M-x kmacro-set-counter."
   ;;(add-to-list 'yas/known-modes 'espresso-mode) ;; need this?
   (add-to-list 'yas/known-modes 'js-mode) ;; need this?
   (yas/minor-mode-on)
+
+  (add-hook 'local-write-file-hooks
+              '(lambda ()
+                 (save-excursion
+                   (delete-trailing-whitespace))))
 
   (require 'imenu)
   (imenu-add-menubar-index)
