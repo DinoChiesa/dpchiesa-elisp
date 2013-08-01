@@ -1,6 +1,6 @@
 ;;
 ;; Dino's .emacs setup file.
-;; Last saved: <2013-July-25 21:53:25>
+;; Last saved: <2013-July-31 20:43:47>
 ;;
 ;; Works with v24.2 of emacs.
 ;;
@@ -809,6 +809,7 @@ Prompts for INPUT-DIR and OUTPUT-FILE if called-interactively"
   ;; ;; (turn-on-auto-revert-mode)
 
   (local-set-key "\C-c\C-c"  'dino-dired-copy-file-to-dir-in-other-window)
+  (local-set-key "\C-c\C-m"  'dino-dired-move-file-to-dir-in-other-window)
 
   (local-set-key "F" 'dino-dired-do-find))
 
@@ -1945,7 +1946,8 @@ This gets called by flymake itself."
   ;; it's an apostrophe used in contractions.
   ;; But treating it as part of a word is counter-productive in an XML buffer.
   (if (boundp 'sgml-mode-syntax-table)
-      (modify-syntax-entry ?' "\"'" sgml-mode-syntax-table))
+      (modify-syntax-entry ?' "\"" sgml-mode-syntax-table)
+    (modify-syntax-entry ?' "\""))
 
   ;; http://stackoverflow.com/questions/1931784
   ;;(add-hook 'write-contents-functions 'dino-delete-trailing-whitespace)
