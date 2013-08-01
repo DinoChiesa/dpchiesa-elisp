@@ -11,7 +11,7 @@
 ;; Requires   : s.el
 ;; License    : New BSD
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2013-July-17 12:09:59>
+;; Last-saved : <2013-July-30 11:59:54>
 ;;
 ;;; Commentary:
 ;;
@@ -237,7 +237,6 @@ currently being edited.
 
 
 
-
 (defun apigee-upload-bundle-with-pushapi ()
   "Interactive fn that uses the pushapi script to upload the bundle
 that contains the file or directory currently being edited.
@@ -393,14 +392,14 @@ structure, in the `apigee-apiproxies-home' directory.
 
   <FaultRules/>
 
-  <PostFlow name=\"PostFlow\">
-      <Request/>
-      <Response/>
-  </PostFlow>
   <PreFlow name=\"PreFlow\">
       <Request/>
       <Response/>
   </PreFlow>
+  <PostFlow name=\"PostFlow\">
+      <Request/>
+      <Response/>
+  </PostFlow>
 
   <Flows>
     <Flow name='test " (apigee--random-string) " " (apigee--random-string) "'>
