@@ -154,15 +154,8 @@ prefix arg, the next N files "
   (with-current-buffer (or buffer-or-string (current-buffer))
      major-mode))
 
-
-(defun dino-dired-copy-file-to-dir-in-other-window (&optional arg)
-"If there are two or more windows, and the current one is in
-dired-mode, and one of the others is also dired-mode, then copy
-the file under cursor to the directory shown in the other dired
-window. If the current buffer is not in dired-mode, or if not
-exactly 2 windows show dired, then message and quit.
-"
-  (interactive "P")
+(defun dino-dired-copy-or-move-other-window (fn)
+  "copy or move the marked files to another directory."
   (unless (eq major-mode 'dired-mode)
     (error "works only when current-buffer is in dired-mode"))
   (let ((other-visible-dired-buffers
@@ -180,10 +173,36 @@ exactly 2 windows show dired, then message and quit.
     (let ((dst-dir (expand-file-name (with-current-buffer (car other-visible-dired-buffers)
                                        default-directory))))
 
-      (mapcar '(lambda (f) (copy-file f dst-dir 1))
+      (mapcar '(lambda (f) (funcall fn f dst-dir 1))
               (dired-get-marked-files nil arg))
        (with-current-buffer (car other-visible-dired-buffers)
-         (revert-buffer)))))
+         (revert-buffer))
+       (revert-buffer))))
+
+
+(defun dino-dired-move-file-to-dir-in-other-window (&optional arg)
+"If there are two or more windows, and the current one is in
+dired-mode, and one of the others is also dired-mode, then move
+the file under cursor or the marked files to the directory shown
+in the other dired window. If the current buffer is not in
+dired-mode, or if not exactly 2 windows show dired, then message
+and quit.
+"
+  (interactive "P")
+  (dino-dired-copy-or-move-other-window #'rename-file))
+
+(defun dino-dired-copy-file-to-dir-in-other-window (&optional arg)
+"If there are two or more windows, and the current one is in
+dired-mode, and one of the others is also dired-mode, then copy
+the file under cursor or the marked files to the directory shown
+in the other dired window. If the current buffer is not in
+dired-mode, or if not exactly 2 windows show dired, then message
+and quit.
+"
+  (interactive "P")
+    (dino-dired-copy-or-move-other-window #'copy-file))
+
+
 
 
 
