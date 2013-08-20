@@ -11,7 +11,7 @@
 ;; Requires   : s.el
 ;; License    : New BSD
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2013-July-30 11:59:54>
+;; Last-saved : <2013-August-07 10:29:59>
 ;;
 ;;; Commentary:
 ;;
@@ -267,6 +267,14 @@ what is returned from the java snippet:
 "
   (let ((ct (current-time)))
     (format "%d" (+ (* (+ (* (car ct) 65536) (cadr ct)) 1000) (/ (caddr ct) 1000)))))
+
+(defun apigee-insert-java-time-in-millis ()
+  "inserts a string into the current buffer that contains a number equal in value to
+what is returned from the java snippet:
+      (new GregrianCalendar()).getTimeInMillis()
+"
+  (interactive)
+  (insert (apigee--java-get-time-in-millis)))
 
 
 (defun apigee-policy-name-is-available (pname)
