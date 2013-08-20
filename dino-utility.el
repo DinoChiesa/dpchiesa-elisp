@@ -208,27 +208,54 @@ in the list `dino-no-untabify-modes'
 ;; )
 
 
-
 (defun dino-insert-timeofday ()
-  "function to insert time of day at point . format: DayOfWeek, Date Month Year   24hrTime"
+  "Insert a string representing the time of day at point. The
+format varies depending on the mode, or if the minibuffer is
+active or not.  If the minibuffer is active, or if the mode is
+`wdired-mode', then the format used is like this:
+
+  20130820-0848
+
+This allows insertion of the time of day into filenames.
+Otherwise, the format is like this:
+
+  Tuesday, 20 August 2013, 08:48
+
+"
   (interactive)
-  (let (localstring mytime)
-    (setq localstring (current-time-string))
-    ;; example:
-    ;; Mon, 17 Jun 96  12:52
-    (setq mytime (concat (substring localstring 0 3)  ;day-of-week
-                         ", "
-                         (substring localstring 8 10) ;day number
-                         " "
-                         (substring localstring 4 7)  ;month
-                         " "
-                         (substring localstring 20 24 ) ;4-digit year
-                         "  "
-                         (substring localstring 11 16 ) ;24-hr time
-                         "\n"
-                         ))
-    (insert mytime))
-)
+  (let ((tf1 "%Y%m%d-%H%M")
+        (tf2 "%A, %e %B %Y, %H:%M")
+        tf)
+
+    (setq tf
+         (if (or (window-minibuffer-p) (equal major-mode 'wdired-mode))
+             tf1 tf2))
+
+    ;; If the user has invoked this cmd twice in succession, then swap
+    ;; formats. Only if not in the minibuffer!  Using colons in the
+    ;; minibuffer causes emacs to go haywire for me.
+    (if (and
+             (boundp 'dino-timeofday--last-inserted-string)
+             (stringp dino-timeofday--last-inserted-string)
+             (markerp dino-timeofday--last-inserted-marker)
+             (marker-position dino-timeofday--last-inserted-marker)
+             (or (eq last-command 'this-command)
+                 (= (point) dino-timeofday--last-inserted-marker)))
+
+        (progn
+          ;; remove prior insertion
+          (backward-delete-char-untabify (length dino-timeofday--last-inserted-string))
+          ;; use "the other" format
+          (setq tf tf1)))
+
+    ;; examples:
+    ;; 19960617-1252
+    ;; Monday, 17 June 1996, 12:52
+    (setq dino-timeofday--last-inserted-string (format-time-string tf))
+    (insert dino-timeofday--last-inserted-string)
+    (setq dino-timeofday--last-inserted-marker (point-marker))))
+
+
 
 
 (defvar dino-uuidgen-prog
