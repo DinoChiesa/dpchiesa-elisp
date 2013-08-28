@@ -1,6 +1,6 @@
 ;;
 ;; Dino's .emacs setup file.
-;; Last saved: <2013-July-31 20:43:47>
+;; Last saved: <2013-August-27 18:30:19>
 ;;
 ;; Works with v24.2 of emacs.
 ;;
@@ -350,7 +350,7 @@ selection to the kill ring"
          ("\\.txt$"                           . text-mode)
          ("\\.asmx$"                          . csharp-mode)         ; likely, could be another language tho
          ("\\.\\(vb\\)$"                      . vbnet-mode)
-         ("\\.\\(vbs\\)$"                     . vbs-mode)
+         ("\\.\\(vbs\\|vba\\)$"               . vbs-mode)
          ("\\.\\(cs\\|vb\\|shfb\\)proj$"      . xml-mode)            ; msbuild file
          ("\\.config$"                        . xml-mode)            ; .NET config file
          ("\\.\\(xsd\\|wsdl\\)$"              . xml-mode)            ; schema or WSDL file
@@ -941,6 +941,17 @@ refers to relative paths.
 (require 'flymake-cursor)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defun dino-enable-delete-trailing-whitespace ()
+  "remove trailing whitespace"
+  (interactive)
+    ;; remove trailing whitespace in C files
+    ;; http://stackoverflow.com/questions/1931784
+    ;;(add-hook 'write-contents-functions 'dino-delete-trailing-whitespace)
+    (add-hook 'local-write-file-hooks
+              '(lambda ()
+                 (save-excursion
+                   (delete-trailing-whitespace)))))
 
 
 

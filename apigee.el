@@ -11,7 +11,7 @@
 ;; Requires   : s.el
 ;; License    : New BSD
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2013-August-07 10:29:59>
+;; Last-saved : <2013-August-28 15:17:18>
 ;;
 ;;; Commentary:
 ;;
@@ -123,6 +123,45 @@ function.  Eg
 
 ;;(setq apigee-create-bundle-zip-command-template "zip %f -r apiproxy/ -x \"*.*~\"")
 
+(defconst apigee-http-status-message-alist
+  (list
+   '("200" "OK")
+   '("302" "Moved")
+   '("400" "Bad Request")
+   '("404" "Not Found")
+   '("500" "Server Error")
+   '("503" "Server Busy")))
+
+
+(defconst apigee-entity-to-entity-id-types-alist
+  (list
+   '("apiproduct" ("apiproductname" "appname" "appid" "consumerkey"))
+   '("app" ("appname" "appid" "consumerkey"))
+   '("company" ("companyname" "appid" "consumerkey"))
+   '("companydeveloper" ("companyname"))
+   '("consumerkey" ("consumerkey"))
+   '("developer" ("developeremail" "developerid" "appid" "consumerkey"))))
+
+
+(defconst apigee-common-variable-list
+  '("environment.name"
+    "request.header.X-Forwarded-For"
+    "requestMessageUri"
+    "request.verb"
+    "response.status.code"
+    "api_key"
+    "system.time.second"
+    "error.state"
+    "error.content"
+    "error.state"
+    "responsecache.responseCache.cachehit"
+    "client.received.start.timestamp"
+    "system.timestamp"
+    "target.sent.start.timestamp"
+    "target.received.end.timestamp"
+    "target.url"
+    "request.header.Accept"
+    "target.received.content.length"))
 
 
 (defun apigee-path-of-apiproxy ()
@@ -311,6 +350,13 @@ applying as the CreatedBy element in an API Proxy.
 
 
 
+(defun apigee-entity-id-types (entity-type)
+  "return a list of id types for a given entity-type."
+  (let ((id-types (assoc entity-type apigee-entity-to-entity-id-types-alist)))
+    (if id-types (cadr id-types))))
+
+
+
 (defun apigee--random-string (&optional len)
   "produce a string of length LEN containing random characters,
 or of length 8 if the len is not specified.
@@ -432,10 +478,57 @@ structure, in the `apigee-apiproxies-home' directory.
         (find-file-existing apiproxy-dir)
         ))))
 
+(defun apigee--snippet-field (field-num)
+  "returns the FIELD-NUMth field from the currently
+active YAS snippet. This is a utility fn for use within
+apigee snippets, to allow expansion for field (N) to depend on the
+value that was expanded for field (N-1). "
+    (nth (- field-num 1) (yas/snippet-fields snippet)))
+
+
+
+(defun apigee--fixup-script-name (name)
+  "returns a stripped name suitable for use for a file in the resources/jsc directory."
+
+  (let* ((prefix "Javascript-")
+         (pos (length prefix)))
+    (if (and (>= (length name) (length prefix))
+             (string= prefix (substring name 0 pos)))
+        (let ((s (substring name pos)))
+          (concat (downcase (substring s 0 1)) (substring s 1)))
+      name)))
+
+
+
 
 (defconst apigee--policy-alist
     (list
-     '("AssignMessage"
+
+     '("AccessEntity"
+     "AccessEntity"
+     "<AccessEntity name='##'>
+  <EntityType value='${1:$$(yas/choose-value '(\"apiproduct\" \"app\" \"company\" \"companydeveloper\" \"consumerkey\" \"developer\"))}' />
+  <EntityIdentifier type='${2:$$(yas/choose-value (let ((field1 (apigee--snippet-field 1))) (apigee-entity-id-types (buffer-substring-no-properties (yas/field-start field1) (yas/field-end field1)))))}' ref='${3:varName}' />
+  <SecondaryIdentifier type='$4' ref='$5' />
+</AccessEntity>\n")
+
+     '("AssignMessage - remove query param"
+       "AssignMessage"
+       "<AssignMessage enabled='true' continueOnError='false' async='false' name='##'>
+  <DisplayName>AssignMessage = Remove Query Param</DisplayName>
+  <FaultRules/>
+  <Properties/>
+  <Remove>
+    <QueryParams>
+      <QueryParam name='${2:apikey}'/>
+    </QueryParams>
+  </Remove>
+  <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+  <AssignTo createNew='false' transport='http' type='request'></AssignTo>
+</AssignMessage>\n")
+
+
+     '("AssignMessage - set query param"
        "AssignMessage"
        "<AssignMessage name='##'>
   <AssignTo createNew='false' type='${1:$$(yas/choose-value '(\"request\" \"response\"))}'/>
@@ -453,12 +546,12 @@ structure, in the `apigee-apiproxies-home' directory.
   </AssignVariable>
 </AssignMessage>\n")
 
-     '("AssignMessage - Store Original Accept"
+     '("AssignMessage - Store Original header"
      "AssignMessage"
      "<AssignMessage name='##'>
   <AssignVariable>
-    <Name>${1}.originalAccept</Name>
-    <Ref>request.header.Accept</Ref>
+    <Name>${1:originalRequestHeaders}.${2:$$(yas/choose-value '(\"Content-Type\" \"Accept\"))}</Name>
+    <Ref>request.header.$2</Ref>
   </AssignVariable>
 </AssignMessage>\n")
 
@@ -466,7 +559,7 @@ structure, in the `apigee-apiproxies-home' directory.
        "AssignMessage"
        "<AssignMessage name='##'>
   <AssignTo createNew='false' type='response'/>
-  <!-- force content-type. This allows ExtractVariables to work. -->
+  <!-- force content-type. This allows subsequent XMLToJSON or ExtractVariables to work. -->
   <Set>
     <Headers>
       <Header name='Content-Type'>application/json</Header>
@@ -503,16 +596,19 @@ structure, in the `apigee-apiproxies-home' directory.
 
      '("Quota"
        "Quota"
-
        "<Quota async='false' continueOnError='false' enabled='true' name='##'>
     <DisplayName>##</DisplayName>
     <FaultRules/>
     <Properties/>
-    <Allow count='${1:1000}' countRef='request.header.allowed_quota'/>
-    <Interval ref='request.header.quota_count'>1</Interval>
-    <Distributed>false</Distributed>
-    <Synchronous>false</Synchronous>
-    <TimeUnit ref='request.header.quota_timeout'>${2:$$(yas/choose-value '(\"second\" \"minute\" \"hour\" \"day\" \"month\"))}</TimeUnit>
+    <!-- the count specified is used unless overridden by the variable referenced here -->
+    <Allow countRef='verifyapikey.Verify-Api-Key.apiproduct.developer.quota.limit' count='1000'/>
+    <!-- use the interval in the variable; if not present use the value specified here. -->
+    <Interval ref='verifyapikey.Verify-Api-Key.apiproduct.developer.quota.interval'>1</Interval>
+    <!-- use the timeunit provided in the variable; if not present use the value specified here. -->
+    <TimeUnit ref='verifyapikey.Verify-Api-Key.apiproduct.developer.quota.timeunit'>${2:$$(yas/choose-value '(\"second\" \"minute\" \"hour\" \"day\" \"month\"))}</TimeUnit>
+    <Distributed>true</Distributed>
+    <Synchronous>true</Synchronous>
+    <PreciseAtSecondsLevel>false</PreciseAtSecondsLevel>
 </Quota>")
 
      '("Quota - Product"
@@ -523,6 +619,25 @@ structure, in the `apigee-apiproxies-home' directory.
   <Allow countRef='apiproduct.developer.quota.limit'/>
   <Identifier ref='client_id'/>
 </Quota>\n")
+
+
+     '("VerifyAPIKey - in query param"
+       "VerifyAPIKey"
+     "<VerifyAPIKey enabled='true' continueOnError='false' async='false'  name='##'>
+    <DisplayName>Verify API Key</DisplayName>
+    <FaultRules/>
+    <Properties/>
+    <APIKey ref='request.queryparam.apikey'></APIKey>
+</VerifyAPIKey>\n")
+
+     '("VerifyAPIKey - in header"
+       "VerifyAPIKey"
+     "<VerifyAPIKey enabled='true' continueOnError='false' async='false'  name='##'>
+    <DisplayName>Verify API Key</DisplayName>
+    <FaultRules/>
+    <Properties/>
+    <APIKey ref='request.header.X-Apikey'></APIKey>
+</VerifyAPIKey>\n")
 
      '("GetAPIProduct - fixed"
        "GetAPIProduct"
@@ -548,25 +663,58 @@ structure, in the `apigee-apiproxies-home' directory.
      '("XMLToJSON"
        "XMLToJSON"
        "<XMLToJSON name='##'>
-    <DisplayName>XML2JSON Mediation</DisplayName>
-    <Description>This policy converts the XML returned by origin servers
-    to JSON Message. it can be applied on the response when the Accept
-    Encoding on the original request is application/json</Description>
-        <Format>yahoo</Format>
-    <!--<Options>
-        <RecognizeNumber>true</RecognizeNumber>
-        <RecognizeBoolean>true</RecognizeBoolean>
-        <RecognizeNull>true</RecognizeNull>
-        <NullValue>NULL</NullValue>
-        <NamespaceSeparator>***</NamespaceSeparator>
-        <NamespaceBlockName>#namespaces</NamespaceBlockName>
-        <DefaultNamespaceNodeName>&amp;</DefaultNamespaceNodeName>
-        <TextAlwaysAsProperty>false</TextAlwaysAsProperty>
-        <TextNodeName>TEXT</TextNodeName>
-        <AttributeBlockName>ATT_BLOCK</AttributeBlockName>
-        <AttributePrefix>ATT_</AttributePrefix>
-    </Options>-->
+  <DisplayName>XML2JSON Mediation</DisplayName>
+  <Description>This policy converts the XML in a message to JSON, when
+  the content-type is text/xml. It can be applied on the request or the
+  response.</Description>
+  <Format>yahoo</Format>
+  <Options>
+    <RecognizeNumber>true</RecognizeNumber>
+    <RecognizeBoolean>true</RecognizeBoolean>
+    <RecognizeNull>true</RecognizeNull>
+    <!--
+      <NullValue>NULL</NullValue>
+      <NamespaceSeparator>***</NamespaceSeparator>
+      <NamespaceBlockName>#namespaces</NamespaceBlockName>
+      <DefaultNamespaceNodeName>&amp;</DefaultNamespaceNodeName>
+      <TextAlwaysAsProperty>false</TextAlwaysAsProperty>
+      <TextNodeName>TEXT</TextNodeName>
+      <AttributeBlockName>ATT_BLOCK</AttributeBlockName>
+      <AttributePrefix>ATT_</AttributePrefix>
+    -->
+  </Options>
 </XMLToJSON>\n")
+
+
+     '("ExtractVariables - from AccessEntity"
+       "Extract"
+       "<ExtractVariables name='##'>
+  <Source>AccessEntity.AccessEntity-$1</Source>
+  <VariablePrefix>entity</VariablePrefix>
+  <XMLPayload>
+    <Variable name='${2:varname1}' type='string'>
+      <XPath>/Developer/Attributes/Attribute[Name='$2']/Value/text()</XPath>
+    </Variable>
+    <Variable name='${3:varname2}' type='string'>
+      <XPath>/Developer/Attributes/Attribute[Name='$3']/Value/text()</XPath>
+    </Variable>
+  </XMLPayload>
+</ExtractVariables>")
+
+     '("ExtractVariables - XML"
+       "Extract"
+       "<ExtractVariables name='##'>
+  <Source>$1</Source>
+  <VariablePrefix>entity</VariablePrefix>
+  <XMLPayload>
+    <Variable name='${2:varname1}' type='string'>
+      <XPath>/Developer/Attributes/Attribute[Name='$2']/Value/text()</XPath>
+    </Variable>
+    <Variable name='${3:varname2}' type='string'>
+      <XPath>/Developer/Attributes/Attribute[Name='$3']/Value/text()</XPath>
+    </Variable>
+  </XMLPayload>
+</ExtractVariables>")
 
 
      '("ExtractVariables - JSON"
@@ -612,33 +760,185 @@ structure, in the `apigee-apiproxies-home' directory.
     </HTTPTargetConnection>
 </ServiceCallout>\n")
 
-     '("OAuthV2 - GenerateAccessToken"
+     '("OAuthV2 - GenerateAccessToken auth_code, client creds, passwd"
        "OAuthV2"
        "<OAuthV2 name='##'>
-    <DisplayName>RefreshAccessToken</DisplayName>
+    <DisplayName>OAuthV2 - GenerateAccessToken</DisplayName>
+    <Operation>GenerateAccessToken</Operation>
     <FaultRules/>
     <Properties/>
-    <Operation>GenerateAccessToken</Operation>
-    <ExpiresIn>2400000</ExpiresIn>
+    <!-- ExpiresIn, in milliseconds. The ref is optional. The explicitly specified -->
+    <!-- value is the default, when the ref cannot be resolved.                    -->
+    <ExpiresIn ref='flow.variable'>2400000</ExpiresIn>
+
+    <!-- RefreshTokenExpiresIn is optional; if it is not specified, the default    -->
+    <!-- value will be used which is -1 (no expiration).                           -->
+    <RefreshTokenExpiresIn>3600000</RefreshTokenExpiresIn>
+
     <SupportedGrantTypes>
+        <!-- keep one or more of the following -->
         <GrantType>authorization_code</GrantType>
         <GrantType>password</GrantType>
         <GrantType>client_credentials</GrantType>
     </SupportedGrantTypes>
-    <GenerateResponse/>
+    <!-- variable that specifies the requested grant type -->
+    <GrantType>${1:$$(yas/choose-value '(\"request.queryparam.grant_type\" \"request.formparam.grant_type\" \"flowVariable.something\" ))}</GrantType>
+
+    <!--
+    ExternalAuthorization is used to support external authorization. It is
+    optional; if not present, the implied value is false. If it is present and
+    true:
+        - this policy looks for a flow variable with the name 'oauth_external_authorization_status'.
+          which indicates the external authorization status.
+        - if 'oauth_external_authorization_status' is true, the policy does not
+          explicitly validate the client_id and client_secret.
+          Still, the client_id is expected to be present in the request.
+
+        - if 'oauth_external_authorization_status' is false,
+          this signals that external authorization has failed and the policy throws
+          an appropriate error message.
+
+    If ExternalAuthorization is set to false or if the element is not present, then
+    the policy validates the client_id and secret against the internal key store.
+
+    -->
+
+    <ExternalAuthorization>${2:$$(yas/choose-value '(\"true\" \"false\" ))}</ExternalAuthorization>
+
+    <GenerateResponse enabled='true'/>
+</OAuthV2>\n")
+
+     '("OAuthV2 - GenerateAccessToken - Implicit Grant"
+       "OAuthV2"
+       "<OAuthV2 name='##'>
+    <DisplayName>OAuthV2 - GenerateAccessTokenImplicitGrant</DisplayName>
+    <Operation>GenerateAccessTokenImplicitGrant</Operation>
+    <FaultRules/>
+    <Properties/>
+    <!-- ExpiresIn, in milliseconds. The ref is optional. The explicitly specified -->
+    <!-- value is the default, when the ref cannot be resolved.                    -->
+    <ExpiresIn ref='flow.variable'>2400000</ExpiresIn>
+
+    <!-- RefreshTokenExpiresIn is optional; if it is not specified, the default    -->
+    <!-- value will be used which is -1 (no expiration).                           -->
+    <RefreshTokenExpiresIn>3600000</RefreshTokenExpiresIn> <!-- Optional -->
+
+    <ResponseType>flow.variable</ResponseType> <!-- Optional -->
+    <ClientId>flow.variable</ClientId> <!-- Optional -->
+    <RedirectUri>flow.variable</RedirectUri> <!-- Optional -->
+    <Scope>flow.variable</Scope> <!-- Optional -->
+    <State>flow.variable</State> <!-- Optional -->
+    <AppEndUser>flow.variable</AppEndUser> <!-- Optional -->
+    <Attributes> <!-- Optional -->
+      <Attribute name='attr_name1' ref='flow.variable' display='true|false'>value1</Attribute>
+      <Attribute name='attr_name2' ref='flow.variable' display='true|false'>value2</Attribute>
+    </Attributes>
+
+    <!--
+    ExternalAuthorization is used to support external authorization. It is
+    optional; if not present, the implied value is false. If it is present and
+    true:
+        - this policy looks for a flow variable with the name 'oauth_external_authorization_status'.
+          which indicates the external authorization status.
+        - if 'oauth_external_authorization_status' is true, the policy does not
+          explicitly validate the client_id and client_secret.
+          Still, the client_id is expected to be present in the request.
+
+        - if 'oauth_external_authorization_status' is false,
+          this signals that external authorization has failed and the policy throws
+          an appropriate error message.
+
+    If ExternalAuthorization is set to false or if the element is not present, then
+    the policy validates the client_id and secret against the internal key store.
+
+    -->
+
+    <ExternalAuthorization>${2:$$(yas/choose-value '(\"true\" \"false\" ))}</ExternalAuthorization>
+
+    <GenerateResponse enabled='true'/>
+</OAuthV2>\n")
+
+     '("OAuthV2 - GenerateAuthorizationCode"
+       "OAuthV2"
+       "<OAuthV2 name='##'>
+    <DisplayName>OAuthV2 - GenerateAuthorizationCode</DisplayName>
+    <Operation>GenerateAuthorizationCode</Operation>
+    <FaultRules/>
+    <Properties/>
+    <!-- ExpiresIn is milliseconds. 3600000 = 1 hour. -->
+    <!-- The ref is optional. The explicitly specified value is the default, -->
+    <!-- when the ref cannot be resolved. -->
+    <ExpiresIn ref='flow.variable'>2400000</ExpiresIn>
+
+    <!-- The following are Optional -->
+    <ResponseType>flow.variable</ResponseType>
+    <ClientId>flow.variable</ClientId>
+    <RedirectUri>flow.variable</RedirectUri>
+    <Code>flow.variable</Code>
+    <Scope>flow.variable</Scope>
+    <State>flow.variable</State>
+    <Attributes>
+      <!-- If set to false, the attribute wont be delivered in the auth code response. -->
+      <Attribute name='attr_name1' ref='flow.variable' display='true|false'>value1</Attribute>
+      <Attribute name='attr_name2' ref='flow.variable' display='true|false'>value2</Attribute>
+    </Attributes>
+
+    <!-- With <GenerateResponse/>, a response will be generated and returned. -->
+    <!-- Without that element, the policy will fill these variables: -->
+    <!-- oauthv2authcode.<PolicyName>.code        -->
+    <!-- oauthv2authcode.<PolicyName>.redirect_ur -->
+    <!-- oauthv2authcode.<PolicyName>.scope       -->
+    <!-- oauthv2authcode.<PolicyName>.client_id   -->
+    <GenerateResponse enabled='true'/>
+</OAuthV2>\n")
+
+     '("OAuthV2 - VerifyAccessToken"
+       "OAuthV2"
+       "<OAuthV2 async='false' continueOnError='false' enabled='true' name='##'>
+    <DisplayName>OAuthV2 - VerifyAccessToken</DisplayName>
+    <Operation>VerifyAccessToken</Operation>
+    <FaultRules/>
+    <Properties/>
+    <Attributes/>
+
+    <!--
+    This policy sets the following flow variables:
+      organization_name
+      developer.id
+      developer.app.name
+      client_id
+      grant_type
+      token_type
+      access_token
+      accesstoken.{custom_attribute}
+      issued_at
+      expires_in
+      status
+      scope
+      apiproduct.name*
+      apiproduct.<custom_attribute_name>*
+    -->
+
+    <ExternalAuthorization>false</ExternalAuthorization>
+    <SupportedGrantTypes/>
 </OAuthV2>\n")
 
      '("OAuthV2 - RefreshAccessToken"
        "OAuthV2"
-       "<OAuthV2 name='##' enabled='true' continueOnError='false' async='false' >
-    <DisplayName>RefreshAccessToken</DisplayName>
+       "<OAuthV2 enabled='true' continueOnError='false' async='false' name='##'>
+    <DisplayName>OAuthV2 - RefreshAccessToken</DisplayName>
+    <Operation>RefreshAccessToken</Operation>
     <FaultRules/>
     <Properties/>
     <Attributes/>
-    <ExpiresIn>100000000000</ExpiresIn>
+
+    <!-- ExpiresIn is milliseconds. 3600000 = 1 hour -->
+    <!-- The ref is optional. The explicitly specified value is the default, -->
+    <!-- when the ref cannot be resolved. -->
+    <ExpiresIn ref='flow.variable'>3600000</ExpiresIn>
+
     <ExternalAuthorization>false</ExternalAuthorization>
     <GrantType>request.formparam.grant_type</GrantType>
-    <Operation>RefreshAccessToken</Operation>
     <RefreshToken>request.formparam.refresh_token</RefreshToken>
     <GenerateResponse enabled='true'>
         <Format>FORM_PARAM</Format>
@@ -646,12 +946,17 @@ structure, in the `apigee-apiproxies-home' directory.
     <SupportedGrantTypes/>
 </OAuthV2>\n")
 
-
-     '("GetOAuthV2Info"
+     '("OAuthV2 - GetInfo"
        "GetOAuthV2Info"
      "<GetOAuthV2Info name='##'>
   <AccessToken ref='openidconnect.access_token'/>
 </GetOAuthV2Info>\n")
+
+     '("OAuthV1 - GetInfo"
+       "GetOAuthV1Info"
+     "<GetOAuthV1Info name='##'>
+  <AppKey ref='tokenRequest.client_id'/>
+</GetOAuthV1Info>\n")
 
      '("LookupCache"
        "LookupCache"
@@ -663,6 +968,24 @@ structure, in the `apigee-apiproxies-home' directory.
       <KeyFragment ref='${4:flowvariable.name}' />
     </CacheKey>
 </LookupCache>")
+
+     '("SysLog"
+       "SysLog"
+       "<MessageLogging enabled='true' continueOnError='true' async='true' name='##'>
+    <DisplayName>##</DisplayName>
+    <FaultRules/>
+    <Properties/>
+    <BufferMessage>false</BufferMessage>
+    <Syslog async='true'>
+        <Host>${1:hostname.domain.com}</Host>
+        <Message>4G:{${2:$$(yas/choose-value apigee-common-variable-list)}}</Message>
+        <Port>514</Port>
+    </Syslog>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+    <logLevel>INFO</logLevel>
+    <NotificationIntervalInSec>0</NotificationIntervalInSec>
+</MessageLogging>\n")
+
 
      '("PopulateCache"
        "PopulateCache"
@@ -677,6 +1000,16 @@ structure, in the `apigee-apiproxies-home' directory.
     <TimeoutInSec>864000</TimeoutInSec> <!-- 864000 = 10 days -->
   </ExpirySettings>
 </PopulateCache>\n")
+
+     '("RaiseAlert"
+       "RaiseAlert"
+       "<RaiseAlert name='##'>
+    <Syslog>
+        <Message>4G: message text here {${1:$$(yas/choose-value apigee-common-variable-list)}}</Message>
+        <Host>IP</Host>
+        <Port>514</Port>
+    </Syslog>
+</RaiseAlert>\n")
 
 
      '("RaiseFault"
@@ -693,14 +1026,14 @@ structure, in the `apigee-apiproxies-home' directory.
     $0
 }
 ]]></Payload>
-     <StatusCode>${3:$$(yas/choose-value '(\"200\" \"400\" \"404\" \"500\" \"503\"))}</StatusCode>
-     <ReasonPhrase>OK</ReasonPhrase>
+     <StatusCode>${3:$$(yas/choose-value '(\"200\" \"302\" \"400\" \"404\" \"500\" \"503\"))}</StatusCode>
+     <ReasonPhrase>${3:$(cadr (assoc text apigee-http-status-message-alist))}</ReasonPhrase>
    </Set>
  </FaultResponse>
 </RaiseFault>")
 
 
-     '("RaiseFault - Redirect"
+     '("RaiseFault - 302 Redirect"
        "RaiseFault"
        "<RaiseFault name='##' enabled='true' continueOnError='false' async='false'>
     <DisplayName>Redirect To...</DisplayName>
@@ -722,33 +1055,34 @@ $1
 </RaiseFault>\n")
 
 
-     '("JavaScript"
-       "JavaScript"
+     '("Javascript"
+       "Javascript"
        "<Javascript enabled='true' continueOnError='false' async='false' name='##'>
   <FaultRules/>
   <Properties/>
-  <ResourceURL>jsc://${1:doWork}.js</ResourceURL>
+  <ResourceURL>jsc://${1:$$(apigee--fixup-script-name \"##\")}.js</ResourceURL>
 </Javascript>")
 
      '("ResponseCache"
      "ResponseCache"
      "<ResponseCache enabled='true' continueOnError='false' async='false' name='##'>
-  <DisplayName>$1</DisplayName>
+  <DisplayName>${1:ResponseCache}</DisplayName>
   <FaultRules/>
   <Properties/>
+  <!-- composite item to use as cache key -->
   <CacheKey>
     <Prefix></Prefix>
-    <KeyFragment ref='${2:request.uri}' /> <!-- item to use as cache key -->
+    <KeyFragment ref='${2:request.uri}' />
   </CacheKey>
   <CacheResource>${3:ApigeeCache}</CacheResource>
   <Scope>${4:$$(yas/choose-value '(\"Exclusive\" \"Global\" \"Application\" \"Proxy\" \"Target\"))}</Scope>
   <ExpirySettings>
     <ExpiryDate></ExpiryDate>
     <TimeOfDay></TimeOfDay>
-    <TimeoutInSec ref=''>${5:6000}</TimeoutInSec>
+    <TimeoutInSec ref='insert.variable.here'>${5:6000}</TimeoutInSec>
   </ExpirySettings>
-  <SkipCacheLookup>request.header.x-bypass-cache = 'true'</SkipCacheLookup>
-  <SkipCachePopulation>request.header.x-bypass-cache = 'true'</SkipCachePopulation>
+  <SkipCacheLookup>request.header.x-bypass-cache = \"true\"</SkipCacheLookup>
+  <SkipCachePopulation>request.header.x-bypass-cache = \"true\"</SkipCachePopulation>
 </ResponseCache>")
 
      '("XSL"
@@ -758,7 +1092,7 @@ $1
   <FaultRules/>
   <Properties/>
   <OutputVariable>request.content</OutputVariable>
-  <ResourceURL>xsl://$2.xsl</ResourceURL>
+  <ResourceURL>xsl://${2:##}.xsl</ResourceURL>
   <Source>${3:$$(yas/choose-value '(\"request\" \"response\"))}</Source>
 </XSL>\n")
 
@@ -767,11 +1101,11 @@ $1
        "JavaCallout"
        "<JavaCallout name='##' enabled='true'
              continueOnError='false' async='false'>
-  <DisplayName>$1</DisplayName>
+  <DisplayName>${1:##}</DisplayName>
   <Properties/>
   <FaultRules/>
   <ClassName>$2</ClassName>
-  <ResourceURL>java://$3.jar</ResourceURL>
+  <ResourceURL>java://${3:##}.jar</ResourceURL>
 </JavaCallout>")
 
 ))
@@ -858,7 +1192,9 @@ Bug: Does not check for name clashes by newly added policies.
         (progn
           (if (not (s-ends-with-p "/" apiproxy-dir))
               (setq apiproxy-dir (concat apiproxy-dir "/")))
-          (let ((chosen (apigee-prompt-user-with-choices apigee--policy-alist)))
+          (let ((chosen (apigee-prompt-user-with-choices
+                         (sort apigee--policy-alist
+                               (lambda (a b) (string< (car a) (car b) )) ))))
             (when chosen
               (let ((policy-dir (concat apiproxy-dir "apiproxy/policies/"))
                     (ptype (cadr chosen))
@@ -887,7 +1223,9 @@ Bug: Does not check for name clashes by newly added policies.
                                            policy-name
                                            ".xml"))
                          (myBuffer (find-file filename)))
-                    (yas/expand-snippet elaborated-template (point) (point)))))))))))
+                    (yas/expand-snippet elaborated-template (point) (point))
+                    (save-buffer)
+                    )))))))))
 
 
 
