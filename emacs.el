@@ -1,6 +1,6 @@
 ;;
 ;; Dino's .emacs setup file.
-;; Last saved: <2013-August-27 18:30:19>
+;; Last saved: <2013-November-02 14:38:23>
 ;;
 ;; Works with v24.2 of emacs.
 ;;
@@ -812,6 +812,7 @@ Prompts for INPUT-DIR and OUTPUT-FILE if called-interactively"
   (local-set-key "\C-c\C-m"  'dino-dired-move-file-to-dir-in-other-window)
 
   (local-set-key "F" 'dino-dired-do-find))
+  (local-set-key "L" 'dired-kill-subdir)) ;; opposite of i (dired-maybe-insert-subdir)
 
 (add-hook 'dired-mode-hook 'dino-dired-mode-hook-fn)
 
@@ -2169,10 +2170,14 @@ i.e M-x kmacro-set-counter."
   (add-to-list 'yas/known-modes 'js-mode) ;; need this?
   (yas/minor-mode-on)
 
+  ;; wtf? Does this no longer work?
   (add-hook 'local-write-file-hooks
               '(lambda ()
                  (save-excursion
                    (delete-trailing-whitespace))))
+
+  ;; trying to force delete trailing whitespace
+  (dino-enable-delete-trailing-whitespace)
 
   (require 'imenu)
   (imenu-add-menubar-index)

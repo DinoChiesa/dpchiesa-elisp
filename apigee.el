@@ -11,7 +11,7 @@
 ;; Requires   : s.el
 ;; License    : New BSD
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2013-August-28 15:17:18>
+;; Last-saved : <2013-November-02 14:10:55>
 ;;
 ;;; Commentary:
 ;;
@@ -421,7 +421,7 @@ structure, in the `apigee-apiproxies-home' directory.
     <Request>
       <Step>
         <FaultRules/>
-        <Name>RaiseFault.For.Unknown.Request</Name>
+        <Name>RaiseFault-UnknownRequest</Name>
       </Step>
     </Request>
     <Response/>
@@ -499,11 +499,8 @@ value that was expanded for field (N-1). "
       name)))
 
 
-
-
 (defconst apigee--policy-alist
     (list
-
      '("AccessEntity"
      "AccessEntity"
      "<AccessEntity name='##'>
@@ -527,7 +524,6 @@ value that was expanded for field (N-1). "
   <AssignTo createNew='false' transport='http' type='request'></AssignTo>
 </AssignMessage>\n")
 
-
      '("AssignMessage - set query param"
        "AssignMessage"
        "<AssignMessage name='##'>
@@ -543,12 +539,26 @@ value that was expanded for field (N-1). "
   <AssignVariable>
     <Name>urlshortener.longUrl</Name>
     <Ref>request.queryparam.url</Ref>
+    <Value>this-value-is-used-when-the-Ref-is-unresolvable</Value>
+  </AssignVariable>
+</AssignMessage>\n")
+
+     '("AssignMessage - assign variable"
+     "AssignVariable"
+     "<AssignMessage name='##'>
+  <DisplayName>##</DisplayName>
+  <IgnoreUnresolvedVariables>false</IgnoreUnresolvedVariables>
+  <AssignVariable>
+    <Name>parsedRequest.client_id</Name>
+    <Ref>request.queryparam.client_id</Ref>
+    <Value>BADDBEEF</Value>
   </AssignVariable>
 </AssignMessage>\n")
 
      '("AssignMessage - Store Original header"
      "AssignMessage"
      "<AssignMessage name='##'>
+  <IgnoreUnresolvedVariables>false</IgnoreUnresolvedVariables>
   <AssignVariable>
     <Name>${1:originalRequestHeaders}.${2:$$(yas/choose-value '(\"Content-Type\" \"Accept\"))}</Name>
     <Ref>request.header.$2</Ref>
@@ -566,6 +576,33 @@ value that was expanded for field (N-1). "
     </Headers>
   </Set>
 </AssignMessage>\n")
+
+     '("AssignMessage - full response"
+       "AssignMessage"
+     "<AssignMessage name='##'>
+  <DisplayName>AssignMessage</DisplayName>
+  <Description>$0</Description>
+  <IgnoreUnresolvedVariables>false</IgnoreUnresolvedVariables>
+  <Set>
+    <Payload contentType='application/json'
+             variablePrefix='%' variableSuffix='#'><![CDATA[{
+  \"response\" : {
+    \"clientId\" : \"%parsedRequest.client_id#\",
+  }
+}
+]]></Payload>
+     <StatusCode>${1:$$(yas/choose-value '(\"200\" \"302\" \"400\" \"404\" \"500\" \"503\"))}</StatusCode>
+     <ReasonPhrase>${1:$(cadr (assoc text apigee-http-status-message-alist))}</ReasonPhrase>
+  </Set>
+
+  <!-- Set this flow variable to indicate the response has been set -->
+  <AssignVariable>
+    <Name>tokenResponse.ready</Name>
+    <Value>true</Value>
+  </AssignVariable>
+
+</AssignMessage>\n")
+
 
      '("KVM - Put"
        "KVM-PUT"
@@ -620,7 +657,6 @@ value that was expanded for field (N-1). "
   <Identifier ref='client_id'/>
 </Quota>\n")
 
-
      '("VerifyAPIKey - in query param"
        "VerifyAPIKey"
      "<VerifyAPIKey enabled='true' continueOnError='false' async='false'  name='##'>
@@ -668,11 +704,11 @@ value that was expanded for field (N-1). "
   the content-type is text/xml. It can be applied on the request or the
   response.</Description>
   <Format>yahoo</Format>
+  <!--
   <Options>
     <RecognizeNumber>true</RecognizeNumber>
     <RecognizeBoolean>true</RecognizeBoolean>
     <RecognizeNull>true</RecognizeNull>
-    <!--
       <NullValue>NULL</NullValue>
       <NamespaceSeparator>***</NamespaceSeparator>
       <NamespaceBlockName>#namespaces</NamespaceBlockName>
@@ -681,8 +717,8 @@ value that was expanded for field (N-1). "
       <TextNodeName>TEXT</TextNodeName>
       <AttributeBlockName>ATT_BLOCK</AttributeBlockName>
       <AttributePrefix>ATT_</AttributePrefix>
-    -->
   </Options>
+  -->
 </XMLToJSON>\n")
 
 
@@ -706,12 +742,19 @@ value that was expanded for field (N-1). "
        "<ExtractVariables name='##'>
   <Source>$1</Source>
   <VariablePrefix>entity</VariablePrefix>
+  <IgnoreUnresolvedVariables>false</IgnoreUnresolvedVariables>
   <XMLPayload>
+    <Namespaces>
+      <Namespace prefix='apigee'>http://www.apigee.com</Namespace>
+    </Namespaces>
     <Variable name='${2:varname1}' type='string'>
-      <XPath>/Developer/Attributes/Attribute[Name='$2']/Value/text()</XPath>
+      <XPath>/apigee:$2/text()</XPath>
     </Variable>
     <Variable name='${3:varname2}' type='string'>
       <XPath>/Developer/Attributes/Attribute[Name='$3']/Value/text()</XPath>
+    </Variable>
+    <Variable name='${4:varname3}' type='string'>
+      <XPath>/Developer/Attributes/Attribute[Name='$4']/Value/text()</XPath>
     </Variable>
   </XMLPayload>
 </ExtractVariables>")
@@ -761,7 +804,7 @@ value that was expanded for field (N-1). "
 </ServiceCallout>\n")
 
      '("OAuthV2 - GenerateAccessToken auth_code, client creds, passwd"
-       "OAuthV2"
+       "OAuthV2-GenerateAccessToken"
        "<OAuthV2 name='##'>
     <DisplayName>OAuthV2 - GenerateAccessToken</DisplayName>
     <Operation>GenerateAccessToken</Operation>
@@ -806,10 +849,18 @@ value that was expanded for field (N-1). "
     <ExternalAuthorization>${2:$$(yas/choose-value '(\"true\" \"false\" ))}</ExternalAuthorization>
 
     <GenerateResponse enabled='true'/>
+    <!--
+    If you include GenerateResponse, then the response is sent directly to the caller.
+    If you omit GenerateResponse, then these flow variables are set on success:
+      oauthv2accesstoken.{policy_name}.access_token
+      oauthv2accesstoken.{policy_name}.token_type
+      oauthv2accesstoken.{policy_name}.expires_in
+      oauthv2accesstoken.{policy_name}.refresh_token
+    -->
 </OAuthV2>\n")
 
      '("OAuthV2 - GenerateAccessToken - Implicit Grant"
-       "OAuthV2"
+       "OAuthV2-GenerateAccessToken"
        "<OAuthV2 name='##'>
     <DisplayName>OAuthV2 - GenerateAccessTokenImplicitGrant</DisplayName>
     <Operation>GenerateAccessTokenImplicitGrant</Operation>
@@ -855,11 +906,18 @@ value that was expanded for field (N-1). "
 
     <ExternalAuthorization>${2:$$(yas/choose-value '(\"true\" \"false\" ))}</ExternalAuthorization>
 
+    <!--
+      If <GenerateResponse/> is omitted, the policy sets these variables on success:
+        oauthv2accesstoken.{policy_name}.access_token
+        oauthv2accesstoken.{policy_name}.token_type
+        oauthv2accesstoken.{policy_name}.expires_in
+        oauthv2accesstoken.{policy_name}.refresh_token
+    -->
     <GenerateResponse enabled='true'/>
 </OAuthV2>\n")
 
      '("OAuthV2 - GenerateAuthorizationCode"
-       "OAuthV2"
+       "OAuthV2-GenerateAuthorizationCode"
        "<OAuthV2 name='##'>
     <DisplayName>OAuthV2 - GenerateAuthorizationCode</DisplayName>
     <Operation>GenerateAuthorizationCode</Operation>
@@ -883,12 +941,14 @@ value that was expanded for field (N-1). "
       <Attribute name='attr_name2' ref='flow.variable' display='true|false'>value2</Attribute>
     </Attributes>
 
-    <!-- With <GenerateResponse/>, a response will be generated and returned. -->
-    <!-- Without that element, the policy will fill these variables: -->
-    <!-- oauthv2authcode.<PolicyName>.code        -->
-    <!-- oauthv2authcode.<PolicyName>.redirect_ur -->
-    <!-- oauthv2authcode.<PolicyName>.scope       -->
-    <!-- oauthv2authcode.<PolicyName>.client_id   -->
+    <!--
+      With <GenerateResponse/>, a response will be generated and returned.
+      Without it, then these flow variables are set on success:
+        oauthv2authcode.<PolicyName>.code
+        oauthv2authcode.<PolicyName>.redirect_uri
+        oauthv2authcode.<PolicyName>.scope
+        oauthv2authcode.<PolicyName>.client_id
+    -->
     <GenerateResponse enabled='true'/>
 </OAuthV2>\n")
 
@@ -924,7 +984,7 @@ value that was expanded for field (N-1). "
 </OAuthV2>\n")
 
      '("OAuthV2 - RefreshAccessToken"
-       "OAuthV2"
+       "OAuthV2-RefreshAccessToken"
        "<OAuthV2 enabled='true' continueOnError='false' async='false' name='##'>
     <DisplayName>OAuthV2 - RefreshAccessToken</DisplayName>
     <Operation>RefreshAccessToken</Operation>
@@ -940,20 +1000,118 @@ value that was expanded for field (N-1). "
     <ExternalAuthorization>false</ExternalAuthorization>
     <GrantType>request.formparam.grant_type</GrantType>
     <RefreshToken>request.formparam.refresh_token</RefreshToken>
+    <SupportedGrantTypes/>
+
     <GenerateResponse enabled='true'>
         <Format>FORM_PARAM</Format>
     </GenerateResponse>
-    <SupportedGrantTypes/>
+    <!--
+    NB: If <GenerateResponse/> is omitted, then the policy implicitly sets
+    the following variables:
+      oauthv2accesstoken.<PolicyName>.access_token
+      oauthv2accesstoken.<PolicyName>.token_type
+      oauthv2accesstoken.<PolicyName>.expires_in
+      oauthv2accesstoken.<PolicyName>.refresh_token
+      oauthv2accesstoken.<PolicyName>.refresh_token_expires_in
+      oauthv2accesstoken.<PolicyName>.refresh_token_issued_at
+      oauthv2accesstoken.<PolicyName>.refresh_token_status
+    -->
+
 </OAuthV2>\n")
 
-     '("OAuthV2 - GetInfo"
-       "GetOAuthV2Info"
-     "<GetOAuthV2Info name='##'>
-  <AccessToken ref='openidconnect.access_token'/>
+
+     '("OAuthV2 - GetClientInfo"
+       "OAuthV2-GetOAuthV2Info"
+"<GetOAuthV2Info name='##'>
+    <!-- use one of the following: a referenced variable or -->
+    <!-- an explicitly passed client_id -->
+    <ClientId ref='{flow.variable}'/>
+    <ClientId>{client id}</ClientId>
+    <!--
+    On Success, the following flow variables will be set.
+      oauthv2client.{policy_name}.client_id
+      oauthv2client.{policy_name}.client_secret
+      oauthv2client.{policy_name}.redirection_uris
+      oauthv2client.{policy_name}.developer.email
+      oauthv2client.{policy_name}.developer.app.name
+      oauthv2client.{policy_name}.developer.id
+      oauthv2client.{policy_name}.{custom_attribute_name}
+    -->
 </GetOAuthV2Info>\n")
 
+     '("OAuthV2 - GetAccessTokenInfo"
+       "GetOAuthV2Info"
+     "<GetOAuthV2Info name='##'>
+    <!-- use one of the following: a referenced variable or -->
+    <!-- an explicitly passed access_token -->
+    <AccessToken ref='${1:openidconnect.access_token}'/>
+    <AccessToken>${2:BAADBEEF}</AccessToken>
+    <!--
+    On Success, the following flow variables will be set.
+      oauthv2accesstoken.{policy_name}.access_token
+      oauthv2accesstoken.{policy_name}.scope
+      oauthv2accesstoken.{policy_name}.refresh_token
+      oauthv2accesstoken.{policy_name}.accesstoken.{custom_attribute_name}
+      oauthv2accesstoken.{policy_name}.developer.id
+      oauthv2accesstoken.{policy_name}.developer.app.name
+      oauthv2accesstoken.{policy_name}.expires_in
+      oauthv2accesstoken.{policy_name}.status
+    -->
+</GetOAuthV2Info>\n")
+
+     '("OAuthV2 - InvalidateToken"
+       "OAuthV2-InvalidateToken"
+       "<OAuthV2 name='##'>
+    <Operation>InvalidateToken</Operation>
+    <Tokens>
+        <Token type='${1:$$(yas/choose-value '(\"accesstoken\" \"refreshtoken\"))}'
+               cascade='true'>${2:flow.variable}</Token>
+    </Tokens>
+</OAuthV2>\n")
+
+
+     '("OAuthV2 - GetAuthorizationCodeInfo"
+       "GetOAuthV2Info"
+     "<GetOAuthV2Info name='##'>
+    <!-- use one of the following: a referenced variable or -->
+    <!-- an explicitly passed authorization_code -->
+    <AuthorizationCode ref='${1:flow.variable}'/>
+    <AuthorizationCode>${2:BAADBEEF}</AuthorizationCode>
+    <!--
+    On Success, the following flow variables will be set.
+      oauthv2authcode.{policy_name}.client_id
+      oauthv2authcode.{policy_name}.organization_id
+      oauthv2authcode.{policy_name}.issued_at
+      oauthv2authcode.{policy_name}.expires_in
+      oauthv2authcode.{policy_name}.redirect_uri
+      oauthv2authcode.{policy_name}.status
+      oauthv2authcode.{policy_name}.state
+      oauthv2authcode.{policy_name}.scope
+      oauthv2authcode.{policy_name}.id
+      oauthv2authcode.{policy_name}.{custom_attribute_name}
+    -->
+</GetOAuthV2Info>\n")
+
+
+     '("OAuthV2 - GetRefreshTokenAttributes"
+       "OAuthV2-GetOAuthV2Info"
+     "<GetOAuthV2Info name='##'>
+    <!-- use one of the following: a referenced variable or -->
+    <!-- an explicitly passed refresh_token -->
+    <RefreshToken ref='${1:flow.variable}'/>
+    <RefreshToken>${2:refresh_token}</RefreshToken>
+    <!--
+    On Success, the following flow variables will be set.
+      oauthv2accesstoken.<PolicyName>.refresh_token
+      oauthv2accesstoken.<PolicyName>.refresh_token_expires_in
+      oauthv2accesstoken.<PolicyName>.refresh_token_issued_at
+      oauthv2accesstoken.<PolicyName>.refresh_token_status
+    -->
+</GetOAuthV2Info>\n")
+
+
      '("OAuthV1 - GetInfo"
-       "GetOAuthV1Info"
+       "OAuthV1-GetOAuthV1Info"
      "<GetOAuthV1Info name='##'>
   <AppKey ref='tokenRequest.client_id'/>
 </GetOAuthV1Info>\n")
@@ -1015,7 +1173,7 @@ value that was expanded for field (N-1). "
      '("RaiseFault"
        "RaiseFault"
        "<RaiseFault name='##'>
-  <DisplayName>$1</DisplayName>
+  <DisplayName>${1:##}</DisplayName>
   <Description>$2</Description>
   <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
   <FaultResponse>
@@ -1034,15 +1192,15 @@ value that was expanded for field (N-1). "
 
 
      '("RaiseFault - 302 Redirect"
-       "RaiseFault"
+       "RaiseFault-Redirect"
        "<RaiseFault name='##' enabled='true' continueOnError='false' async='false'>
-    <DisplayName>Redirect To...</DisplayName>
+    <DisplayName>${1:##}.</DisplayName>
     <FaultRules/>
     <Properties/>
     <FaultResponse>
       <Set>
         <Headers>
-          <Header name='Location'>${1:http://target.to-redirect.to}</Header>
+          <Header name='Location'>${2:http://target.to-redirect.to}</Header>
         </Headers>
         <Payload contentType='text/plain'>
 $1
@@ -1058,15 +1216,16 @@ $1
      '("Javascript"
        "Javascript"
        "<Javascript enabled='true' continueOnError='false' async='false' name='##'>
-  <FaultRules/>
-  <Properties/>
-  <ResourceURL>jsc://${1:$$(apigee--fixup-script-name \"##\")}.js</ResourceURL>
+    <DisplayName>${1:##}.</DisplayName>
+  <ResourceURL>jsc://${2:$$(apigee--fixup-script-name \"##\")}.js</ResourceURL>
 </Javascript>")
+;;  <FaultRules/>
+;;  <Properties/>
 
      '("ResponseCache"
      "ResponseCache"
      "<ResponseCache enabled='true' continueOnError='false' async='false' name='##'>
-  <DisplayName>${1:ResponseCache}</DisplayName>
+  <DisplayName>${1:##}</DisplayName>
   <FaultRules/>
   <Properties/>
   <!-- composite item to use as cache key -->
@@ -1088,7 +1247,7 @@ $1
      '("XSL"
        "XSL"
        "<XSL enabled='true' continueOnError='false' async='false' name='##'>
-  <DisplayName>XSL - $1</DisplayName>
+  <DisplayName>${1:##}</DisplayName>
   <FaultRules/>
   <Properties/>
   <OutputVariable>request.content</OutputVariable>
@@ -1104,10 +1263,9 @@ $1
   <DisplayName>${1:##}</DisplayName>
   <Properties/>
   <FaultRules/>
-  <ClassName>$2</ClassName>
-  <ResourceURL>java://${3:##}.jar</ResourceURL>
+  <ClassName>${2:com.company.ClassName}</ClassName>
+  <ResourceURL>java://${3:$$(apigee--fixup-script-name \"##\")}.jar</ResourceURL>
 </JavaCallout>")
-
 ))
 
 
@@ -1121,46 +1279,184 @@ $1
     t))
 
 
+(defun apigee--remove-string-duplicates (list)
+  "Given a LIST of strings, generate a new list whose members
+consist only of the unique members of the original list.
+"
+  (let ((new-list nil))
+    (while list
+      (when (and (car list) (not (member (car list) new-list)))
+        (setq new-list (cons (car list) new-list)))
+      (setq list (cdr list)))
+    (nreverse new-list)))
+
+(defun apigee--sort-strings (strings)
+  "lexicographically sort a list of strings"
+  (sort strings
+        (lambda (a b) (string<  a b ))))
+
+
+(defun apigee--policy-type-for-menu-item (candidate)
+  "returns the policy type for the given menu ITEM."
+  (car (split-string (car candidate))))
+
+
+;; (defun apigee--menu-item (candidate)
+;;   "works for `x-popup-menu'"
+;;   (list (car candidate) candidate))
+
+
+;; (defun apigee--generate-menu (candidates)
+;;   "Generate a menu suitable for use in `x-popup-menu' from the
+;; list of candidates. Each item in the list of candidates is a
+;; list, (KEY TEMPLATE), where KEY is one of {Quota, XMLToJSON,
+;; Javascript, etc}, TEMPLATE is the template to fill in a new policy file.
+;;
+;; The output is a multi-leveled hierarchy, like this:
+;;
+;;   (\"Insert a policy...\"
+;;     (\"AssignMessage\"
+;;       (\"AssignMessage - remove query param\" 1 )
+;;       (\"AssignMessage - set header\" 2 ))
+;;     (\"AccessEntity\"
+;;       (\"AccessEntity - developer\" 3)
+;;       (\"AccessEntity - app\" 4))
+;;       ....)
+;;
+;; "
+;;   (let ((categories (apigee--sort-strings
+;;                      (apigee--remove-string-duplicates
+;;                       (mapcar 'apigee--policy-type-for-menu-item candidates))))
+;;         menu)
+;;
+;;     (while categories
+;;       (let ((cat (car categories))
+;;             (n 0)
+;;             (len (length candidates))
+;;             pane-items)
+;;
+;;         (while (< n len)
+;;           (let ((candidate (nth n candidates)))
+;;             (if (string= cat (apigee--policy-type-for-menu-item candidate))
+;;                  (setq pane-items (cons (list (car candidate) n) pane-items))))
+;;           (setq n (1+ n)))
+;;
+;;         (setq pane-items (nreverse pane-items))
+;;         (setq menu (cons
+;;                     (if (> (length pane-items) 1)
+;;                         (cons cat pane-items)
+;;                       (car pane-items))
+;;                     menu))
+;;       (setq categories (cdr categories))))
+;;
+;;     ;; this works with x-popup-menu
+;;     (cons "Insert a policy..." (nreverse menu))))
+
 (defun apigee--generate-menu (candidates)
-  "Generate a menu suitable for use in `x-popup-menu' from the
-list of candidates. Each item in the list of candidates is a
-list, (KEY TEMPLATE), where KEY is one of {Quota, XMLToJSON,
-Javascript, etc}, TEMPLATE is the template to fill in a new policy file.
+  "From the list of candidates, generate a keymap suitable for
+use as a menu in `popup-menu' . Each item in the list of
+candidates is a list, (KEY TEMPLATE), where KEY is one of {Quota,
+XMLToJSON, Javascript, etc}, TEMPLATE is the template to fill in
+a new policy file.
 
-The output is a list like this:
-
-  (\"Insert...\"
-    (\"Ignored pane title\"
-      (\"Quota\" \"value to return if thing 1 is selected\")
-      (\"Javascript\" \"value if thing 2 is selected\")
-      ....))
+The intention is to display a multi-paned popup menu.
 
 "
-  (let ((items (mapcar '(lambda (elt)
-                          (cons
-                           (nth 0 elt)
-                           elt))
-                        candidates)))
+  (let ((categories (nreverse (apigee--sort-strings
+                     (apigee--remove-string-duplicates
+                      (mapcar 'apigee--policy-type-for-menu-item candidates)))))
+        (keymap (make-sparse-keymap "Insert a policy...")))
 
-    ;; this works with x-popup-menu
-    (setq items (cons "Ignored pane title" items))
-    (list "Insert..." items)))
+    (while categories
+      (let ((cat (car categories))
+            (n 0)
+            (len (length candidates))
+            pane-items)
+
+        (while (< n len)
+          (let ((candidate (nth n candidates)))
+            (if (string= cat (apigee--policy-type-for-menu-item candidate))
+                 (setq pane-items (cons (list (car candidate) n) pane-items))))
+          (setq n (1+ n)))
+
+        ;;(setq pane-items (nreverse pane-items))
+        (if (eq (length pane-items) 1)
+            (let ((item (car pane-items)))
+              (define-key keymap
+                ;; (vector (intern (format "%s-%d"
+                ;;                         (car item)
+                ;;                         (cadr item))))
+                (vector (cadr item))
+                item))
+          (define-key keymap
+            (vector (intern cat))
+            (cons cat (make-sparse-keymap cat)))
+          (while pane-items
+            (let ((item (car pane-items)))
+              (define-key keymap
+                (vector (intern cat) (cadr item))
+                item))
+            (setq pane-items (cdr pane-items))))
+
+      (setq categories (cdr categories))))
+
+    ;; this works with popup-menu
+    keymap))
+
+
+;; (defun apigee--old-generate-menu (candidates)
+;;   "Generate a menu suitable for use in `x-popup-menu' from the
+;; list of candidates. Each item in the list of candidates is a
+;; list, (KEY TEMPLATE), where KEY is one of {Quota, XMLToJSON,
+;; Javascript, etc}, TEMPLATE is the template to fill in a new policy file.
+;;
+;; The output is a multi-leveled hierarchy, like this:
+;;
+;;   (\"Insert a policy...\"
+;;     (\"Quota\"
+;;       (\"Quota\" \"value to return if thing 1 is selected\")
+;;       (\"Quota - Product\" \"value to return if thing 2 is selected\"))
+;;     (\"OAuthV2\"
+;;       (\"OAuthV2\" \"value to return if thing 3 is selected\")
+;;       (\"OAuthV2\" \"value if thing 4 is selected\"))
+;;       ....)
+;;
+;; "
+;;   (let ((items (mapcar '(lambda (elt)
+;;                           (cons
+;;                            (nth 0 elt)
+;;                            elt))
+;;                         candidates)))
+;;
+;;     ;; this works with x-popup-menu
+;;     (setq items (cons "Ignored pane title" items))
+;;     (list "Insert a policy..." items)))
 
 
 
-(defun apigee-prompt-user-with-choices (candidates)
+(defun apigee-prompt-user-with-policy-choices ()
   "Prompt the user with the available choices.
-In this context the list of choices is the list of available Policies.
+In this context the available choices is the hierarchical list
+of available policies.
 
 "
+  (let
+      ;; No need to sort here. The popup-menu gets its items sorted, and
+      ;; choosing any item returns an index into the original unsorted
+      ;; list.
+      ;;
+      ;; ((candidates
+      ;;    (sort apigee--policy-alist
+      ;;          (lambda (a b) (string< (car a) (car b) )) )))
+      ((candidates apigee--policy-alist))
+
   (cond
-   ((not candidates)
-    nil)
+   ((not candidates) nil)
    ((and (eq apigee-prompt-mechanism 'dropdown-list)
          (featurep 'dropdown-list))
     (let ((choice-n (dropdown-list (mapcar '(lambda (elt) (nth 0 elt)) candidates))))
-      (if choice-n
-          (nth choice-n candidates)
+      (if (not (nilp choice-n))
+          choice-n
         (keyboard-quit))))
 
    (t
@@ -1172,7 +1468,7 @@ In this context the list of choices is the list of available Policies.
     ;; of the frame, which makes for an annoying
     ;; user-experience.
     (x-popup-menu (apigee-get-menu-position)
-                  (apigee--generate-menu candidates)))))
+                  (apigee--generate-menu candidates))))))
 
 
 
@@ -1192,15 +1488,19 @@ Bug: Does not check for name clashes by newly added policies.
         (progn
           (if (not (s-ends-with-p "/" apiproxy-dir))
               (setq apiproxy-dir (concat apiproxy-dir "/")))
-          (let ((chosen (apigee-prompt-user-with-choices
-                         (sort apigee--policy-alist
-                               (lambda (a b) (string< (car a) (car b) )) ))))
+          (let* ((choice (apigee-prompt-user-with-policy-choices))
+
+                 (chosen (nth (elt choice (1- (length choice))) apigee--policy-alist)))
+
             (when chosen
               (let ((policy-dir (concat apiproxy-dir "apiproxy/policies/"))
                     (ptype (cadr chosen))
                     (have-name nil)
                     (policy-name-prompt "policy name: ")
                     (raw-template (caddr chosen)))
+
+                (and (not (file-exists-p policy-dir))
+                     (make-directory policy-dir))
 
                 (let* ((default-value (apigee--default-val-for-policy-name ptype))
                        (policy-name
