@@ -11,7 +11,7 @@
 ;; Requires   : s.el
 ;; License    : New BSD
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2013-November-03 08:22:00>
+;; Last-saved : <2013-November-03 08:57:57>
 ;;
 ;;; Commentary:
 ;;
@@ -147,7 +147,6 @@ the only possible value currently.")
    '("consumerkey" ("consumerkey"))
    '("developer" ("developeremail" "developerid" "appid" "consumerkey"))))
 
-
 (defconst apigee-common-variable-list
   '("environment.name"
     "request.header.X-Forwarded-For"
@@ -167,347 +166,6 @@ the only possible value currently.")
     "target.url"
     "request.header.Accept"
     "target.received.content.length"))
-
-
-(defun apigee-insure-trailing-slash (path)
-  "Insure the given path ends with a slash.
-This is usedful with `default-directory'.  Setting
-`default-directory' to a value that does not end with a slash
-causes it to use the parent directory.
-"
-  (and s
-       (if (s-ends-with? "/" path) path) (concat path "/")))
-
-
-(defun apigee-path-of-apiproxy ()
-  "Returns the path of the directory that contains the
-apiproxy directory.
-
-If the apiproxy is defined in a structure like this:
-
-~/dev/apiproxies/APINAME/apiproxy
-~/dev/apiproxies/APINAME/apiproxy/APINAME.xml
-~/dev/apiproxies/APINAME/apiproxy/resources
-~/dev/apiproxies/APINAME/apiproxy/resources/...
-~/dev/apiproxies/APINAME/apiproxy/targets
-~/dev/apiproxies/APINAME/apiproxy/targets/..
-~/dev/apiproxies/APINAME/apiproxy/proxies
-~/dev/apiproxies/APINAME/apiproxy/proxies/..
-..
-
-then the return value is: ~/dev/apiproxies/APINAME/
-
-It always ends in slash.
-
-"
-  (interactive)
-    (apigee-insure-trailing-slash
-     (let ((maybe-this (concat (file-name-directory default-directory) "apiproxy")))
-       (if (apigee--is-directory maybe-this)
-           (file-name-directory default-directory)
-         (let ((elts (reverse (split-string (file-name-directory default-directory) "/")))
-               r)
-           (while (and elts (not r))
-             (if (string= (car elts) "apiproxy")
-                 (setq r (reverse (cdr elts)))
-               (setq elts (cdr elts))))
-           (if r
-               (mapconcat 'identity r "/") ))))))
-
-
-
-(defun apigee-apiproxy-name ()
-  "Get a name for the API Proxy bundle that contains
-the file or directory currently being edited.
-"
-  (interactive)
-  (let ((apiproxy-dir (apigee-path-of-apiproxy)))
-    (if apiproxy-dir
-        (file-name-nondirectory apiproxy-dir))))
-
-
-(defun apigee-get-name-for-api-bundle-zip ()
-  "Get a timestamped name for the API bundle zip that contains
-the file or directory currently being edited.
-"
-  (interactive)
-  (let ((apiproxy-dir (apigee-path-of-apiproxy)))
-    (if apiproxy-dir
-        (let ((api-name (file-name-nondirectory apiproxy-dir))
-              (timestamp (format-time-string "%Y%m%d-%H%M%S")))
-          (concat api-name "-" timestamp ".zip")))))
-
-
-;; The following fn can be used to help create the zip and upload from
-;; emacs.  Currently this module delegates that to the pushapi script,
-;; so this fn is unnecessary. But eventually all the upload logic could
-;; be implemented in elisp.
-(defun apigee-get-create-api-bundle-zip-cmd ()
-  "Get the command that creates an API bundle zip. for the file
-or directory currently being edited.
-"
-  (interactive)
-  (let ((api-bundle-name (concat apigee-temp-dir "/" (apigee-get-name-for-api-bundle-zip)))
-        (txt apigee-create-bundle-zip-command-template))
-    (if (and api-bundle-name
-             (string-match "^\\(.+ \\)\\(%f\\)\\( .+\\)" txt))
-        (concat
-         (match-string 1 txt)
-         api-bundle-name
-         (match-string 3 txt)))))
-
-
-
-;; The following fn can be used to create the zip and upload from emacs.
-;; Currently this module delegates that to the pushapi script, so this
-;; fn is unnecessary. But eventually all the upload logic could
-;; be implemented in elisp.
-(defun apigee-create-api-bundle-zip ()
-  "Create the API bundle zip that contains the file or directory
-currently being edited.
-"
-  (interactive)
-  (let ((cmd (apigee-get-create-api-bundle-zip-cmd))
-        (bundle-dir (apigee-path-of-apiproxy))
-        buffer)
-    (setq buffer (get-buffer-create
-                  (concat "*Bundle Create "
-                          (file-name-nondirectory bundle-dir) "*")))
-    (message "Creating zip via %s" cmd)
-    (with-current-buffer buffer
-      (setq default-directory (apigee-insure-trailing-slash bundle-dir))
-      (goto-char (point-max))
-      (insert "\n\n============================================\n")
-      (goto-char (point-max))
-      (shell-command "pwd" t nil)
-      (goto-char (point-max))
-      (shell-command (concat "echo " cmd) t nil)
-      (goto-char (point-max))
-      (shell-command cmd t nil))
-
-    (switch-to-buffer-other-window buffer)))
-
-
-
-(defun apigee-upload-bundle-with-pushapi ()
-  "Interactive fn that uses the pushapi script to upload the bundle
-that contains the file or directory currently being edited.
-"
-  (interactive)
-  (let ((proxy-dir (apigee-path-of-apiproxy)))
-    (if proxy-dir
-        (if (file-exists-p apigee-upload-bundle-pgm)
-            (progn
-              (set (make-local-variable 'compile-command)
-                   (concat
-                    apigee-upload-bundle-pgm " "
-                    apigee-upload-bundle-args " "
-                    proxy-dir))
-              (call-interactively 'compile))))))
-
-
-(defun apigee--is-directory (dir-name)
-  "Tests to see whether a name refers to a directory"
-  (and
-   (file-exists-p dir-name)
-   (car (file-attributes dir-name))))
-
-(defun apigee--java-get-time-in-millis ()
-  "Returns a string that contains a number equal in value to
-what is returned from the java snippet:
-      (new GregrianCalendar()).getTimeInMillis()
-"
-  (let ((ct (current-time)))
-    (format "%d" (+ (* (+ (* (car ct) 65536) (cadr ct)) 1000) (/ (caddr ct) 1000)))))
-
-(defun apigee-insert-java-time-in-millis ()
-  "inserts a string into the current buffer that contains a number equal in value to
-what is returned from the java snippet:
-      (new GregrianCalendar()).getTimeInMillis()
-"
-  (interactive)
-  (insert (apigee--java-get-time-in-millis)))
-
-
-(defun apigee-policy-name-is-available (pname)
-  "Return true if the passed policy name is unused, in other words
-if no file exists by that name in the given proxy.
-"
-  (let* ((proxy-dir (apigee-path-of-apiproxy))
-         (policy-dir (concat proxy-dir "/apiproxy/policies/"))
-         (filename-to-check (concat policy-dir pname ".xml")))
-    (not (file-exists-p filename-to-check))))
-
-
-(defun apigee--suggested-policy-name (ptype)
-  "Returns a string that contains a default policy name, uses a counter
-that is indexed per policy type within each API Proxy.
-"
-  (let ((val 1))
-    (flet ((next-name (v) (concat ptype "-" (format "%d" v))))
-      (let ((pname (next-name val)))
-        (while (not (apigee-policy-name-is-available pname))
-          (setq val (1+ val)
-                pname (next-name val)))
-        pname))))
-
-
-(defun apigee--get-createdby ()
-  "Returns a string that contains a username, useful for
-applying as the CreatedBy element in an API Proxy.
-"
-  (or (getenv "LOGNAME") (getenv "USER") "orgAdmin"))
-
-
-
-(defun apigee-entity-id-types (entity-type)
-  "return a list of id types for a given entity-type."
-  (let ((id-types (assoc entity-type apigee-entity-to-entity-id-types-alist)))
-    (if id-types (cadr id-types))))
-
-
-
-(defun apigee--random-string (&optional len)
-  "produce a string of length LEN containing random characters,
-or of length 8 if the len is not specified.
-"
-  (let (s '())
-    (if (not len) (setq len 8))
-    (if (> len 144) (setq len 8)) ;; sanity
-    (while (> len 0)
-      (setq s (cons (+ (random 26) 97) s)
-            len (- len 1)))
-    (mapconcat 'string s "")))
-
-
-(defun apigee-new-proxy (proxy-name)
-  "Interactive fn that creates a new exploded proxy bundle directory
-structure, in the `apigee-apiproxies-home' directory.
-"
-  (interactive "Mproxy name: ")
-  (if (not (s-ends-with-p "/" apigee-apiproxies-home))
-      (setq apigee-apiproxies-home (concat apigee-apiproxies-home "/")))
-
-  (let ((proxy-dir (concat apigee-apiproxies-home proxy-name))
-        apiproxy-dir
-        file-attrs)
-
-    (if (file-exists-p proxy-dir)
-        (error "proxy dir already exists")
-      (if (not (apigee--is-directory apigee-apiproxies-home))
-          (error "set apigee-apiproxies-home to the name of an existing directory.")
-        (setq apiproxy-dir (concat proxy-dir "/apiproxy/"))
-        (make-directory apiproxy-dir t)
-        ;; create the sub-directories
-        (let ((subdirs (list "proxies" "targets" "resources" "policies"
-                             "resources/java" "resources/xsl"
-                             "resources/node" "resources/jsc" )))
-          (while subdirs
-            (make-directory (concat apiproxy-dir (car subdirs)))
-            (setq subdirs (cdr subdirs))))
-        ;; create the toplevel xml file
-        (with-temp-file (concat apiproxy-dir proxy-name ".xml")
-          (insert
-           (concat
-            "<APIProxy revision='1' name='" proxy-name "'>\n"
-            "  <ConfigurationVersion minorVersion='0' majorVersion='4'/>\n"
-            "  <CreatedAt>" (apigee--java-get-time-in-millis) "</CreatedAt>\n"
-            "  <CreatedBy>" (apigee--get-createdby) "</CreatedBy>\n"
-            "  <Description></Description>\n"
-            "  <DisplayName>" proxy-name "</DisplayName>\n"
-            "  <LastModifiedAt>" (apigee--java-get-time-in-millis) "</LastModifiedAt>\n"
-            "  <LastModifiedBy>orgAdmin</LastModifiedBy>\n"
-            "  <TargetEndpoints>\n"
-            "    <TargetEndpoint>default</TargetEndpoint>\n"
-            "  </TargetEndpoints>\n"
-            "</APIProxy>\n")))
-
-        (with-temp-file (concat apiproxy-dir "targets/default.xml")
-          (insert "<TargetEndpoint name='default'>
-  <Description>Apigee auto generated target endpoint</Description>
-  <FaultRules/>
-  <Flows/>
-  <PreFlow name='PreFlow'>
-    <Request>
-      <Step>
-        <FaultRules/>
-        <Name>RaiseFault-UnknownRequest</Name>
-      </Step>
-    </Request>
-    <Response/>
-  </PreFlow>
-
-  <HTTPTargetConnection>
-    <Properties/>
-    <URL>http://internal.example.com/v1/XYZ/something</URL>
-  </HTTPTargetConnection>
-</TargetEndpoint>\n"))
-
-        (with-temp-file (concat apiproxy-dir "proxies/default.xml")
-          (insert
-           "<ProxyEndpoint name='default'>
-  <Description>Default Proxy</Description>
-  <HTTPProxyConnection>
-    <BasePath>/v1/" (apigee--random-string) "</BasePath>
-    <Properties/>
-    <VirtualHost>default</VirtualHost>
-    <VirtualHost>secure</VirtualHost>
-  </HTTPProxyConnection>
-
-  <FaultRules/>
-
-  <PreFlow name=\"PreFlow\">
-      <Request/>
-      <Response/>
-  </PreFlow>
-  <PostFlow name=\"PostFlow\">
-      <Request/>
-      <Response/>
-  </PostFlow>
-
-  <Flows>
-    <Flow name='test " (apigee--random-string) " " (apigee--random-string) "'>
-      <Description>insert description here</Description>
-      <Request>
-        <Step>
-          <FaultRules/>
-          <Name>InsertPolicyNameHere</Name>
-        </Step>
-      </Request>
-      <Response/>
-      <Condition>(proxy.pathsuffix MatchesPath \"/foo\") and (request.verb = \"GET\")</Condition>
-    </Flow>
-  </Flows>
-
-  <RouteRule name='InvokeRouteRule'>
-    <TargetEndpoint>default</TargetEndpoint>
-  </RouteRule>
-
-</ProxyEndpoint>\n"))
-
-        (find-file-existing apiproxy-dir)
-        ))))
-
-(defun apigee--snippet-field (field-num)
-  "returns the FIELD-NUMth field from the currently
-active YAS snippet. This is a utility fn for use within
-apigee snippets, to allow expansion for field (N) to depend on the
-value that was expanded for field (N-1). "
-    (nth (- field-num 1) (yas/snippet-fields snippet)))
-
-
-
-(defun apigee--fixup-script-name (name)
-  "returns a stripped name suitable for use for a file in the resources/jsc directory."
-
-  (let* ((prefix "Javascript-")
-         (pos (length prefix)))
-    (if (and (>= (length name) (length prefix))
-             (string= prefix (substring name 0 pos)))
-        (let ((s (substring name pos)))
-          (concat (downcase (substring s 0 1)) (substring s 1)))
-      name)))
-
 
 (defconst apigee--policy-alist
     (list
@@ -641,7 +299,7 @@ value that was expanded for field (N-1). "
 
 </KeyValueMapOperations>\n")
 
-     '("Quota"
+     '("Quota - Enforce after VerifyAPIKey"
        "Quota"
        "<Quota async='false' continueOnError='false' enabled='true' name='##'>
     <DisplayName>##</DisplayName>
@@ -658,7 +316,7 @@ value that was expanded for field (N-1). "
     <PreciseAtSecondsLevel>false</PreciseAtSecondsLevel>
 </Quota>")
 
-     '("Quota - Product"
+     '("Quota - Enforce on Product"
        "Quota"
      "<Quota name='##'>
   <Interval ref='apiproduct.developer.quota.interval'/>
@@ -667,22 +325,24 @@ value that was expanded for field (N-1). "
   <Identifier ref='client_id'/>
 </Quota>\n")
 
-     '("VerifyAPIKey - in query param"
-       "VerifyAPIKey"
-     "<VerifyAPIKey enabled='true' continueOnError='false' async='false'  name='##'>
-    <DisplayName>Verify API Key</DisplayName>
-    <FaultRules/>
-    <Properties/>
-    <APIKey ref='request.queryparam.apikey'></APIKey>
-</VerifyAPIKey>\n")
+          '("Quota - Reset"
+       "Quota-Reset"
+       "<ResetQuota name='##'>
+  <!-- name of the Qupta policy being reset -->
+  <Quota name='request.header.quotapolicy'>
+    <Identifier name='_default'>
+      <!-- use one of the following  -->
+      <Allow>100</Allow>
+      <Allow ref='flow.variable.containing.number.to.allow' />
+    </Identifier>
+  </Quota>
+</ResetQuota>\n")
 
-     '("VerifyAPIKey - in header"
+     '("VerifyAPIKey" ;;  - query param or header
        "VerifyAPIKey"
      "<VerifyAPIKey enabled='true' continueOnError='false' async='false'  name='##'>
     <DisplayName>Verify API Key</DisplayName>
-    <FaultRules/>
-    <Properties/>
-    <APIKey ref='request.header.X-Apikey'></APIKey>
+    <APIKey ref='${1:$$(yas/choose-value '(\"request.queryparam.apikey\" \"request.header.X-Apikey\"))}'></APIKey>
 </VerifyAPIKey>\n")
 
      '("GetAPIProduct - fixed"
@@ -1265,6 +925,17 @@ $1
   <Source>${3:$$(yas/choose-value '(\"request\" \"response\"))}</Source>
 </XSL>\n")
 
+     '("AccessControl"
+       "AccessControl"
+       "<AccessControl name='ACL'>
+    <IPRules noRuleMatchAction='DENY'>
+        <MatchRule action='ALLOW'>
+            <SourceAddress mask='24'>10.10.20.0</SourceAddress>
+            <SourceAddress mask='24'>10.10.30.0</SourceAddress>
+            <SourceAddress mask='24'>10.10.40.0</SourceAddress>
+        </MatchRule>
+    </IPRules>
+</AccessControl>\n")
 
      '("JavaCallout"
        "JavaCallout"
@@ -1277,6 +948,348 @@ $1
   <ResourceURL>java://${3:$$(apigee--fixup-script-name \"##\")}.jar</ResourceURL>
 </JavaCallout>")
 ))
+
+
+(defun apigee-insure-trailing-slash (path)
+  "Insure the given path ends with a slash.
+This is usedful with `default-directory'.  Setting
+`default-directory' to a value that does not end with a slash
+causes it to use the parent directory.
+"
+  (and s
+       (if (s-ends-with? "/" path) path) (concat path "/")))
+
+
+(defun apigee-path-of-apiproxy ()
+  "Returns the path of the directory that contains the
+apiproxy directory.
+
+If the apiproxy is defined in a structure like this:
+
+~/dev/apiproxies/APINAME/apiproxy
+~/dev/apiproxies/APINAME/apiproxy/APINAME.xml
+~/dev/apiproxies/APINAME/apiproxy/resources
+~/dev/apiproxies/APINAME/apiproxy/resources/...
+~/dev/apiproxies/APINAME/apiproxy/targets
+~/dev/apiproxies/APINAME/apiproxy/targets/..
+~/dev/apiproxies/APINAME/apiproxy/proxies
+~/dev/apiproxies/APINAME/apiproxy/proxies/..
+..
+
+then the return value is: ~/dev/apiproxies/APINAME/
+
+It always ends in slash.
+
+"
+  (interactive)
+    (apigee-insure-trailing-slash
+     (let ((maybe-this (concat (file-name-directory default-directory) "apiproxy")))
+       (if (apigee--is-directory maybe-this)
+           (file-name-directory default-directory)
+         (let ((elts (reverse (split-string (file-name-directory default-directory) "/")))
+               r)
+           (while (and elts (not r))
+             (if (string= (car elts) "apiproxy")
+                 (setq r (reverse (cdr elts)))
+               (setq elts (cdr elts))))
+           (if r
+               (mapconcat 'identity r "/") ))))))
+
+
+
+(defun apigee-apiproxy-name ()
+  "Get a name for the API Proxy bundle that contains
+the file or directory currently being edited.
+"
+  (interactive)
+  (let ((apiproxy-dir (apigee-path-of-apiproxy)))
+    (if apiproxy-dir
+        (file-name-nondirectory apiproxy-dir))))
+
+
+(defun apigee-get-name-for-api-bundle-zip ()
+  "Get a timestamped name for the API bundle zip that contains
+the file or directory currently being edited.
+"
+  (interactive)
+  (let ((apiproxy-dir (apigee-path-of-apiproxy)))
+    (if apiproxy-dir
+        (let ((api-name (file-name-nondirectory apiproxy-dir))
+              (timestamp (format-time-string "%Y%m%d-%H%M%S")))
+          (concat api-name "-" timestamp ".zip")))))
+
+
+;; The following fn can be used to help create the zip and upload from
+;; emacs.  Currently this module delegates that to the pushapi script,
+;; so this fn is unnecessary. But eventually all the upload logic could
+;; be implemented in elisp.
+(defun apigee-get-create-api-bundle-zip-cmd ()
+  "Get the command that creates an API bundle zip. for the file
+or directory currently being edited.
+"
+  (interactive)
+  (let ((api-bundle-name (concat apigee-temp-dir "/" (apigee-get-name-for-api-bundle-zip)))
+        (txt apigee-create-bundle-zip-command-template))
+    (if (and api-bundle-name
+             (string-match "^\\(.+ \\)\\(%f\\)\\( .+\\)" txt))
+        (concat
+         (match-string 1 txt)
+         api-bundle-name
+         (match-string 3 txt)))))
+
+
+
+;; The following fn can be used to create the zip and upload from emacs.
+;; Currently this module delegates that to the pushapi script, so this
+;; fn is unnecessary. But eventually all the upload logic could
+;; be implemented in elisp.
+(defun apigee-create-api-bundle-zip ()
+  "Create the API bundle zip that contains the file or directory
+currently being edited.
+"
+  (interactive)
+  (let ((cmd (apigee-get-create-api-bundle-zip-cmd))
+        (bundle-dir (apigee-path-of-apiproxy))
+        buffer)
+    (setq buffer (get-buffer-create
+                  (concat "*Bundle Create "
+                          (file-name-nondirectory bundle-dir) "*")))
+    (message "Creating zip via %s" cmd)
+    (with-current-buffer buffer
+      (setq default-directory (apigee-insure-trailing-slash bundle-dir))
+      (goto-char (point-max))
+      (insert "\n\n============================================\n")
+      (goto-char (point-max))
+      (shell-command "pwd" t nil)
+      (goto-char (point-max))
+      (shell-command (concat "echo " cmd) t nil)
+      (goto-char (point-max))
+      (shell-command cmd t nil))
+
+    (switch-to-buffer-other-window buffer)))
+
+
+
+(defun apigee-upload-bundle-with-pushapi ()
+  "Interactive fn that uses the pushapi script to upload the bundle
+that contains the file or directory currently being edited.
+"
+  (interactive)
+  (let ((proxy-dir (apigee-path-of-apiproxy)))
+    (if proxy-dir
+        (if (file-exists-p apigee-upload-bundle-pgm)
+            (progn
+              (set (make-local-variable 'compile-command)
+                   (concat
+                    apigee-upload-bundle-pgm " "
+                    apigee-upload-bundle-args " "
+                    proxy-dir))
+              (call-interactively 'compile))))))
+
+
+(defun apigee--is-directory (dir-name)
+  "Tests to see whether a name refers to a directory"
+  (and
+   (file-exists-p dir-name)
+   (car (file-attributes dir-name))))
+
+(defun apigee--java-get-time-in-millis ()
+  "Returns a string that contains a number equal in value to
+what is returned from the java snippet:
+      (new GregrianCalendar()).getTimeInMillis()
+"
+  (let ((ct (current-time)))
+    (format "%d" (+ (* (+ (* (car ct) 65536) (cadr ct)) 1000) (/ (caddr ct) 1000)))))
+
+(defun apigee-insert-java-time-in-millis ()
+  "inserts a string into the current buffer that contains a number equal in value to
+what is returned from the java snippet:
+      (new GregrianCalendar()).getTimeInMillis()
+"
+  (interactive)
+  (insert (apigee--java-get-time-in-millis)))
+
+
+(defun apigee-policy-name-is-available (pname)
+  "Return true if the passed policy name is unused, in other words
+if no file exists by that name in the given proxy.
+"
+  (let* ((proxy-dir (apigee-path-of-apiproxy))
+         (policy-dir (concat proxy-dir "/apiproxy/policies/"))
+         (filename-to-check (concat policy-dir pname ".xml")))
+    (not (file-exists-p filename-to-check))))
+
+
+(defun apigee--suggested-policy-name (ptype)
+  "Returns a string that contains a default policy name, uses a counter
+that is indexed per policy type within each API Proxy.
+"
+  (let ((val 1))
+    (flet ((next-name (v) (concat ptype "-" (format "%d" v))))
+      (let ((pname (next-name val)))
+        (while (not (apigee-policy-name-is-available pname))
+          (setq val (1+ val)
+                pname (next-name val)))
+        pname))))
+
+
+(defun apigee--get-createdby ()
+  "Returns a string that contains a username, useful for
+applying as the CreatedBy element in an API Proxy.
+"
+  (or (getenv "LOGNAME") (getenv "USER") "orgAdmin"))
+
+
+
+(defun apigee-entity-id-types (entity-type)
+  "return a list of id types for a given entity-type."
+  (let ((id-types (assoc entity-type apigee-entity-to-entity-id-types-alist)))
+    (if id-types (cadr id-types))))
+
+
+
+(defun apigee--random-string (&optional len)
+  "produce a string of length LEN containing random characters,
+or of length 8 if the len is not specified.
+"
+  (let (s '())
+    (if (not len) (setq len 8))
+    (if (> len 144) (setq len 8)) ;; sanity
+    (while (> len 0)
+      (setq s (cons (+ (random 26) 97) s)
+            len (- len 1)))
+    (mapconcat 'string s "")))
+
+
+(defun apigee-new-proxy (proxy-name)
+  "Interactive fn that creates a new exploded proxy bundle directory
+structure, in the `apigee-apiproxies-home' directory.
+"
+  (interactive "Mproxy name: ")
+  (if (not (s-ends-with-p "/" apigee-apiproxies-home))
+      (setq apigee-apiproxies-home (concat apigee-apiproxies-home "/")))
+
+  (let ((proxy-dir (concat apigee-apiproxies-home proxy-name))
+        apiproxy-dir
+        file-attrs)
+
+    (if (file-exists-p proxy-dir)
+        (error (format "proxy dir %s already exists" proxy-dir))
+      (if (not (apigee--is-directory apigee-apiproxies-home))
+          (error "set apigee-apiproxies-home to the name of an existing directory.")
+        (setq apiproxy-dir (concat proxy-dir "/apiproxy/"))
+        (make-directory apiproxy-dir t)
+        ;; create the sub-directories
+        (let ((subdirs (list "proxies" "targets" "resources" "policies"
+                             "resources/java" "resources/xsl"
+                             "resources/node" "resources/jsc" )))
+          (while subdirs
+            (make-directory (concat apiproxy-dir (car subdirs)))
+            (setq subdirs (cdr subdirs))))
+        ;; create the toplevel xml file
+        (with-temp-file (concat apiproxy-dir proxy-name ".xml")
+          (insert
+           (concat
+            "<APIProxy revision='1' name='" proxy-name "'>\n"
+            "  <ConfigurationVersion minorVersion='0' majorVersion='4'/>\n"
+            "  <CreatedAt>" (apigee--java-get-time-in-millis) "</CreatedAt>\n"
+            "  <CreatedBy>" (apigee--get-createdby) "</CreatedBy>\n"
+            "  <Description></Description>\n"
+            "  <DisplayName>" proxy-name "</DisplayName>\n"
+            "  <LastModifiedAt>" (apigee--java-get-time-in-millis) "</LastModifiedAt>\n"
+            "  <LastModifiedBy>orgAdmin</LastModifiedBy>\n"
+            "  <TargetEndpoints>\n"
+            "    <TargetEndpoint>default</TargetEndpoint>\n"
+            "  </TargetEndpoints>\n"
+            "</APIProxy>\n")))
+
+        (with-temp-file (concat apiproxy-dir "targets/default.xml")
+          (insert "<TargetEndpoint name='default'>
+  <Description>Apigee auto generated target endpoint</Description>
+  <FaultRules/>
+  <Flows/>
+  <PreFlow name='PreFlow'>
+    <Request>
+      <Step>
+        <FaultRules/>
+        <Name>RaiseFault-UnknownRequest</Name>
+      </Step>
+    </Request>
+    <Response/>
+  </PreFlow>
+
+  <HTTPTargetConnection>
+    <Properties/>
+    <URL>http://internal.example.com/v1/XYZ/something</URL>
+  </HTTPTargetConnection>
+</TargetEndpoint>\n"))
+
+        (with-temp-file (concat apiproxy-dir "proxies/default.xml")
+          (insert
+           "<ProxyEndpoint name='default'>
+  <Description>Default Proxy</Description>
+  <HTTPProxyConnection>
+    <BasePath>/v1/" (apigee--random-string) "</BasePath>
+    <Properties/>
+    <VirtualHost>default</VirtualHost>
+    <VirtualHost>secure</VirtualHost>
+  </HTTPProxyConnection>
+
+  <FaultRules/>
+
+  <PreFlow name=\"PreFlow\">
+      <Request/>
+      <Response/>
+  </PreFlow>
+  <PostFlow name=\"PostFlow\">
+      <Request/>
+      <Response/>
+  </PostFlow>
+
+  <Flows>
+    <Flow name='test " (apigee--random-string) " " (apigee--random-string) "'>
+      <Description>insert description here</Description>
+      <Request>
+        <Step>
+          <FaultRules/>
+          <Name>InsertPolicyNameHere</Name>
+        </Step>
+      </Request>
+      <Response/>
+      <Condition>(proxy.pathsuffix MatchesPath \"/foo\") and (request.verb = \"GET\")</Condition>
+    </Flow>
+  </Flows>
+
+  <RouteRule name='InvokeRouteRule'>
+    <TargetEndpoint>default</TargetEndpoint>
+  </RouteRule>
+
+</ProxyEndpoint>\n"))
+
+        (find-file-existing apiproxy-dir)
+        ))))
+
+(defun apigee--snippet-field (field-num)
+  "returns the FIELD-NUMth field from the currently
+active YAS snippet. This is a utility fn for use within
+apigee snippets, to allow expansion for field (N) to depend on the
+value that was expanded for field (N-1). "
+    (nth (- field-num 1) (yas/snippet-fields snippet)))
+
+
+
+(defun apigee--fixup-script-name (name)
+  "returns a stripped name suitable for use for a file in the resources/jsc directory."
+
+  (let* ((prefix "Javascript-")
+         (pos (length prefix)))
+    (if (and (>= (length name) (length prefix))
+             (string= prefix (substring name 0 pos)))
+        (let ((s (substring name pos)))
+          (concat (downcase (substring s 0 1)) (substring s 1)))
+      name)))
+
+
 
 
 (defun apigee-get-menu-position ()
@@ -1369,7 +1382,7 @@ candidates is a list, (KEY TEMPLATE), where KEY is one of {Quota,
 XMLToJSON, Javascript, etc}, TEMPLATE is the template to fill in
 a new policy file.
 
-The intention is to display a multi-paned popup menu.
+The intention is to display a cascading (multi-level) popup menu.
 
 "
   (let ((categories (nreverse (apigee--sort-strings
@@ -1389,15 +1402,14 @@ The intention is to display a multi-paned popup menu.
                  (setq pane-items (cons (list (car candidate) n) pane-items))))
           (setq n (1+ n)))
 
-        ;;(setq pane-items (nreverse pane-items))
+        ;; sort by description here
+        (setq pane-items
+              (sort pane-items
+                    (lambda (a b) (not (string< (downcase (car a)) (downcase (car b)) )) )))
+
         (if (= (length pane-items) 1)
             (let ((item (car pane-items)))
-              (define-key keymap
-                ;; (vector (intern (format "%s-%d"
-                ;;                         (car item)
-                ;;                         (cadr item))))
-                (vector (cadr item))
-                item))
+              (define-key keymap (vector (cadr item)) item))
           (define-key keymap
             (vector (intern cat))
             (cons cat (make-sparse-keymap cat)))
