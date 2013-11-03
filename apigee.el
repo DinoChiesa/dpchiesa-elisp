@@ -5,13 +5,13 @@
 ;; Author     : Dino Chiesa
 ;; Maintainer : Dino Chiesa <dpchiesa@hotmail.com>
 ;; Created    : May 2013
-;; Modified   : May 2013
-;; Version    : 1.0
+;; Modified   : November 2013
+;; Version    : 1.1
 ;; Keywords   : apigee
 ;; Requires   : s.el
 ;; License    : New BSD
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2013-November-02 14:10:55>
+;; Last-saved : <2013-November-03 08:22:00>
 ;;
 ;;; Commentary:
 ;;
@@ -102,18 +102,23 @@ Or you can customize this variable.
   :group 'apigee)
 
 
-(defcustom apigee-prompt-mechanism 'x-popup-menu
+;; (defcustom apigee-prompt-mechanism 'x-popup-menu
+;;   "The mechanism used to prompt the user for his choice.
+;; Options: 'x-popup-menu, or 'dropdown-list.  When setting
+;; this, set it to the symbol, not to the string or the actual
+;; function.  Eg
+;;
+;;   (setq apigee-prompt-mechanism 'x-popup-menu)
+;;
+;; "
+;;   :type 'symbol
+;;   :options '('x-popup-menu 'dropdown-list)
+;;   :group 'apigee)
+
+(defvar apigee-prompt-mechanism 'x-popup-menu
   "The mechanism used to prompt the user for his choice.
-Options: 'x-popup-menu, or 'dropdown-list.  When setting
-this, set it to the symbol, not to the string or the actual
-function.  Eg
-
-  (setq apigee-prompt-mechanism 'x-popup-menu)
-
-"
-  :type 'symbol
-  :options '('x-popup-menu 'dropdown-list)
-  :group 'apigee)
+Originally this was going to be settable, but x-popup-menu is
+the only possible value currently.")
 
 
 ;; The command "template" to use when creating the API bundle zip. In
@@ -164,11 +169,21 @@ function.  Eg
     "target.received.content.length"))
 
 
-(defun apigee-path-of-apiproxy ()
-  "Returns the path of apiproxy that acts as the parent of
-the current file or directory.
+(defun apigee-insure-trailing-slash (path)
+  "Insure the given path ends with a slash.
+This is usedful with `default-directory'.  Setting
+`default-directory' to a value that does not end with a slash
+causes it to use the parent directory.
+"
+  (and s
+       (if (s-ends-with? "/" path) path) (concat path "/")))
 
-If the apiproxy is defined in a dir structure like:
+
+(defun apigee-path-of-apiproxy ()
+  "Returns the path of the directory that contains the
+apiproxy directory.
+
+If the apiproxy is defined in a structure like this:
 
 ~/dev/apiproxies/APINAME/apiproxy
 ~/dev/apiproxies/APINAME/apiproxy/APINAME.xml
@@ -180,19 +195,24 @@ If the apiproxy is defined in a dir structure like:
 ~/dev/apiproxies/APINAME/apiproxy/proxies/..
 ..
 
-then the return value is: ~/dev/apiproxies/APINAME
+then the return value is: ~/dev/apiproxies/APINAME/
 
+It always ends in slash.
 
 "
   (interactive)
-  (let ((elts (reverse (split-string (file-name-directory default-directory) "/")))
-        r)
-    (while (and elts (not r))
-      (if (string= (car elts) "apiproxy")
-          (setq r (reverse (cdr elts)))
-        (setq elts (cdr elts))))
-    (if r
-        (mapconcat 'identity r "/") )))
+    (apigee-insure-trailing-slash
+     (let ((maybe-this (concat (file-name-directory default-directory) "apiproxy")))
+       (if (apigee--is-directory maybe-this)
+           (file-name-directory default-directory)
+         (let ((elts (reverse (split-string (file-name-directory default-directory) "/")))
+               r)
+           (while (and elts (not r))
+             (if (string= (car elts) "apiproxy")
+                 (setq r (reverse (cdr elts)))
+               (setq elts (cdr elts))))
+           (if r
+               (mapconcat 'identity r "/") ))))))
 
 
 
@@ -220,7 +240,8 @@ the file or directory currently being edited.
 
 ;; The following fn can be used to help create the zip and upload from
 ;; emacs.  Currently this module delegates that to the pushapi script,
-;; so this fn is unnecessary.
+;; so this fn is unnecessary. But eventually all the upload logic could
+;; be implemented in elisp.
 (defun apigee-get-create-api-bundle-zip-cmd ()
   "Get the command that creates an API bundle zip. for the file
 or directory currently being edited.
@@ -235,20 +256,12 @@ or directory currently being edited.
          api-bundle-name
          (match-string 3 txt)))))
 
-(defun apigee-insure-trailing-slash (path)
-  "Insure the given path ends with a slash.
-This is usedful with `default-directory'.  Setting
-`default-directory' to a value that does not end with a slash
-causes it to use the parent directory.
-"
-  (if (s-ends-with? "/" path)
-      path)
-  (concat path "/"))
 
 
 ;; The following fn can be used to create the zip and upload from emacs.
 ;; Currently this module delegates that to the pushapi script, so this
-;; fn is unnecessary.
+;; fn is unnecessary. But eventually all the upload logic could
+;; be implemented in elisp.
 (defun apigee-create-api-bundle-zip ()
   "Create the API bundle zip that contains the file or directory
 currently being edited.
@@ -326,20 +339,17 @@ if no file exists by that name in the given proxy.
     (not (file-exists-p filename-to-check))))
 
 
-(defun apigee--default-val-for-policy-name (ptype)
+(defun apigee--suggested-policy-name (ptype)
   "Returns a string that contains a default policy name, uses a counter
 that is indexed per policy type within each API Proxy.
 "
-  (let* ((proxy-name (apigee-apiproxy-name))
-         (key (concat proxy-name "." ptype))
-         (val 1)
-         (pname (concat ptype "-" (format "%d" val))))
-
-    (while (not (apigee-policy-name-is-available pname))
-      (setq val (1+ val)
-            pname (concat ptype "-" (format "%d" val))))
-
-    pname))
+  (let ((val 1))
+    (flet ((next-name (v) (concat ptype "-" (format "%d" v))))
+      (let ((pname (next-name val)))
+        (while (not (apigee-policy-name-is-available pname))
+          (setq val (1+ val)
+                pname (next-name val)))
+        pname))))
 
 
 (defun apigee--get-createdby ()
@@ -1216,7 +1226,7 @@ $1
      '("Javascript"
        "Javascript"
        "<Javascript enabled='true' continueOnError='false' async='false' name='##'>
-    <DisplayName>${1:##}.</DisplayName>
+    <DisplayName>${1:##}</DisplayName>
   <ResourceURL>jsc://${2:$$(apigee--fixup-script-name \"##\")}.js</ResourceURL>
 </Javascript>")
 ;;  <FaultRules/>
@@ -1380,7 +1390,7 @@ The intention is to display a multi-paned popup menu.
           (setq n (1+ n)))
 
         ;;(setq pane-items (nreverse pane-items))
-        (if (eq (length pane-items) 1)
+        (if (= (length pane-items) 1)
             (let ((item (car pane-items)))
               (define-key keymap
                 ;; (vector (intern (format "%s-%d"
@@ -1403,34 +1413,6 @@ The intention is to display a multi-paned popup menu.
     ;; this works with popup-menu
     keymap))
 
-
-;; (defun apigee--old-generate-menu (candidates)
-;;   "Generate a menu suitable for use in `x-popup-menu' from the
-;; list of candidates. Each item in the list of candidates is a
-;; list, (KEY TEMPLATE), where KEY is one of {Quota, XMLToJSON,
-;; Javascript, etc}, TEMPLATE is the template to fill in a new policy file.
-;;
-;; The output is a multi-leveled hierarchy, like this:
-;;
-;;   (\"Insert a policy...\"
-;;     (\"Quota\"
-;;       (\"Quota\" \"value to return if thing 1 is selected\")
-;;       (\"Quota - Product\" \"value to return if thing 2 is selected\"))
-;;     (\"OAuthV2\"
-;;       (\"OAuthV2\" \"value to return if thing 3 is selected\")
-;;       (\"OAuthV2\" \"value if thing 4 is selected\"))
-;;       ....)
-;;
-;; "
-;;   (let ((items (mapcar '(lambda (elt)
-;;                           (cons
-;;                            (nth 0 elt)
-;;                            elt))
-;;                         candidates)))
-;;
-;;     ;; this works with x-popup-menu
-;;     (setq items (cons "Ignored pane title" items))
-;;     (list "Insert a policy..." items)))
 
 
 
@@ -1475,58 +1457,103 @@ of available policies.
 ;;;###autoload
 (defun apigee-add-policy ()
   "Invoke this interactively, and the fn will prompt the user to
-choose a policy type to insert. It will then ask for a name for the policy,
-create the appropriate XML file, and yas/snippet expand the template for
-that policy file.
-
-Bug: Does not check for name clashes by newly added policies.
+choose a policy type to insert. It will then ask for a name for
+the policy, create the appropriate XML file, and using
+yas/snippet, expand the template associated to the chosen policy,
+into the policy file.
 
 "
   (interactive)
   (let ((apiproxy-dir (apigee-path-of-apiproxy)))
     (if apiproxy-dir
-        (progn
-          (if (not (s-ends-with-p "/" apiproxy-dir))
-              (setq apiproxy-dir (concat apiproxy-dir "/")))
-          (let* ((choice (apigee-prompt-user-with-policy-choices))
+        (let* ((choice (apigee-prompt-user-with-policy-choices))
+               (chosen (nth (elt choice (1- (length choice))) apigee--policy-alist)))
+          (when chosen
+            (let ((policy-dir (concat apiproxy-dir "apiproxy/policies/"))
+                  (ptype (cadr chosen))
+                  (have-name nil)
+                  (policy-name-prompt "policy name: ")
+                  (raw-template (caddr chosen)))
 
-                 (chosen (nth (elt choice (1- (length choice))) apigee--policy-alist)))
+              (and (not (file-exists-p policy-dir))
+                   (make-directory policy-dir))
 
-            (when chosen
-              (let ((policy-dir (concat apiproxy-dir "apiproxy/policies/"))
-                    (ptype (cadr chosen))
-                    (have-name nil)
-                    (policy-name-prompt "policy name: ")
-                    (raw-template (caddr chosen)))
+              (let* ((default-value (apigee--suggested-policy-name ptype))
+                     (policy-name
+                      (let (n)
+                        (while (not have-name)
+                          (setq n (read-string policy-name-prompt default-value nil default-value)
+                                have-name (apigee-policy-name-is-available n)
+                                policy-name-prompt "That name is in use. Policy name: " ))
+                        n))
 
-                (and (not (file-exists-p policy-dir))
-                     (make-directory policy-dir))
+                     (elaborated-template
+                      (progn
+                        (while (string-match "##" raw-template)
+                          (setq raw-template
+                                (replace-match policy-name t t raw-template)))
+                        raw-template)))
 
-                (let* ((default-value (apigee--default-val-for-policy-name ptype))
-                       (policy-name
-                        (let (n)
-                          (while (not have-name)
-                            (setq n (read-string policy-name-prompt default-value nil default-value)
-                                  have-name (apigee-policy-name-is-available n)
-                                  policy-name-prompt "That name is in use. Policy name: " ))
-                          n))
+                ;; create the file, expand the snippet, save it.
+                (find-file (concat policy-dir policy-name ".xml"))
+                (yas/expand-snippet elaborated-template (point) (point))
+                (save-buffer)
 
-                       (elaborated-template
-                        (if (string-match "##" raw-template)
-                            (progn
-                            (while (string-match "##" raw-template)
-                              (setq raw-template
-                            (replace-match policy-name t t raw-template)))
-                            raw-template)
-                          raw-template)))
-                  (let* ((filename (concat policy-dir
-                                           policy-name
-                                           ".xml"))
-                         (myBuffer (find-file filename)))
-                    (yas/expand-snippet elaborated-template (point) (point))
-                    (save-buffer)
-                    )))))))))
+                ;; here, optionally open the resource file, if any
+                (cond
+                 ((or (string= ptype "Javascript") (string= ptype "XSL"))
+                    (save-excursion
+                      (goto-char (point-min))
+                      (if (re-search-forward "<ResourceURL>\\(jsc\\|xsl\\)://\\(.+\\)</ResourceURL>" (point-max) t)
+                          (let ((resource-type (match-string-no-properties 1))
+                                (resource-basename (match-string-no-properties 2)))
+                            (if resource-basename
+                                (let ((resource-dir
+                                       (concat apiproxy-dir "apiproxy/resources/" resource-type)))
+                                  (and (not (file-exists-p resource-dir))
+                                       (make-directory resource-dir))
+                                  (find-file-other-window (concat resource-dir resource-basename))
+                                  (apigee-mode)))))))
 
+                 (t nil))
+
+                )))))))
+
+
+;;;###autoload
+(defun apigee-open-resource-file-around-point ()
+  "Opens the resource file that is specified on the current line.
+This can be used interactively when editing a policy that includes a resource
+file, such as a Javascript, Python, or XSL policy.
+"
+  (interactive)
+  (let ((fullpath
+    (save-excursion
+      (goto-char (point-at-bol))
+      (if (re-search-forward "<ResourceURL>\\(jsc\\|xsl\\)://\\(.+\\)</ResourceURL>" (point-max) t)
+          (let ((resource-type (match-string-no-properties 1))
+                (resource-basename  (match-string-no-properties 2))
+                resource-dir)
+            (setq resource-dir
+                  (concat (apigee-path-of-apiproxy) "apiproxy/resources/" resource-type))
+            (and (not (file-exists-p resource-dir)) (make-directory resource-dir))
+            (concat resource-dir "/" resource-basename))))))
+    (and fullpath (find-file fullpath))))
+
+
+
+(define-minor-mode apigee-mode
+       "Toggle Apigee mode.
+     Allows apigee-specific functions when editing policy, proxy, and target files. "
+       ;; The initial value.
+      :init-value nil
+      ;; The indicator for the mode line.
+      :lighter " Apigee"
+      ;; The minor mode bindings.
+      :keymap
+      '(([f7] . apigee-open-resource-file-around-point)
+        )
+      :group 'apigee)
 
 
 (provide 'apigee)

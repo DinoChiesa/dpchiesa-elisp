@@ -1,6 +1,6 @@
 ;;
 ;; Dino's .emacs setup file.
-;; Last saved: <2013-November-02 14:38:23>
+;; Last saved: <2013-November-03 07:43:57>
 ;;
 ;; Works with v24.2 of emacs.
 ;;
