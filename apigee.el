@@ -11,7 +11,7 @@
 ;; Requires   : s.el
 ;; License    : New BSD
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2013-November-03 08:57:57>
+;; Last-saved : <2013-November-03 09:30:23>
 ;;
 ;;; Commentary:
 ;;
@@ -672,9 +672,8 @@ the only possible value currently.")
     <RefreshToken>request.formparam.refresh_token</RefreshToken>
     <SupportedGrantTypes/>
 
-    <GenerateResponse enabled='true'>
-        <Format>FORM_PARAM</Format>
-    </GenerateResponse>
+    <GenerateResponse/>
+
     <!--
     NB: If <GenerateResponse/> is omitted, then the policy implicitly sets
     the following variables:
@@ -1269,13 +1268,13 @@ structure, in the `apigee-apiproxies-home' directory.
         (find-file-existing apiproxy-dir)
         ))))
 
+
 (defun apigee--snippet-field (field-num)
   "returns the FIELD-NUMth field from the currently
 active YAS snippet. This is a utility fn for use within
 apigee snippets, to allow expansion for field (N) to depend on the
 value that was expanded for field (N-1). "
     (nth (- field-num 1) (yas/snippet-fields snippet)))
-
 
 
 (defun apigee--fixup-script-name (name)
@@ -1288,8 +1287,6 @@ value that was expanded for field (N-1). "
         (let ((s (substring name pos)))
           (concat (downcase (substring s 0 1)) (substring s 1)))
       name)))
-
-
 
 
 (defun apigee-get-menu-position ()
@@ -1428,32 +1425,48 @@ The intention is to display a cascading (multi-level) popup menu.
 
 
 
+;; (defun apigee-prompt-user-with-policy-choices ()
+;;   "Prompt the user with the available choices.
+;; In this context the available choices is the hierarchical list
+;; of available policies.
+;;
+;; "
+;;   (let
+;;       ;; No need to sort here. The popup-menu gets its items sorted, and
+;;       ;; choosing any item returns an index into the original unsorted
+;;       ;; list.
+;;       ;;
+;;       ;; ((candidates
+;;       ;;    (sort apigee--policy-alist
+;;       ;;          (lambda (a b) (string< (car a) (car b) )) )))
+;;       ((candidates apigee--policy-alist))
+;;
+;;   (cond
+;;    ((not candidates) nil)
+;;    ((and (eq apigee-prompt-mechanism 'dropdown-list)
+;;          (featurep 'dropdown-list))
+;;     (let ((choice-n (dropdown-list (mapcar '(lambda (elt) (nth 0 elt)) candidates))))
+;;       (if (not (nilp choice-n))
+;;           choice-n
+;;         (keyboard-quit))))
+;;
+;;    (t
+;;     ;; NB:
+;;     ;; x-popup-menu displays in the proper location, near
+;;     ;; the cursor.
+;;     ;;
+;;     ;; x-popup-dialog always displays in the center
+;;     ;; of the frame, which makes for an annoying
+;;     ;; user-experience.
+;;     (x-popup-menu (apigee-get-menu-position)
+;;                   (apigee--generate-menu candidates))))))
+
+
 (defun apigee-prompt-user-with-policy-choices ()
   "Prompt the user with the available choices.
 In this context the available choices is the hierarchical list
 of available policies.
-
 "
-  (let
-      ;; No need to sort here. The popup-menu gets its items sorted, and
-      ;; choosing any item returns an index into the original unsorted
-      ;; list.
-      ;;
-      ;; ((candidates
-      ;;    (sort apigee--policy-alist
-      ;;          (lambda (a b) (string< (car a) (car b) )) )))
-      ((candidates apigee--policy-alist))
-
-  (cond
-   ((not candidates) nil)
-   ((and (eq apigee-prompt-mechanism 'dropdown-list)
-         (featurep 'dropdown-list))
-    (let ((choice-n (dropdown-list (mapcar '(lambda (elt) (nth 0 elt)) candidates))))
-      (if (not (nilp choice-n))
-          choice-n
-        (keyboard-quit))))
-
-   (t
     ;; NB:
     ;; x-popup-menu displays in the proper location, near
     ;; the cursor.
@@ -1462,7 +1475,7 @@ of available policies.
     ;; of the frame, which makes for an annoying
     ;; user-experience.
     (x-popup-menu (apigee-get-menu-position)
-                  (apigee--generate-menu candidates))))))
+                  (apigee--generate-menu apigee--policy-alist)))
 
 
 
