@@ -11,7 +11,7 @@
 ;; Requires   : s.el
 ;; License    : New BSD
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2013-November-03 09:30:23>
+;; Last-saved : <2013-November-04 11:32:59>
 ;;
 ;;; Commentary:
 ;;
@@ -1521,8 +1521,9 @@ into the policy file.
 
                 ;; create the file, expand the snippet, save it.
                 (find-file (concat policy-dir policy-name ".xml"))
-                (yas/expand-snippet elaborated-template (point) (point))
+                (yas/expand-snippet-sync elaborated-template (point) (point))
                 (save-buffer)
+                (apigee-mode 1)
 
                 ;; here, optionally open the resource file, if any
                 (cond
@@ -1534,11 +1535,11 @@ into the policy file.
                                 (resource-basename (match-string-no-properties 2)))
                             (if resource-basename
                                 (let ((resource-dir
-                                       (concat apiproxy-dir "apiproxy/resources/" resource-type)))
+                                       (concat apiproxy-dir "apiproxy/resources/" resource-type "/")))
                                   (and (not (file-exists-p resource-dir))
                                        (make-directory resource-dir))
                                   (find-file-other-window (concat resource-dir resource-basename))
-                                  (apigee-mode)))))))
+                                  (apigee-mode 1)))))))
 
                  (t nil))
 
