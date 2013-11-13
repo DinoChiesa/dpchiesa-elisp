@@ -6,12 +6,12 @@
 ;; Maintainer : Dino Chiesa <dpchiesa@hotmail.com>
 ;; Created    : May 2013
 ;; Modified   : November 2013
-;; Version    : 1.1
+;; Version    : 1.2
 ;; Keywords   : apigee
 ;; Requires   : s.el
 ;; License    : New BSD
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2013-November-04 11:32:59>
+;; Last-saved : <2013-November-13 09:05:05>
 ;;
 ;;; Commentary:
 ;;
@@ -19,8 +19,8 @@
 ;; with API Proxy definition bundles within emacs. Per ejemplo,
 ;;  - creating a new blank proxy
 ;;  - zipping and importing a bundle
-;;  - validaitng a bundle (coming soon)
-;;  - adding a new policy to a bundle (coming soon)
+;;  - adding a new policy to a bundle
+;;  - validating a bundle (coming soon)
 ;;
 ;;
 ;;; License
@@ -124,7 +124,8 @@ the only possible value currently.")
 ;; The command "template" to use when creating the API bundle zip. In
 ;; this template, the %f is replaced with the name of the zip file to
 ;; create. This template probably never needs to be customized.
-(defvar apigee-create-bundle-zip-command-template "zip %f -r apiproxy/ -x \"*.*~\" ")
+(defvar apigee-create-bundle-zip-command-template "zip %f -r apiproxy/ -x \"*.*~\" "
+  "command template to use when creating an API bundle zip")
 
 ;;(setq apigee-create-bundle-zip-command-template "zip %f -r apiproxy/ -x \"*.*~\"")
 
@@ -137,7 +138,6 @@ the only possible value currently.")
    '("500" "Server Error")
    '("503" "Server Busy")))
 
-
 (defconst apigee-entity-to-entity-id-types-alist
   (list
    '("apiproduct" ("apiproductname" "appname" "appid" "consumerkey"))
@@ -149,7 +149,6 @@ the only possible value currently.")
 
 (defconst apigee-common-variable-list
   '("environment.name"
-    "request.header.X-Forwarded-For"
     "requestMessageUri"
     "request.verb"
     "response.status.code"
@@ -163,9 +162,14 @@ the only possible value currently.")
     "system.timestamp"
     "target.sent.start.timestamp"
     "target.received.end.timestamp"
+    "target.copy.pathsuffix"
     "target.url"
-    "request.header.Accept"
-    "target.received.content.length"))
+    "request.header.accept"
+    "request.header.x-apikey"
+    "request.header.apikey"
+    "request.header.X-Forwarded-For"
+    "target.received.content.length")
+  "A list of common variables, can be used to prompt expansion in yas snippets")
 
 (defconst apigee--policy-alist
     (list
@@ -949,14 +953,18 @@ $1
 ))
 
 
+(defvar apigee-upload-command-alist nil
+  "alist used at runtime to cache the upload commands")
+
+
+
 (defun apigee-insure-trailing-slash (path)
-  "Insure the given path ends with a slash.
-This is usedful with `default-directory'.  Setting
-`default-directory' to a value that does not end with a slash
-causes it to use the parent directory.
+  "Insure the given path ends with a slash. This is usedful with
+`default-directory'. Setting `default-directory' to a value that
+does not end with a slash causes it to use the parent directory.
 "
-  (and s
-       (if (s-ends-with? "/" path) path) (concat path "/")))
+  (and path
+       (if (s-ends-with? "/" path) path (concat path "/"))))
 
 
 (defun apigee-path-of-apiproxy ()
@@ -981,19 +989,19 @@ It always ends in slash.
 
 "
   (interactive)
-    (apigee-insure-trailing-slash
-     (let ((maybe-this (concat (file-name-directory default-directory) "apiproxy")))
-       (if (apigee--is-directory maybe-this)
-           (file-name-directory default-directory)
-         (let ((elts (reverse (split-string (file-name-directory default-directory) "/")))
-               r)
-           (while (and elts (not r))
-             (if (string= (car elts) "apiproxy")
-                 (setq r (reverse (cdr elts)))
-               (setq elts (cdr elts))))
-           (if r
-               (mapconcat 'identity r "/") ))))))
-
+  (file-truename
+   (apigee-insure-trailing-slash
+    (let ((maybe-this (concat (file-name-directory default-directory) "apiproxy")))
+      (if (apigee--is-directory maybe-this)
+          (file-name-directory default-directory)
+        (let ((elts (reverse (split-string (file-name-directory default-directory) "/")))
+              r)
+          (while (and elts (not r))
+            (if (string= (car elts) "apiproxy")
+                (setq r (reverse (cdr elts)))
+              (setq elts (cdr elts))))
+          (if r
+              (mapconcat 'identity r "/") )))))))
 
 
 (defun apigee-apiproxy-name ()
@@ -1019,11 +1027,11 @@ the file or directory currently being edited.
 
 
 ;; The following fn can be used to help create the zip and upload from
-;; emacs.  Currently this module delegates that to the pushapi script,
+;; emacs. Currently this module delegates that to the pushapi script,
 ;; so this fn is unnecessary. But eventually all the upload logic could
 ;; be implemented in elisp.
 (defun apigee-get-create-api-bundle-zip-cmd ()
-  "Get the command that creates an API bundle zip. for the file
+  "Get the command that creates an API bundle zip. For the file
 or directory currently being edited.
 "
   (interactive)
@@ -1075,15 +1083,21 @@ that contains the file or directory currently being edited.
 "
   (interactive)
   (let ((proxy-dir (apigee-path-of-apiproxy)))
-    (if proxy-dir
-        (if (file-exists-p apigee-upload-bundle-pgm)
-            (progn
-              (set (make-local-variable 'compile-command)
-                   (concat
-                    apigee-upload-bundle-pgm " "
-                    apigee-upload-bundle-args " "
-                    proxy-dir))
-              (call-interactively 'compile))))))
+    (and proxy-dir
+         (file-exists-p apigee-upload-bundle-pgm)
+         (let ((this-cmd (assoc proxy-dir apigee-upload-command-alist)))
+           (set (make-local-variable 'compile-command)
+                (or (cdr this-cmd)
+                    (concat
+                     apigee-upload-bundle-pgm " "
+                     apigee-upload-bundle-args " "
+                     proxy-dir)))
+           (call-interactively 'compile)
+           (if this-cmd
+               (setcdr this-cmd compile-command)
+             (add-to-list 'apigee-upload-command-alist (cons proxy-dir compile-command)))
+           ;;(message (format "compile command: %s" compile-command))
+           ))))
 
 
 (defun apigee--is-directory (dir-name)
@@ -1485,7 +1499,8 @@ of available policies.
 choose a policy type to insert. It will then ask for a name for
 the policy, create the appropriate XML file, and using
 yas/snippet, expand the template associated to the chosen policy,
-into the policy file.
+into the policy file. It then will open any resource files as
+appropriate.
 
 "
   (interactive)
@@ -1521,6 +1536,7 @@ into the policy file.
 
                 ;; create the file, expand the snippet, save it.
                 (find-file (concat policy-dir policy-name ".xml"))
+                ;; expand-snippet-sync does not return until the snip is expanded.
                 (yas/expand-snippet-sync elaborated-template (point) (point))
                 (save-buffer)
                 (apigee-mode 1)
@@ -1578,6 +1594,7 @@ file, such as a Javascript, Python, or XSL policy.
       ;; The minor mode bindings.
       :keymap
       '(([f7] . apigee-open-resource-file-around-point)
+        ([f8] . apigee-upload-bundle-with-pushapi)
         )
       :group 'apigee)
 
