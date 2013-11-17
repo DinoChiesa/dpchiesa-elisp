@@ -1,6 +1,6 @@
 ;;
 ;; Dino's .emacs setup file.
-;; Last saved: <2013-November-03 07:43:57>
+;; Last saved: <2013-November-04 11:31:16>
 ;;
 ;; Works with v24.2 of emacs.
 ;;
@@ -601,6 +601,34 @@ Prompts for INPUT-DIR and OUTPUT-FILE if called-interactively"
       (find-file-other-window output-file)))
 
 
+
+
+;; ------------------------------------------------
+
+;;;; Expand snippet synchronously
+(defvar yas/recursive-edit-flag nil)
+
+(defun yas/expand-sync ()
+  "Execute `yas/expand'. This function exits after expanding snippet."
+  (interactive)
+  (let ((yas/recursive-edit-flag t))
+    (call-interactively 'yas/expand)
+    (recursive-edit)))
+
+(defun yas/expand-snippet-sync (content &optional start end expand-env)
+  "Execute `yas/expand-snippet'. This function exits after expanding snippet."
+  (let ((yas/recursive-edit-flag t))
+    (yas/expand-snippet content start end expand-env)
+    (recursive-edit)))
+(defun yas/after-exit-snippet-hook--recursive-edit ()
+  (when yas/recursive-edit-flag
+    (throw 'exit nil)))
+(add-hook 'yas/after-exit-snippet-hook 'yas/after-exit-snippet-hook--recursive-edit)
+;; ------------------------------------------------
+
+
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
@@ -811,8 +839,9 @@ Prompts for INPUT-DIR and OUTPUT-FILE if called-interactively"
   (local-set-key "\C-c\C-c"  'dino-dired-copy-file-to-dir-in-other-window)
   (local-set-key "\C-c\C-m"  'dino-dired-move-file-to-dir-in-other-window)
 
-  (local-set-key "F" 'dino-dired-do-find))
-  (local-set-key "L" 'dired-kill-subdir)) ;; opposite of i (dired-maybe-insert-subdir)
+  (local-set-key "F" 'dino-dired-do-find)
+  (local-set-key "K" 'dired-kill-subdir) ;; opposite of i (dired-maybe-insert-subdir)
+  )
 
 (add-hook 'dired-mode-hook 'dino-dired-mode-hook-fn)
 
