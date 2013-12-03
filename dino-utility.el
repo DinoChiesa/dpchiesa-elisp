@@ -463,5 +463,95 @@ are the string substitutions (see `format')."
             (insert "\n-->"))))))
 
 
+(defun dino-is-directory (dir-name)
+  "Tests to see whether a name refers to a directory"
+  (and
+   (file-exists-p dir-name)
+   (let ((attrs (file-attributes dir-name)))
+     (and
+      (car attrs)
+      (not (stringp (car attrs)))))))
+
+
+(defvar dino-move-timer-list nil
+  "list of timers for `dino-move-whenever'")
+
+
+(defun dino-get-unique-filename (fname dir)
+  "returns a unique filename for FNAME in diretory DIR,
+by appending -N, N=1,2,3... to FNAME when FNAME exists
+in DIR.
+"
+  (let ((testname
+         (concat (file-name-as-directory dir) fname)))
+    (if (file-exists-p testname)
+      (let ((parts (split-string fname "\\."))
+            (continue t))
+        (let ((basename
+               (mapconcat 'identity (reverse (cdr (reverse parts))) "."))
+              (extension
+               (if (> (length parts) 1)
+                   (car (reverse parts))
+               ""))
+              (ix 1))
+        (while continue
+          (setq testname
+                (concat (file-name-as-directory dir) basename
+                        "-" (format "%d" ix) "." extension))
+          (setq continue (file-exists-p testname)
+                ix (1+ ix))))))
+    testname))
+
+
+
+(defun dino-check-files-and-move (src targ)
+  "Checks SRC directory and moves any files there to
+TARG directory. Fixes up names for uniqueness. Returns
+the list of files moved, nil if none.
+
+Eg,
+  (dino-check-files-and-move \"~/dev/axp/to-Apigee\" \"~/Desktop\")
+
+"
+  (if (not (dino-is-directory src))
+      (error (format "%s is not a directory" src)))
+  (if (not (dino-is-directory targ))
+      (error (format "%s is not a directory" targ)))
+  (let ((flist (directory-files-and-attributes src))
+        moved)
+    (while flist
+      (let ((one-file (car flist)))
+        (if (not (car (cdr one-file))) ;; regular file
+            (let ((unique-name
+                   (dino-get-unique-filename (car one-file) targ)))
+              (rename-file
+               (concat (file-name-as-directory src)
+                       (car one-file))
+               unique-name)
+              (add-to-list 'moved unique-name))))
+      (setq flist (cdr flist)))
+    moved))
+
+
+
+(defun dino-move-whenever (src targ)
+  "Watches SRC directory and when files are present, moves them to
+TARG directory.
+
+Eg,
+
+ (dino-move-whenever \"~/dev/axp/to-Apigee\"
+                     \"/Users/dino/Google Drive/Pre-Sales/Accounts/AEXP\")
+
+"
+  (if (not (dino-is-directory src))
+      (error (format "%s is not a directory" src)))
+  (if (not (dino-is-directory targ))
+      (error (format "%s is not a directory" targ)))
+  (let ((x (run-with-timer 0 75 'dino-check-files-and-move src targ)))
+    (add-to-list 'dino-move-timer-list (list src targ x))))
+
+
+
 
 (provide 'dino-utility)
