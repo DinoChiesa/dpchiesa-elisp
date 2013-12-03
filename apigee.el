@@ -11,7 +11,7 @@
 ;; Requires   : s.el
 ;; License    : New BSD
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2013-November-13 09:05:05>
+;; Last-saved : <2013-November-21 08:00:51>
 ;;
 ;;; Commentary:
 ;;
@@ -129,11 +129,24 @@ the only possible value currently.")
 
 ;;(setq apigee-create-bundle-zip-command-template "zip %f -r apiproxy/ -x \"*.*~\"")
 
+(defconst apigee-message-payload-template-alist
+  (list
+   '("application/json" "<![CDATA[{
+  \"response\" : {
+    \"clientId\" : \"%parsedRequest.client_id#\",
+  }
+}
+]]>")
+   '("application/xml" "<message><here>%parsedRequest.client_id#</here></message>")))
+
+
 (defconst apigee-http-status-message-alist
   (list
    '("200" "OK")
+   '("201" "Created")
    '("302" "Moved")
    '("400" "Bad Request")
+   '("401" "Not Authorized")
    '("404" "Not Found")
    '("500" "Server Error")
    '("503" "Server Busy")))
@@ -253,18 +266,13 @@ the only possible value currently.")
        "AssignMessage"
      "<AssignMessage name='##'>
   <DisplayName>AssignMessage</DisplayName>
-  <Description>$0</Description>
+  <Description>$1</Description>
   <IgnoreUnresolvedVariables>false</IgnoreUnresolvedVariables>
   <Set>
-    <Payload contentType='application/json'
-             variablePrefix='%' variableSuffix='#'><![CDATA[{
-  \"response\" : {
-    \"clientId\" : \"%parsedRequest.client_id#\",
-  }
-}
-]]></Payload>
-     <StatusCode>${1:$$(yas/choose-value '(\"200\" \"302\" \"400\" \"404\" \"500\" \"503\"))}</StatusCode>
-     <ReasonPhrase>${1:$(cadr (assoc text apigee-http-status-message-alist))}</ReasonPhrase>
+    <Payload contentType='${2:$$(yas/choose-value (reverse (apigee--sort-strings (mapcar 'car apigee-message-payload-template-alist))))}'
+             variablePrefix='%' variableSuffix='#'>${2:$(cadr (assoc text apigee-message-payload-template-alist))}</Payload>
+    <StatusCode>${3:$$(yas/choose-value (reverse (apigee--sort-strings (mapcar 'car apigee-http-status-message-alist))))}</StatusCode>
+    <ReasonPhrase>${3:$(cadr (assoc text apigee-http-status-message-alist))}</ReasonPhrase>
   </Set>
 
   <!-- Set this flow variable to indicate the response has been set -->
@@ -783,11 +791,66 @@ the only possible value currently.")
 </GetOAuthV2Info>\n")
 
 
-     '("OAuthV1 - GetInfo"
+     '("OAuthV1 - GetInfo - AppKey"
        "OAuthV1-GetOAuthV1Info"
      "<GetOAuthV1Info name='##'>
-  <AppKey ref='tokenRequest.client_id'/>
+  <AppKey ref='request.formparam.apikey'/>
 </GetOAuthV1Info>\n")
+
+     '("OAuthV1 - GetInfo - APIKey"
+       "OAuthV1-GetOAuthV1Info"
+     "<GetOAuthV1Info name='##'>
+  <APIKey ref='request.formparam.apikey'/>
+</GetOAuthV1Info>\n")
+
+     '("OAuthV1 - GetInfo - ConsumerKey"
+       "OAuthV1-GetOAuthV1Info"
+     "<GetOAuthV1Info name='##'>
+  <ConsumerKey ref='request.formparam.oauth_consumer_key'/>
+</GetOAuthV1Info>\n")
+
+     '("OAuthV1 - GetInfo - RequestToken"
+       "OAuthV1-GetOAuthV1Info"
+     "<GetOAuthV1Info name='##'>
+  <RequestToken ref='request.formparam.oauth_token'/>
+</GetOAuthV1Info>\n")
+
+     '("OAuthV1 - GenerateRequestToken"
+       "OAuthV1-GenerateRequestToken"
+"<OAuthV1 name='##'>
+  <Operation>GenerateRequestToken</Operation>
+  <GenerateResponse enabled='${1:$$(yas/choose-value '(\"true\" \"false\" ))}'>
+    <Format>${2:$$(yas/choose-value '(\"FORM_PARAM\" \"XML\" ))}</Format>
+  </GenerateResponse>
+  <GenerateErrorResponse enabled='${3:$$(yas/choose-value '(\"true\" \"false\" ))}'>
+    <Format>${4:$$(yas/choose-value '(\"FORM_PARAM\" \"XML\" ))}</Format>
+    <Realm>http://oauth.apigee.com/oauth/1/</Realm>
+  </GenerateErrorResponse>
+</OAuthV1>\n")
+
+     '("OAuthV1 - GenerateAccessToken"
+       "OAuthV1-GenerateAccessToken"
+"<OAuthV1 name='##'>
+  <Operation>GenerateAccessToken</Operation>
+  <GenerateResponse enabled='${1:$$(yas/choose-value '(\"true\" \"false\" ))}'>
+    <Format>${2:$$(yas/choose-value '(\"FORM_PARAM\" \"XML\" ))}</Format>
+  </GenerateResponse>
+  <GenerateErrorResponse enabled='${3:$$(yas/choose-value '(\"true\" \"false\" ))}'>
+    <Format>${4:$$(yas/choose-value '(\"FORM_PARAM\" \"XML\" ))}</Format>
+    <Realm>http://oauth.apigee.com/oauth/1/</Realm>
+  </GenerateErrorResponse>
+</OAuthV1>\n")
+
+     '("OAuthV1 - VerifyAccessToken"
+       "OAuthV1-VerifyAccessToken"
+ "<OAuthV1 name='##'>
+  <Operation>VerifyAccessToken</Operation>
+  <GenerateErrorResponse enabled='${1:$$(yas/choose-value '(\"true\" \"false\" ))}'>
+    <Format>${2:$$(yas/choose-value '(\"FORM_PARAM\" \"XML\" ))}</Format>
+    <Realm>http://oauth.apigee.com/oauth/1/</Realm>
+  </GenerateErrorResponse>
+</OAuthV1>\n")
+
 
      '("LookupCache"
        "LookupCache"
@@ -850,17 +913,13 @@ the only possible value currently.")
   <Description>$2</Description>
   <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
   <FaultResponse>
-   <Set>
-    <Payload contentType='application/json' variablePrefix='%' variableSuffix='#'><![CDATA[
-{
-%jsonResponse#
-    $0
-}
-]]></Payload>
-     <StatusCode>${3:$$(yas/choose-value '(\"200\" \"302\" \"400\" \"404\" \"500\" \"503\"))}</StatusCode>
-     <ReasonPhrase>${3:$(cadr (assoc text apigee-http-status-message-alist))}</ReasonPhrase>
-   </Set>
- </FaultResponse>
+    <Set>
+      <Payload contentType='${3:$$(yas/choose-value (reverse (apigee--sort-strings (mapcar 'car apigee-message-payload-template-alist))))}'
+               variablePrefix='%' variableSuffix='#'>${3:$(cadr (assoc text apigee-message-payload-template-alist))}$0</Payload>
+      <StatusCode>${4:$$(yas/choose-value (reverse (apigee--sort-strings (mapcar 'car apigee-http-status-message-alist))))}</StatusCode>
+      <ReasonPhrase>${4:$(cadr (assoc text apigee-http-status-message-alist))}</ReasonPhrase>
+    </Set>
+  </FaultResponse>
 </RaiseFault>")
 
 
@@ -1104,7 +1163,11 @@ that contains the file or directory currently being edited.
   "Tests to see whether a name refers to a directory"
   (and
    (file-exists-p dir-name)
-   (car (file-attributes dir-name))))
+   (let ((attrs (file-attributes dir-name)))
+     (and
+      (car attrs)
+      (not (stringp (car attrs)))))))
+
 
 (defun apigee--java-get-time-in-millis ()
   "Returns a string that contains a number equal in value to
