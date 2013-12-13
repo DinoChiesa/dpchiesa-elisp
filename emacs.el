@@ -1,6 +1,6 @@
 ;;
 ;; Dino's .emacs setup file.
-;; Last saved: <2013-December-02 17:48:06>
+;; Last saved: <2013-December-03 18:11:21>
 ;;
 ;; Works with v24.2 of emacs.
 ;;
@@ -2729,4 +2729,5 @@ emacs doing it for me.
 (add-hook 'find-file-hook
               (lambda () (turn-on-auto-revert-mode)))
 
+(setq default-directory "~/")
 (message "Done with emacs.el...")
