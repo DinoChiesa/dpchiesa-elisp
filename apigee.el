@@ -11,7 +11,7 @@
 ;; Requires   : s.el
 ;; License    : New BSD
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2013-November-21 08:00:51>
+;; Last-saved : <2013-December-13 13:51:15>
 ;;
 ;;; Commentary:
 ;;
@@ -563,8 +563,8 @@ the only possible value currently.")
     <State>flow.variable</State> <!-- Optional -->
     <AppEndUser>flow.variable</AppEndUser> <!-- Optional -->
     <Attributes> <!-- Optional -->
-      <Attribute name='attr_name1' ref='flow.variable' display='true|false'>value1</Attribute>
-      <Attribute name='attr_name2' ref='flow.variable' display='true|false'>value2</Attribute>
+      <Attribute name='attr_name1' ref='flow.variable1' display='true|false'>value1</Attribute>
+      <Attribute name='attr_name2' ref='flow.variable2' display='true|false'>value2</Attribute>
     </Attributes>
 
     <!--
@@ -619,8 +619,8 @@ the only possible value currently.")
     <State>flow.variable</State>
     <Attributes>
       <!-- If set to false, the attribute wont be delivered in the auth code response. -->
-      <Attribute name='attr_name1' ref='flow.variable' display='true|false'>value1</Attribute>
-      <Attribute name='attr_name2' ref='flow.variable' display='true|false'>value2</Attribute>
+      <Attribute name='attr_name1' ref='flow.variable1' display='true|false'>value1</Attribute>
+      <Attribute name='attr_name2' ref='flow.variable2' display='true|false'>value2</Attribute>
     </Attributes>
 
     <!--
@@ -641,7 +641,7 @@ the only possible value currently.")
     <Operation>VerifyAccessToken</Operation>
     <FaultRules/>
     <Properties/>
-    <Attributes/>
+    <Attributes/> <!-- not sure if valid here -->
 
     <!--
     This policy sets the following flow variables:
@@ -672,7 +672,7 @@ the only possible value currently.")
     <Operation>RefreshAccessToken</Operation>
     <FaultRules/>
     <Properties/>
-    <Attributes/>
+    <Attributes/> <!-- not sure if valid here -->
 
     <!-- ExpiresIn is milliseconds. 3600000 = 1 hour -->
     <!-- The ref is optional. The explicitly specified value is the default, -->
@@ -813,6 +813,16 @@ the only possible value currently.")
        "OAuthV1-GetOAuthV1Info"
      "<GetOAuthV1Info name='##'>
   <RequestToken ref='request.formparam.oauth_token'/>
+  <!--
+  On Success, these variables will be populated:
+    oauth_token
+    oauth_token_secret
+    developer.app.name
+    developer.id
+    ??
+    apiproduct.name
+    apiproduct.<custom_attribute_name>
+  -->
 </GetOAuthV1Info>\n")
 
      '("OAuthV1 - GenerateRequestToken"
@@ -831,6 +841,9 @@ the only possible value currently.")
      '("OAuthV1 - GenerateAccessToken"
        "OAuthV1-GenerateAccessToken"
 "<OAuthV1 name='##'>
+  <!-- ExpiresIn, in milliseconds. The ref is optional. The explicitly specified -->
+  <!-- value is the default, when the variable reference cannot be resolved.     -->
+  <ExpiresIn ref='flow.variable'>2400000</ExpiresIn>
   <Operation>GenerateAccessToken</Operation>
   <GenerateResponse enabled='${1:$$(yas/choose-value '(\"true\" \"false\" ))}'>
     <Format>${2:$$(yas/choose-value '(\"FORM_PARAM\" \"XML\" ))}</Format>
@@ -926,7 +939,7 @@ the only possible value currently.")
      '("RaiseFault - 302 Redirect"
        "RaiseFault-Redirect"
        "<RaiseFault name='##' enabled='true' continueOnError='false' async='false'>
-    <DisplayName>${1:##}.</DisplayName>
+    <DisplayName>${1:##}</DisplayName>
     <FaultRules/>
     <Properties/>
     <FaultResponse>
