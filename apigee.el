@@ -11,7 +11,7 @@
 ;; Requires   : s.el
 ;; License    : New BSD
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2013-December-13 13:51:15>
+;; Last-saved : <2014-January-20 17:49:15>
 ;;
 ;;; Commentary:
 ;;
@@ -475,12 +475,14 @@ the only possible value currently.")
     <DisplayName>##</DisplayName>
     <FaultRules/>
     <Properties/>
-      <Request variable='authenticationRequest' clearPayload='false'>
+    <Request variable='authenticationRequest' clearPayload='false'>
         <IgnoreUnresolvedVariables>false</IgnoreUnresolvedVariables>
     </Request>
     <Response>authenticationResponse</Response>
     <HTTPTargetConnection>
-        <Properties/>
+      <Properties>
+        <Property name='success.codes'>2xx, 4xx, 5xx</Property>
+      </Properties>
         <URL>${1:https://api.usergrid.com/globo/sandbox/token}</URL>
     </HTTPTargetConnection>
 </ServiceCallout>\n")
@@ -701,8 +703,19 @@ the only possible value currently.")
 </OAuthV2>\n")
 
 
+     '("OAuthV2 - InvalidateToken"
+       "OAuthV2-InvalidateToken"
+       "<OAuthV2 name='##'>
+    <Operation>InvalidateToken</Operation>
+    <Tokens>
+        <Token type='${1:$$(yas/choose-value '(\"accesstoken\" \"refreshtoken\"))}'
+               cascade='true'>${2:flow.variable}</Token>
+    </Tokens>
+</OAuthV2>\n")
+
+
      '("OAuthV2 - GetClientInfo"
-       "OAuthV2-GetOAuthV2Info"
+       "OAuthV2-Get-OAuthV2-Info-for-ClientId"
 "<GetOAuthV2Info name='##'>
     <!-- use one of the following: a referenced variable or -->
     <!-- an explicitly passed client_id -->
@@ -721,8 +734,9 @@ the only possible value currently.")
 </GetOAuthV2Info>\n")
 
      '("OAuthV2 - GetAccessTokenInfo"
-       "GetOAuthV2Info"
+       "OAuthV2-Get-OAuthV2-Info-for-AccessToken"
      "<GetOAuthV2Info name='##'>
+    <!-- http://apigee.com/docs/api-services/content/authorize-requests-using-oauth-20 -->
     <!-- use one of the following: a referenced variable or -->
     <!-- an explicitly passed access_token -->
     <AccessToken ref='${1:openidconnect.access_token}'/>
@@ -740,15 +754,22 @@ the only possible value currently.")
     -->
 </GetOAuthV2Info>\n")
 
-     '("OAuthV2 - InvalidateToken"
-       "OAuthV2-InvalidateToken"
-       "<OAuthV2 name='##'>
-    <Operation>InvalidateToken</Operation>
-    <Tokens>
-        <Token type='${1:$$(yas/choose-value '(\"accesstoken\" \"refreshtoken\"))}'
-               cascade='true'>${2:flow.variable}</Token>
-    </Tokens>
-</OAuthV2>\n")
+
+     '("OAuthV2 - GetRefreshTokenAttributes"
+       "OAuthV2-GetOAuthV2Info"
+     "<GetOAuthV2Info name='##'>
+    <!-- use one of the following: a referenced variable or -->
+    <!-- an explicitly passed refresh_token -->
+    <RefreshToken ref='${1:flow.variable}'/>
+    <RefreshToken>${2:refresh_token}</RefreshToken>
+    <!--
+    On Success, the following flow variables will be set.
+      oauthv2accesstoken.<PolicyName>.refresh_token
+      oauthv2accesstoken.<PolicyName>.refresh_token_expires_in
+      oauthv2accesstoken.<PolicyName>.refresh_token_issued_at
+      oauthv2accesstoken.<PolicyName>.refresh_token_status
+    -->
+</GetOAuthV2Info>\n")
 
 
      '("OAuthV2 - GetAuthorizationCodeInfo"
@@ -774,33 +795,12 @@ the only possible value currently.")
 </GetOAuthV2Info>\n")
 
 
-     '("OAuthV2 - GetRefreshTokenAttributes"
-       "OAuthV2-GetOAuthV2Info"
-     "<GetOAuthV2Info name='##'>
-    <!-- use one of the following: a referenced variable or -->
-    <!-- an explicitly passed refresh_token -->
-    <RefreshToken ref='${1:flow.variable}'/>
-    <RefreshToken>${2:refresh_token}</RefreshToken>
-    <!--
-    On Success, the following flow variables will be set.
-      oauthv2accesstoken.<PolicyName>.refresh_token
-      oauthv2accesstoken.<PolicyName>.refresh_token_expires_in
-      oauthv2accesstoken.<PolicyName>.refresh_token_issued_at
-      oauthv2accesstoken.<PolicyName>.refresh_token_status
-    -->
-</GetOAuthV2Info>\n")
-
 
      '("OAuthV1 - GetInfo - AppKey"
        "OAuthV1-GetOAuthV1Info"
      "<GetOAuthV1Info name='##'>
+     <!-- deprecated - use VerifyApiKey -->
   <AppKey ref='request.formparam.apikey'/>
-</GetOAuthV1Info>\n")
-
-     '("OAuthV1 - GetInfo - APIKey"
-       "OAuthV1-GetOAuthV1Info"
-     "<GetOAuthV1Info name='##'>
-  <APIKey ref='request.formparam.apikey'/>
 </GetOAuthV1Info>\n")
 
      '("OAuthV1 - GetInfo - ConsumerKey"
@@ -809,10 +809,10 @@ the only possible value currently.")
   <ConsumerKey ref='request.formparam.oauth_consumer_key'/>
 </GetOAuthV1Info>\n")
 
-     '("OAuthV1 - GetInfo - RequestToken"
+     '("OAuthV1 - GetInfo - Token"
        "OAuthV1-GetOAuthV1Info"
      "<GetOAuthV1Info name='##'>
-  <RequestToken ref='request.formparam.oauth_token'/>
+  <${1:$$(yas/choose-value '(\"AccessToken\" \"RequestToken\" ))} ref='request.formparam.oauth_token'/>
   <!--
   On Success, these variables will be populated:
     oauth_token
