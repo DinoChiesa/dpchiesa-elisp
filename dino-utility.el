@@ -431,6 +431,40 @@ are the string substitutions (see `format')."
       )))
 
 
+
+(defun dino-encode-uri-component-in-region (start end)
+  (interactive "r")
+  (save-excursion
+    (save-restriction
+      (narrow-to-region start end)
+      (let ((str (buffer-substring-no-properties (point-min) (point-max)))
+            (len (- (point-max) (point-min)))
+            command)
+        (goto-char (point-min))
+        (delete-char len)
+        (setq command (concat
+                       "/usr/local/bin/node -e \"console.log(encodeURIComponent('"
+                       str "'))\"" ))
+        (insert (shell-command-to-string command))))))
+
+
+(defun dino-unencode-uri-component-in-region (start end)
+  (interactive "r")
+  (save-excursion
+    (save-restriction
+      (narrow-to-region start end)
+      (let ((str (buffer-substring-no-properties (point-min) (point-max)))
+            (len (- (point-max) (point-min)))
+            command)
+        (goto-char (point-min))
+        (delete-char len)
+        (setq command (concat
+                       "/usr/local/bin/node -e \"console.log(unescape('"
+                       str "'))\"" ))
+        (insert (shell-command-to-string command))))))
+
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
     (defun dino-xml-comment-region (beg end &optional arg)
