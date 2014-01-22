@@ -1,6 +1,6 @@
 ;;
 ;; Dino's .emacs setup file.
-;; Last saved: <2013-December-03 18:11:21>
+;; Last saved: <2013-December-17 20:19:03>
 ;;
 ;; Works with v24.2 of emacs.
 ;;
@@ -70,6 +70,7 @@ selection to the kill ring"
 ;; a bunch of random utility functions
 ;;
 (require 'dino-utility)
+;xxxx
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -171,7 +172,7 @@ selection to the kill ring"
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Global settings
+;; Global key bindings
 ;
 (global-set-key "\C-xw" 'dino-fixup-linefeeds)
 (global-set-key "\C-cg" 'httpget)
@@ -187,6 +188,7 @@ selection to the kill ring"
 (global-set-key "\C-x\C-d"  'delete-window)
 (global-set-key "\C-xd"     'dino-ediff-buffer-against-file)
 (global-set-key "\C-x\C-r"  'dino-resize-big)
+(global-set-key "\C-x&"     'dino-encode-uri-component-in-region)
 (global-set-key "\C-xx"     'copy-to-register)
 (global-set-key "\C-xg"     'insert-register)
 (global-set-key "\C-xp"     'previous-window)
