@@ -1,6 +1,6 @@
 ;;
 ;; Dino's .emacs setup file.
-;; Last saved: <2013-December-17 20:19:03>
+;; Last saved: <2014-February-16 09:18:31>
 ;;
 ;; Works with v24.2 of emacs.
 ;;
@@ -319,6 +319,21 @@ selection to the kill ring"
 (autoload 'php-mode "php-mode" "Major mode for editing php code." t)
 
 
+(require 'web-mode)
+
+(defun dino-web-mode-fn ()
+  "My hook for web mode"
+  (interactive)
+  (turn-on-font-lock)
+
+  (local-set-key "\M-\C-R"  'indent-region)
+  ;; Make sure autofill is OFF.
+  (auto-fill-mode -1)
+  )
+
+(add-hook 'web-mode-hook 'dino-web-mode-fn)
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; adjustment to mode mappings
 ;
@@ -341,8 +356,8 @@ selection to the kill ring"
          ("\\.ashx$"                          . csharp-mode)
          ("\\.ascx$"                          . csharp-mode)
          ("\\.s?html?\\'"                     . html-mode)
-         ("\\.html$"                          . html-mode)
-         ("\\.htm$"                           . html-mode)
+         ("\\.html$"                          . web-mode)
+         ("\\.htm$"                           . web-mode)
          ("\\.md$"                            . fundamental-mode)  ;; markdown
          ("\\.el$"                            . emacs-lisp-mode)
          ;; ("\\.\\(js\\|jsi\\)$"                . javascript-mode)
