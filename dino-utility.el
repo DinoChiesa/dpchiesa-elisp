@@ -79,6 +79,17 @@
 ;;         (set-window-buffer (funcall split-f)
 ;;                            (cadr buffers))))))
 
+(defun dino-hangout ()
+  "emit the dino-hangout url"
+  (interactive)
+  (let ((s "http://bit.ly/dino-hangout"))
+    (if (fboundp 'paste-to-osx)
+        (progn
+          (paste-to-osx s)
+          (call-process "open" nil nil nil s)))
+    (insert s)))
+
+
 
 (defun dino-toggle-frame-split ()
   "If the frame is split vertically, split it horizontally or vice versa.
