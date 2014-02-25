@@ -11,7 +11,7 @@
 ;; Requires   : s.el
 ;; License    : New BSD
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2014-January-20 17:49:15>
+;; Last-saved : <2014-February-19 11:38:24>
 ;;
 ;;; Commentary:
 ;;
@@ -133,7 +133,8 @@ the only possible value currently.")
   (list
    '("application/json" "<![CDATA[{
   \"response\" : {
-    \"clientId\" : \"%parsedRequest.client_id#\",
+    \"message\" : \"whatever\",
+    \"clientId\" : \"%parsedRequest.client_id#\"
   }
 }
 ]]>")
@@ -638,13 +639,10 @@ the only possible value currently.")
 
      '("OAuthV2 - VerifyAccessToken"
        "OAuthV2"
-       "<OAuthV2 async='false' continueOnError='false' enabled='true' name='##'>
+       "<OAuthV2 name='##'>
     <DisplayName>OAuthV2 - VerifyAccessToken</DisplayName>
     <Operation>VerifyAccessToken</Operation>
-    <FaultRules/>
-    <Properties/>
-    <Attributes/> <!-- not sure if valid here -->
-
+    <!-- pulls token from Authorization header as per OAuthV2.0 spec -->
     <!--
     This policy sets the following flow variables:
       organization_name
@@ -662,9 +660,9 @@ the only possible value currently.")
       apiproduct.name*
       apiproduct.<custom_attribute_name>*
     -->
+   <AccessToken>flow.variable</AccessToken> <!-- Optional -->
+   <AccessTokenPrefix>Bearer</AccessTokenPrefix> <!-- Optional -->
 
-    <ExternalAuthorization>false</ExternalAuthorization>
-    <SupportedGrantTypes/>
 </OAuthV2>\n")
 
      '("OAuthV2 - RefreshAccessToken"
