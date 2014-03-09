@@ -1,6 +1,6 @@
 ;;
 ;; Dino's .emacs setup file.
-;; Last saved: <2014-February-16 09:18:31>
+;; Last saved: <2014-February-28 18:17:54>
 ;;
 ;; Works with v24.2 of emacs.
 ;;
@@ -325,6 +325,10 @@ selection to the kill ring"
   "My hook for web mode"
   (interactive)
   (turn-on-font-lock)
+
+  xxxxx minor-mode
+  (hs-minor-mode 1)
+
 
   (local-set-key "\M-\C-R"  'indent-region)
   ;; Make sure autofill is OFF.
@@ -891,6 +895,7 @@ just auto-corrects on common mis-spellings by me. "
       ("riguer" "rigeuer" nil 1)
       ("hygeine" "hygiene" nil 0)
       ("comittee" "committee" nil 0)
+      ("cusotmer" "customer" nil 0)
       ("recieve" "receive" nil 0)
       ("vairous" "various" nil 0)
       ("acheive" "achieve" nil 0)
