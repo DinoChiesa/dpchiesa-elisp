@@ -58,7 +58,6 @@
 (fset 'dinoch-b64-paste
       [escape ?x ?r backspace ?e ?r ?a ?s ?e ?- ?b ?u tab return ?\C-y escape ?x ?b ?a ?s ?e ?6 ?4 ?- ?d ?e ?c ?o tab return ?\C-x ?\C-s])
 
-
 (defun dino-fixup-linefeeds ()
   "Dino's function to replace the CR-LF of a DOS ASCII file to a LF for Unix."
   (interactive)
@@ -66,34 +65,10 @@
     (while (search-forward "\xd" nil t)
       (replace-match "" nil t))))
 
-;; (defun dino-2-windows-toggle-vertical-and-horizontal ()
-;;   "When displaying exactly 2 buffers, flip from top/bottom orientation
-;; to side-by-side display. Or vice versa."
-;;   (interactive)
-;;   (let ((buffers (mapcar 'window-buffer (window-list))))
-;;     (when (= 2 (length buffers))
-;;       (let ((split-f (if (window-full-height-p (nth 0 (window-list)))
-;;                          'split-window-vertically
-;;                        'split-window-horizontally)))
-;;         (delete-other-windows)
-;;         (set-window-buffer (funcall split-f)
-;;                            (cadr buffers))))))
-
-(defun dino-hangout ()
-  "emit the dino-hangout url"
-  (interactive)
-  (let ((s "http://bit.ly/dino-hangout"))
-    (if (fboundp 'paste-to-osx)
-        (progn
-          (paste-to-osx s)
-          (call-process "open" nil nil nil s)))
-    (insert s)))
-
-
 
 (defun dino-toggle-frame-split ()
   "If the frame is split vertically, split it horizontally or vice versa.
-Assumes that the frame is only split into two."
+This works only when the frame is split into exactly two windows."
   (interactive)
   (unless (= (length (window-list)) 2)
     (error "Can toggle only if the frame is split in two"))
@@ -103,8 +78,6 @@ Assumes that the frame is only split into two."
         (split-window-horizontally)
       (split-window-vertically)) ; gives us a split with the other window twice
     (switch-to-buffer nil))) ; restore the original window in this part of the frame
-
-
 
 
 (defun dino-indent-buffer ()
@@ -175,7 +148,6 @@ in the list `dino-no-untabify-modes'
   (interactive)
   (set-frame-height (selected-frame) 68)
   (set-frame-width (selected-frame) 128))
-
 
 
 (defun dino-toggle-truncation ()
@@ -414,7 +386,6 @@ are the string substitutions (see `format')."
   (interactive)
   (dino-xml-pretty-print-region (point-min) (point-max)))
 
-
 (defun dino-escape-html-in-region (start end)
   (interactive "r")
   (save-excursion
@@ -440,7 +411,6 @@ are the string substitutions (see `format')."
       (goto-char (point-min))
       (replace-string "&gt;" ">")
       )))
-
 
 
 (defun dino-encode-uri-component-in-region (start end)
@@ -475,37 +445,55 @@ are the string substitutions (see `format')."
         (insert (shell-command-to-string command))))))
 
 
+(defun dino-sum-column (start end)
+  "Adds a column of numbers. Displays the sum and inserts it into
+the kill-ring. To use this fn interactively, mark the rectangle, and
+invoke the function. No commas or $ in the numbers, please.
+
+Overwrites register 9. "
+  (interactive "r")
+  (copy-rectangle-to-register 9 start end)
+  (set-buffer (get-buffer-create "*calc-sum*"))
+  (erase-buffer)
+  (insert-register 9)
+  (let ((sum 0))
+    (while (re-search-forward "[0-9]*\\.?[0-9]+" nil t)
+      (setq sum (+ sum (string-to-number (match-string 0)))))
+    (if (fboundp 'paste-to-osx)
+          (paste-to-osx (format "%f" sum)))
+    (message "Sum: %f" sum)))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-    (defun dino-xml-comment-region (beg end &optional arg)
-      (interactive "*r\nP")
-      (if (> beg end)
-          (let (tmp) (setq tmp beg beg end end tmp)))
-      (save-excursion
-        (save-restriction
-          (narrow-to-region beg end)
-          (goto-char (point-min))
-          (cond
-           ;; is there a C-u prefix?
-           ((and (listp arg) (> (length arg) 0))
-            (and (re-search-forward "<!-- *[\n\r]" nil t)
-                 (goto-char (- (point-max) 1))
-                 (re-search-backward " *-->" nil t)
-                 (goto-char (point-min))
-                 (progn
-                   (re-search-forward "<!-- *[\n\r]" nil t)
-                   (replace-match "")
-                   (goto-char (- (point-max) 1))
-                   (re-search-backward "[\n\r] *-->" nil t)
-                   (replace-match ""))))
+(defun dino-xml-comment-region (beg end &optional arg)
+  (interactive "*r\nP")
+  (if (> beg end)
+      (let (tmp) (setq tmp beg beg end end tmp)))
+  (save-excursion
+    (save-restriction
+      (narrow-to-region beg end)
+      (goto-char (point-min))
+      (cond
+       ;; is there a C-u prefix?
+       ((and (listp arg) (> (length arg) 0))
+        (and (re-search-forward "<!-- *[\n\r]" nil t)
+             (goto-char (- (point-max) 1))
+             (re-search-backward " *-->" nil t)
+             (goto-char (point-min))
+             (progn
+               (re-search-forward "<!-- *[\n\r]" nil t)
+               (replace-match "")
+               (goto-char (- (point-max) 1))
+               (re-search-backward "[\n\r] *-->" nil t)
+               (replace-match ""))))
 
-           (t
-            (insert "<!--\n")
-            (goto-char (- (point-max) 1))
-            (unless (= 10 (following-char))
-              (forward-char))
-            (insert "\n-->"))))))
+       (t
+        (insert "<!--\n")
+        (goto-char (- (point-max) 1))
+        (unless (= 10 (following-char))
+          (forward-char))
+        (insert "\n-->"))))))
 
 
 (defun dino-is-directory (dir-name)
@@ -595,7 +583,6 @@ Eg,
       (error (format "%s is not a directory" targ)))
   (let ((x (run-with-timer 0 75 'dino-check-files-and-move src targ)))
     (add-to-list 'dino-move-timer-list (list src targ x))))
-
 
 
 
