@@ -304,6 +304,7 @@ Handy for editing .resx files within emacs.
       (yank)
       (exchange-point-and-mark))))
 
+;; http://bit.ly/dino-hangout
 
 (defun dino-csharp-snippet ()
   "convert a file into a snippet, just by narrowing. "

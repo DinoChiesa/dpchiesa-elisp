@@ -1,6 +1,6 @@
 ;;
 ;; Dino's .emacs setup file.
-;; Last saved: <2014-February-28 18:17:54>
+;; Last saved: <2014-April-17 12:58:17>
 ;;
 ;; Works with v24.2 of emacs.
 ;;
@@ -420,7 +420,33 @@ selection to the kill ring"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(eval-after-load "gist"
+  '(progn
+;; note that we added the DESCRIPTION argument
+(defun gist-region-with-description (begin end &optional description private callback)
+  "Post the current region as a new paste at gist.github.com
+Copies the URL into the kill ring.
 
+With a prefix argument, makes a private paste."
+  (interactive "r\nsGist Description: \nP") ;; we handle the prompt here!
+  (let* ((file (or (buffer-file-name) (buffer-name)))
+         (name (file-name-nondirectory file))
+         (ext (or (cdr (assoc major-mode gist-supported-modes-alist))
+                  (file-name-extension file)
+                  "txt"))
+         (fname (concat (file-name-sans-extension name) "." ext))
+         (files (list
+                 (gh-gist-gist-file "file"
+                                    :filename fname
+                                    :content (buffer-substring begin end)))))
+    ;; finally we use our new arg to specify the description in the internal call
+    (gist-internal-new files private description callback)))
+
+     ))
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (eval-after-load "image-dired"
   '(progn
@@ -480,8 +506,8 @@ selection to the kill ring"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CSharp Code Completion
 
-(add-to-list 'load-path (file-name-as-directory "~/cscomp"))
-(add-to-list 'load-path (file-name-as-directory "~/auto-complete-1.3.1"))
+(add-to-list 'load-path (file-name-as-directory "~/elisp/cscomp"))
+(add-to-list 'load-path (file-name-as-directory "~/elisp/auto-complete-1.3.1"))
 
 
 ;;(require 'csharp-completion)
@@ -733,7 +759,8 @@ Prompts for INPUT-DIR and OUTPUT-FILE if called-interactively"
   (setq ac-auto-start 2)  ;;or 3?
 
   (require 'flymake)
-  (flymake-mode 1)
+  (and (file-name-directory buffer-file-name)
+       (flymake-mode 1))
 
   ;; "no tabs" -- use only spaces
   ;;(make-local-variable 'indent-tabs-mode)
@@ -895,9 +922,12 @@ just auto-corrects on common mis-spellings by me. "
       ("riguer" "rigeuer" nil 1)
       ("hygeine" "hygiene" nil 0)
       ("comittee" "committee" nil 0)
+      ("machien" "machine" nil 0)
+      ("machiens" "machines" nil 0)
       ("cusotmer" "customer" nil 0)
       ("recieve" "receive" nil 0)
       ("vairous" "various" nil 0)
+      ("multipel" "multiple" nil 0)
       ("acheive" "achieve" nil 0)
       ("acheived" "achieved" nil 0)
       ("APigee" "Apigee" nil 1)
@@ -1688,7 +1718,8 @@ again, I haven't see that as a problem."
          (hl-line-mode 1)
 
          (require 'flymake)
-         (flymake-mode 1)
+         (and (file-name-directory buffer-file-name)
+              (flymake-mode 1))
          (local-set-key "\C-c\C-n"  'flymake-goto-next-error)
          (local-set-key "\C-c\C-m"  'flymake-display-err-menu-for-current-line)
 
@@ -1891,7 +1922,8 @@ Does not consider word syntax tables.
 (defun dino-php-mode-fn ()
   "Function to run when php-mode is initialized for a buffer."
   (require 'flymake)
-  (flymake-mode 1)
+  (and (file-name-directory buffer-file-name)
+       (flymake-mode 1))
 
   (setq c-default-style "bsd"
         c-basic-offset 2)
@@ -1925,10 +1957,10 @@ Does not consider word syntax tables.
   "Gets the cmd line for running a flymake session in a PHP buffer.
 This gets called by flymake itself."
 
-       (dino-log "PHP" "flymake cmdline for %s" source)
+  (dino-log "PHP" "flymake cmdline for %s" source)
 
-        (list dc-php-program
-              (list "-f" (expand-file-name source)  "-l")))
+  (list dc-php-program
+        (list "-f" (expand-file-name source)  "-l")))
 
 
 (defun dino-php-flymake-init ()
@@ -1941,7 +1973,7 @@ This gets called by flymake itself."
         args
         temp-source-file-name)
 
-     (dino-log "PHP" "flymake-for-php invoke...")
+    (dino-log "PHP" "flymake-for-php invoke...")
 
     (setq temp-source-file-name (flymake-init-create-temp-buffer-copy create-temp-f)
 
@@ -1953,8 +1985,8 @@ This gets called by flymake itself."
 
 
 (defun dino-php-flymake-cleanup ()
-     (dino-log "PHP" "flymake-for-php cleanup...")
-     (flymake-simple-cleanup) )
+  (dino-log "PHP" "flymake-for-php cleanup...")
+  (flymake-simple-cleanup) )
 
 (eval-after-load "flymake"
   '(progn
@@ -2021,9 +2053,9 @@ This gets called by flymake itself."
   ;; http://stackoverflow.com/questions/1931784
   ;;(add-hook 'write-contents-functions 'dino-delete-trailing-whitespace)
   (add-hook 'local-write-file-hooks
-              '(lambda ()
-                 (save-excursion
-                   (delete-trailing-whitespace))))
+            '(lambda ()
+               (save-excursion
+                 (delete-trailing-whitespace))))
 
   ;; when `nxml-slash-auto-complete-flag' is non-nil, get completion
   (setq nxml-slash-auto-complete-flag t)
@@ -2041,7 +2073,7 @@ This gets called by flymake itself."
   ;;                       'multi-line                                                                         ;;
   ;;                       (list t nil nil t "One 'block' comment for all lines, end on last commented line")) ;;
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-)
+  )
 
 (add-hook 'sgml-mode-hook 'dino-xml-mode-fn)
 (add-hook 'nxml-mode-hook 'dino-xml-mode-fn)
@@ -2086,9 +2118,9 @@ This gets called by flymake itself."
 
   ;;(add-hook 'write-contents-functions 'dino-delete-trailing-whitespace)
   (add-hook 'local-write-file-hooks
-              '(lambda ()
-                 (save-excursion
-                   (delete-trailing-whitespace))))
+            '(lambda ()
+               (save-excursion
+                 (delete-trailing-whitespace))))
   )
 
 
@@ -2110,7 +2142,7 @@ This gets called by flymake itself."
   (local-set-key "\M-#"     'dino-indent-buffer)
   (local-set-key "\C-c\C-c"  'comment-region)
 
-   ;; python-mode resets \C-c\C-w to  `python-check'.  Silly.
+  ;; python-mode resets \C-c\C-w to  `python-check'.  Silly.
   (local-set-key "\C-c\C-w"  'compare-windows)
 
   (set (make-local-variable 'indent-tabs-mode) nil)
@@ -2123,7 +2155,8 @@ This gets called by flymake itself."
 
   ;; use flymake with pyflakes
   (require 'flymake)
-  (flymake-mode 1)
+  (and (file-name-directory buffer-file-name)
+       (flymake-mode 1))
   (local-set-key "\C-c\C-n"  'flymake-goto-next-error)
   (local-set-key "\C-c\C-m"  'flymake-display-err-menu-for-current-line)
 
@@ -2220,7 +2253,9 @@ i.e M-x kmacro-set-counter."
 
   ;; ;;(setq flyjs-jslintwsh-location "c:\\users\\dino\\bin\\jslint-for-wsh.js")
   ;; (setq flyjs-jslintwsh-location "c:\\users\\dino\\bin\\jshint-for-wsh.js")
-  (flymake-mode 1)
+
+  (and (file-name-directory buffer-file-name)
+       (flymake-mode 1))
 
   ;; ya-snippet
   ;;(add-to-list 'yas/known-modes 'espresso-mode) ;; need this?
