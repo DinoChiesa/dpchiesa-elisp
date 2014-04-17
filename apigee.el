@@ -11,7 +11,7 @@
 ;; Requires   : s.el
 ;; License    : New BSD
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2014-February-19 11:38:24>
+;; Last-saved : <2014-March-25 17:49:57>
 ;;
 ;;; Commentary:
 ;;
@@ -318,6 +318,7 @@ the only possible value currently.")
     <DisplayName>##</DisplayName>
     <FaultRules/>
     <Properties/>
+    <Identifier ref='request.queryparam.apikey' />
     <!-- the count specified is used unless overridden by the variable referenced here -->
     <Allow countRef='verifyapikey.Verify-Api-Key.apiproduct.developer.quota.limit' count='1000'/>
     <!-- use the interval in the variable; if not present use the value specified here. -->
@@ -341,7 +342,7 @@ the only possible value currently.")
           '("Quota - Reset"
        "Quota-Reset"
        "<ResetQuota name='##'>
-  <!-- name of the Qupta policy being reset -->
+  <!-- name of the Quota policy being reset -->
   <Quota name='request.header.quotapolicy'>
     <Identifier name='_default'>
       <!-- use one of the following  -->
@@ -356,6 +357,24 @@ the only possible value currently.")
      "<VerifyAPIKey enabled='true' continueOnError='false' async='false'  name='##'>
     <DisplayName>Verify API Key</DisplayName>
     <APIKey ref='${1:$$(yas/choose-value '(\"request.queryparam.apikey\" \"request.header.X-Apikey\"))}'></APIKey>
+<!--
+Variables populated by this policy: verifyapikey.{policy_name}.
+
+client_id: The consumer key (aka API key or app key) supplied by the requesting app
+client_secret: The consumer secret associated with the consumer key
+redirection_uris: Any redirect URIs in the request
+developer.app.name: The app name of the developer app making the request
+developer.id: The developerID of the developer registered as the owner of the requesting app
+failed: Set when API Key validation fails
+{custom_attribute_name_of_app}: Any custom attribute derived from the app profile
+{custom_attribute_name_of_appkey}: Any custom attributes derived from the app key profile
+apiproduct.name*: The name of the API product used to validate the request
+apiproduct.{custom_attribute_name}*: Any custom attribute derived from the API product profile
+apiproduct.developer.quota.limit*
+apiproduct.developer.quota.interval*
+apiproduct.developer.quota.timeunit*
+
+-->
 </VerifyAPIKey>\n")
 
      '("GetAPIProduct - fixed"
@@ -874,9 +893,9 @@ the only possible value currently.")
     </CacheKey>
 </LookupCache>")
 
-     '("SysLog"
-       "SysLog"
-       "<MessageLogging enabled='true' continueOnError='true' async='true' name='##'>
+     '("MessageLogging - SysLog"
+       "MessageLogging-SysLog"
+       "<MessageLogging enabled='true' continueOnError='true' name='##'>
     <DisplayName>##</DisplayName>
     <FaultRules/>
     <Properties/>
@@ -889,6 +908,23 @@ the only possible value currently.")
     <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
     <logLevel>INFO</logLevel>
     <NotificationIntervalInSec>0</NotificationIntervalInSec>
+</MessageLogging>\n")
+
+
+     '("MessageLogging - Log file"
+       "MessageLogging-File"
+       "<MessageLogging enabled='true' continueOnError='true' name='##'>
+    <DisplayName>##</DisplayName>
+   <File>
+        <Message>{system.time},{request.path},{response.header.X-time-total-elapsed},{response.header.X-time-target-elapsed},{response.status.code}
+</Message>
+        <FileName>atlantis-perf.log</FileName>
+        <FileRotationOptions rotateFileOnStartup="true">
+            <FileRotationType>SIZE</FileRotationType>
+            <MaxFileSizeInMB>10</MaxFileSizeInMB>
+            <MaxFilesToRetain>10</MaxFilesToRetain>
+        </FileRotationOptions>
+    </File>
 </MessageLogging>\n")
 
 
@@ -1368,10 +1404,10 @@ value that was expanded for field (N-1). "
 (defun apigee--fixup-script-name (name)
   "returns a stripped name suitable for use for a file in the resources/jsc directory."
 
-  (let* ((prefix "Javascript-")
+  (let* ((prefix (downcase "Javascript-"))
          (pos (length prefix)))
     (if (and (>= (length name) (length prefix))
-             (string= prefix (substring name 0 pos)))
+             (string= prefix (downcase (substring name 0 pos))))
         (let ((s (substring name pos)))
           (concat (downcase (substring s 0 1)) (substring s 1)))
       name)))
