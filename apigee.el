@@ -11,7 +11,7 @@
 ;; Requires   : s.el
 ;; License    : New BSD
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2014-March-25 17:49:57>
+;; Last-saved : <2014-April-17 13:23:13>
 ;;
 ;;; Commentary:
 ;;
@@ -309,8 +309,8 @@ the only possible value currently.")
       <Parameter ref='${4:variable.containing.key}'/>
     </Key>
   </Get>
-
 </KeyValueMapOperations>\n")
+
 
      '("Quota - Enforce after VerifyAPIKey"
        "Quota"
@@ -326,9 +326,29 @@ the only possible value currently.")
     <!-- use the timeunit provided in the variable; if not present use the value specified here. -->
     <TimeUnit ref='verifyapikey.Verify-Api-Key.apiproduct.developer.quota.timeunit'>${2:$$(yas/choose-value '(\"second\" \"minute\" \"hour\" \"day\" \"month\"))}</TimeUnit>
     <Distributed>true</Distributed>
-    <Synchronous>true</Synchronous>
+    <Synchronous>false</Synchronous>
     <PreciseAtSecondsLevel>false</PreciseAtSecondsLevel>
 </Quota>")
+
+
+     '("Quota - Enforce after OAuth2 VerifyAccessToken"
+       "Quota"
+       "<Quota async='false' continueOnError='false' enabled='true' name='##'>
+    <DisplayName>##</DisplayName>
+    <FaultRules/>
+    <Properties/>
+    <Identifier ref='request.queryparam.apikey' />
+    <!-- the count specified is used unless overridden by the variable referenced here -->
+    <Allow countRef='apiproduct.developer.quota.limit' count='1000'/>
+    <!-- use the interval in the variable; if not present use the value specified here. -->
+    <Interval ref='apiproduct.developer.quota.interval'>1</Interval>
+    <!-- use the timeunit provided in the variable; if not present use the value specified here. -->
+    <TimeUnit ref='apiproduct.developer.quota.timeunit'>${2:$$(yas/choose-value '(\"second\" \"minute\" \"hour\" \"day\" \"month\"))}</TimeUnit>
+    <Distributed>true</Distributed>
+    <Synchronous>false</Synchronous>
+    <PreciseAtSecondsLevel>false</PreciseAtSecondsLevel>
+</Quota>")
+
 
      '("Quota - Enforce on Product"
        "Quota"
