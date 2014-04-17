@@ -212,12 +212,12 @@ status of `flymake-mode'."
 (eval-after-load "flymake"
   '(progn
     (if (boundp 'flymake-goto-error-hook)
-      (add-hook 'flymake-goto-error-hook 'flymake-cursor-show-errors-at-point-now)
+        (add-hook 'flymake-goto-error-hook 'flymake-cursor-show-errors-at-point-now)
       (defadvice flymake-goto-line (after flymake-cursor-display-message-after-move-to-error activate compile)
         "Display the error in the mini-buffer rather than having to mouse over it"
          (flymake-cursor-show-errors-at-point-now)))
     (if (boundp 'flymake-after-syntax-check-hook)
-      (add-hook 'flymake-after-syntax-check-hook 'flymake-cursor-after-syntax-check)
+        (add-hook 'flymake-after-syntax-check-hook 'flymake-cursor-after-syntax-check)
       (defadvice flymake-post-syntax-check (after flymake-cursor-display-message-after-syntax-check activate compile)
         "Display the error in the mini-buffer rather than having to mouse over it"
         (flymake-cursor-after-syntax-check)))
