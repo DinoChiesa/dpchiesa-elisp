@@ -6,7 +6,7 @@
 // Author: @AUTHOR@
 // Created @DATE@
 //
-// Last saved: <2013-April-22 18:56:35>
+// Last saved: <2014-March-19 22:45:11>
 // ------------------------------------------------------------------
 //
 @INSERTFILE(/Users/Dino/elisp/defaultcontent/Copyright.txt)@
@@ -28,7 +28,7 @@ public class @BASEFILENAMELESSEXTENSION@ {
         GetOpts(args, optString);
     }
 
-    private Hashtable<String, Object> Options = new Hashtable<String, Object> ();
+    private Hashtable<String, Object> options = new Hashtable<String, Object> ();
 
     private void GetOpts(String[] args, String optString)
         throws java.lang.Exception {
@@ -58,7 +58,24 @@ public class @BASEFILENAMELESSEXTENSION@ {
             if ((pos != optString.length() - 1) && (optString.charAt(pos+1) == ':')) {
                 if (i+1 < L) {
                     i++;
-                    Options.put(m.group(1), args[i]);
+                    Object current = this.options.get(m.group(1));
+                    ArrayList<String> newList;
+                    if (current == null) {
+                        // not a previously-seen option
+                        this.options.put(m.group(1), args[i]);
+                    }
+                    else if (current instanceof ArrayList<?>) {
+                        // previously seen, and already a lsit
+                        newList = (ArrayList<String>) current;
+                        newList.add(args[i]);
+                    }
+                    else {
+                        // we have one value, need to make a list
+                        newList = new ArrayList<String>();
+                        newList.add((String)current);
+                        newList.add(args[i]);
+                        this.options.put(m.group(1), newList);
+                    }
                 }
                 else {
                     throw new java.lang.Exception("Incorrect arguments.");
@@ -66,20 +83,34 @@ public class @BASEFILENAMELESSEXTENSION@ {
             }
             else {
                 // a "no-value" argument, like -v for verbose
-                Options.put(m.group(1), (Boolean) true);
+                options.put(m.group(1), (Boolean) true);
             }
         }
     }
 
-    private void MaybeShowOptions() {
-        Boolean verbose = (Boolean) Options.get("v");
+    private static ArrayList<String> asOptionsList(Object o) {
+        if (o instanceof ArrayList<?>) {
+            return (ArrayList<String>) o;
+        }
+
+        ArrayList<String> list = new ArrayList<String>();
+
+        if (o instanceof String) {
+            list.add((String)o);
+
+        }
+        return list;
+    }
+
+    private void maybeShowOptions() {
+        Boolean verbose = (Boolean) this.options.get("v");
         if (verbose != null && verbose) {
             System.out.println("options:");
-            Enumeration e = Options.keys();
+            Enumeration e = this.options.keys();
             while(e.hasMoreElements()) {
                 // iterate through Hashtable keys Enumeration
                 String k = (String) e.nextElement();
-                Object o = Options.get(k);
+                Object o = this.options.get(k);
                 String v = null;
                 v = (o.getClass().equals(Boolean.class)) ?  "true" : (String) o;
                 System.out.println("  " + k + ": " + v);
@@ -92,8 +123,14 @@ public class @BASEFILENAMELESSEXTENSION@ {
 
     public void Run() {
 
-        MaybeShowOptions();
-        Boolean verbose = (Boolean) Options.get("v");
+        maybeShowOptions();
+        Boolean verbose = (Boolean) this.options.get("v");
+
+        // for repeated options:
+        ArrayList<String> prefixes = asOptionsList(Options.get("n"));
+        if (prefixes != null) {
+            ...
+        }
 
         @DOT@
     }
@@ -101,7 +138,7 @@ public class @BASEFILENAMELESSEXTENSION@ {
 
     public static void Usage() {
         System.out.println("@BASEFILENAMELESSEXTENSION@: <usage statement here>.\n");
-        System.out.println("Usage:\n  java @BASEFILENAMELESSEXTENSION@ /arg1:<value> /arg1:<Value>");
+        System.out.println("Usage:\n  java @BASEFILENAMELESSEXTENSION@ [-v]  -f <value>");
     }
 
 
@@ -111,7 +148,7 @@ public class @BASEFILENAMELESSEXTENSION@ {
             me.Run();
         }
         catch (java.lang.Exception exc1) {
-            System.out.println("Exception while doing whatever it is I was doing:" + exc1.toString());
+            System.out.println("Exception:" + exc1.toString());
             exc1.printStackTrace();
         }
     }
