@@ -1,10 +1,13 @@
+;;; emacs.el -- dino's em Dino's .emacs setup file.
 ;;
-;; Dino's .emacs setup file.
-;; Last saved: <2014-April-21 11:45:32>
+;; Last saved: <2014-April-21 13:47:35>
 ;;
 ;; Works with v24.2 of emacs.
 ;;
 
+;;; Commentary:
+
+;;; Code:
 (message "Running emacs.el...")
 
 ;; quiet, please! No dinging!
