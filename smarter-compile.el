@@ -88,7 +88,7 @@
 ;;; More Details:
 ;;
 ;; That example uses a string for both the TEST and the COMMAND.
-;; But there are other options. TEST can be:
+;; But there are other options.  TEST can be:
 ;;
 ;;   - a string. In this case it is used as a regex,
 ;;     and test against the filename associated to the

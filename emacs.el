@@ -1,6 +1,6 @@
 ;;
 ;; Dino's .emacs setup file.
-;; Last saved: <2014-April-21 09:52:02>
+;; Last saved: <2014-April-21 11:45:32>
 ;;
 ;; Works with v24.2 of emacs.
 ;;
@@ -20,9 +20,11 @@
 (setq comment-style 'indent) ;; see doc for variable comment-styles
 
 ;; for tetris
-(setq tetris-score-file "~/elisp/tetris-scores")
-(defadvice tetris-end-game (around zap-scores activate)
-  (save-window-excursion ad-do-it))
+(and (boundp 'tetris-score-file)
+     (setq tetris-score-file "~/elisp/tetris-scores")
+     (defadvice tetris-end-game (around zap-scores activate)
+       (save-window-excursion ad-do-it)))
+
 
 ;; To change the coding system of a visited file,
 ;; `C-x RET r utf-8-with-signature RET'.
@@ -39,13 +41,12 @@
 ;;  javascript.el, espresso, etc
 
 (add-to-list 'load-path "~/elisp")
-
+(add-to-list 'load-path "~/.emacs.d/elpa/s-1.9.0") ;; why?!!!?!
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; a bunch of random utility functions
 ;;
 (require 'dino-utility)
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; flycheck, always
@@ -537,7 +538,7 @@ With a prefix argument, makes a private paste."
 
 
 (require 'yasnippet)
-(require 's) ;; string library
+;;(require 's) ;; string library
 
 ;; If I don't set both yas/snippet-dirs and yas/root-directory, I
 ;; get complaints in *Messages*.
@@ -1693,11 +1694,16 @@ again, I haven't see that as a problem."
          (show-paren-mode 1)
          (hl-line-mode 1)
 
-         (require 'flymake)
-         (and (file-name-directory buffer-file-name)
-              (flymake-mode 1))
-         (local-set-key "\C-c\C-n"  'flymake-goto-next-error)
-         (local-set-key "\C-c\C-m"  'flymake-display-err-menu-for-current-line)
+         ;; (require 'flymake)
+         ;; (and (file-name-directory buffer-file-name)
+         ;;      (flymake-mode 1))
+         ;;
+         ;; (local-set-key "\C-c\C-n"  'flymake-goto-next-error)
+         ;; (local-set-key "\C-c\C-m"  'flymake-display-err-menu-for-current-line)
+
+         (require 'flycheck)
+         (flycheck-mode)
+         (flycheck-select-checker 'csharp)
 
          ;; for hide/show support
          (hs-minor-mode 1)
