@@ -50,6 +50,8 @@
 ;; POSSIBILITY OF SUCH DAMAGE.
 ;;
 
+(require 'cl)
+
 ;; when copying binary files into a clipboard buffer
 (fset 'dinoch-b64-copy
       [escape ?  escape ?> escape ?x ?b ?a ?s ?e ?6 ?4 ?- ?e ?n ?c tab return ?\C-w ?\C-y])
@@ -190,6 +192,13 @@ in the list `dino-no-untabify-modes'
 ;;     (insert mytime))
 ;; )
 
+(defvar dino-timeofday--last-inserted-string nil
+  "holder of the last inserted string with `dino-insert-timeofday'. Used
+to determine if we need to rotate through various formats.")
+
+(defvar dino-timeofday--last-inserted-marker nil
+  "marker companion to the above.")
+
 
 (defun dino-insert-timeofday ()
   "Insert a string representing the time of day at point. The
@@ -217,8 +226,7 @@ Otherwise, the format is like this:
     ;; If the user has invoked this cmd twice in succession, then swap
     ;; formats. Only if not in the minibuffer!  Using colons in the
     ;; minibuffer causes emacs to go haywire for me.
-    (if (and
-             (boundp 'dino-timeofday--last-inserted-string)
+    (if (and (boundp 'dino-timeofday--last-inserted-string)
              (stringp dino-timeofday--last-inserted-string)
              (markerp dino-timeofday--last-inserted-marker)
              (marker-position dino-timeofday--last-inserted-marker)
@@ -248,8 +256,10 @@ Otherwise, the format is like this:
   "Program to generate one uuid and emit it to stdout.")
 
 (defvar dino-base64-prog
-  "c:/dev/dotnet/base64.exe"
-  "Program to generate base64 encoding for a given file, emit to stdout.")
+  (if (eq system-type 'windows-nt)
+      "c:/dev/dotnet/base64.exe"
+    "openssl base64 < ")
+  "command to generate base64 encoding for a given file, emit to stdout.")
 ;; see also `base64-encode-region'
 
 (defun dino-uuid-gen ()
@@ -387,32 +397,36 @@ are the string substitutions (see `format')."
   (interactive)
   (dino-xml-pretty-print-region (point-min) (point-max)))
 
+(defvar dino-html-escape-pairs '(("&" "&amp;")
+                       ("<" "&lt;")
+                       (">" "&gt;"))
+  "a list of pairs of strings to swap when escaping and unescaping html")
+
+(defun dino-replace-s-non-interactively (from-string to-string)
+  "Non-interactive fn to replace one string with another.
+Like `replace-string' but for non-interactive use. "
+  (while (search-forward from-string nil t)
+    (replace-match to-string nil t)))
+
 (defun dino-escape-html-in-region (start end)
   (interactive "r")
   (save-excursion
     (save-restriction
       (narrow-to-region start end)
-      (goto-char (point-min))
-      (replace-string "&" "&amp;")
-      (goto-char (point-min))
-      (replace-string "<" "&lt;")
-      (goto-char (point-min))
-      (replace-string ">" "&gt;")
-      )))
+      (mapcar (lambda (elt)
+                (goto-char (point-min))
+                (dino-replace-s-non-interactively (car elt) (cadr elt)))
+                dino-html-escape-pairs))))
 
 (defun dino-unescape-html-in-region (start end)
   (interactive "r")
   (save-excursion
     (save-restriction
       (narrow-to-region start end)
-      (goto-char (point-min))
-      (replace-string "&amp;" "&")
-      (goto-char (point-min))
-      (replace-string "&lt;" "<")
-      (goto-char (point-min))
-      (replace-string "&gt;" ">")
-      )))
-
+      (mapcar (lambda (elt)
+                (goto-char (point-min))
+                (dino-replace-s-non-interactively (cadr elt) (car elt)))
+                dino-html-escape-pairs))))
 
 (defun dino-encode-uri-component-in-region (start end)
   (interactive "r")
@@ -420,14 +434,13 @@ are the string substitutions (see `format')."
     (save-restriction
       (narrow-to-region start end)
       (let ((str (buffer-substring-no-properties (point-min) (point-max)))
-            (len (- (point-max) (point-min)))
-            command)
+            (len (- (point-max) (point-min))))
         (goto-char (point-min))
         (delete-char len)
-        (setq command (concat
-                       "/usr/local/bin/node -e \"console.log(encodeURIComponent('"
-                       str "'))\"" ))
-        (insert (shell-command-to-string command))))))
+        (insert (shell-command-to-string
+                 (concat
+                  "/usr/local/bin/node -e \"console.log(encodeURIComponent('"
+                  str "'))\"" )))))))
 
 
 (defun dino-unencode-uri-component-in-region (start end)
@@ -436,14 +449,13 @@ are the string substitutions (see `format')."
     (save-restriction
       (narrow-to-region start end)
       (let ((str (buffer-substring-no-properties (point-min) (point-max)))
-            (len (- (point-max) (point-min)))
-            command)
+            (len (- (point-max) (point-min))))
         (goto-char (point-min))
         (delete-char len)
-        (setq command (concat
+        (insert (shell-command-to-string
+                 (concat
                        "/usr/local/bin/node -e \"console.log(unescape('"
-                       str "'))\"" ))
-        (insert (shell-command-to-string command))))))
+                       str "'))\"" )))))))
 
 
 (defun dino-sum-column (start end)
@@ -498,7 +510,8 @@ Overwrites register 9. "
 
 
 (defun dino-is-directory (dir-name)
-  "Tests to see whether a name refers to a directory"
+  "Tests to see whether a name refers to a directory.
+Why don't i just use `file-directory-p' ?"
   (and
    (file-exists-p dir-name)
    (let ((attrs (file-attributes dir-name)))
