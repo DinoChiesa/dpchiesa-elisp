@@ -36,14 +36,16 @@ Then, in your csharp file, specify this in the comments at the header.
 This will cause flycheck to run the given command, replacing the %f with
 the source file name."
 
-   (let ((cmd-string
-         (csharp-get-value-from-comments "flycheck" csharp-cmd-line-limit)))
-     (and cmd-string
-         (not (eq cmd-string ""))
-         (let* ((cmd (split-string cmd-string " "))
-                (ferf (member "%f" cmd)))
-           (and ferf (setcar ferf 'source))
-           (put 'csharp :flycheck-command cmd)))))
+  (and (eq major-mode 'csharp-mode)
+       (let ((cmd-string
+              (csharp-get-value-from-comments "flycheck" csharp-cmd-line-limit)))
+         (and cmd-string
+              (not (eq cmd-string ""))
+              (let* ((cmd (split-string cmd-string " "))
+                     (ferf (member "%f" cmd)))
+                (and ferf (setcar ferf 'source))
+                (put 'csharp :flycheck-command cmd))))))
+
 
 
 ;; (defun flycheck-checker-command (checker)
@@ -67,23 +69,18 @@ compiler. If you would like to use a different compiler, see
      (setq flycheck-log-level 0)))
 
 
-
-;; (flycheck-def-option-var flycheck-csharp-use-dotnet nil csharp
-;;   "Whether to use the dotnet pkg for mono."
-;;   :type 'boolean
-;;   :safe #'booleanp
-;;   :package-version '(flycheck . "0.19"))
-
-
-
-;;(setq flycheck-log-level 0)
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; use the mono compiler on MacOSX
-(and (boundp 'smart-compile-alist)
-     (add-to-list 'smart-compile-alist
-             '("\\.cs\\'"         . "gmcs /t:exe /debug+ %f")))
+;; smarter-compile: use the mono compiler on MacOSX
+(eval-after-load "smarter-compile"
+  '(progn
+     (and (boundp 'smart-compile-alist)
+          (let ((csharp-entry (assoc "\\.cs\\'" smart-compile-alist)))
+            (if csharp-entry
+                (setcdr csharp-entry '("gmcs /t:exe /debug+ %f"))
+              (add-to-list 'smart-compile-alist
+                           '("\\.cs\\'"         . "gmcs /t:exe /debug+ %f")))))))
+
+
 
 
 
