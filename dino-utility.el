@@ -13,7 +13,7 @@
 
 ;; -none-
 
-;;; License
+;;; License:
 ;;
 ;; This code is distributed under the New BSD License.
 ;;
@@ -49,6 +49,8 @@
 ;; WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 ;; POSSIBILITY OF SUCH DAMAGE.
 ;;
+
+;;; Code:
 
 (require 'cl)
 
@@ -601,3 +603,5 @@ Eg,
 
 
 (provide 'dino-utility)
+
+;;; dino-utility.el ends here
