@@ -1,6 +1,6 @@
 ;;
 ;; Dino's .emacs setup file.
-;; Last saved: <2014-April-17 12:58:17>
+;; Last saved: <2014-April-21 09:52:02>
 ;;
 ;; Works with v24.2 of emacs.
 ;;
@@ -41,36 +41,16 @@
 (add-to-list 'load-path "~/elisp")
 
 
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; handy utility functions for various purposes
-;;
-
-;; Windows only
-;; upon kill, check clipboard, and if exists, put it into the kill ring.
-(if (eq system-type 'windows-nt)
-    (defadvice kill-new (before
-                         dino-kill-new-push-xselection-on-kill-ring
-                         activate)
-      "Before putting new kill onto the kill-ring, add the clipboard/external
-selection to the kill ring"
-      (let ((have-paste (and interprogram-paste-function
-                             (funcall interprogram-paste-function))))
-        (when have-paste (push have-paste kill-ring)))))
-
-
-;; System-specific configuration
-;; Loads system-type config; e.g. "darwin.el" on Mac
-(let ((system-specific-elisp (concat "~/elisp/" (symbol-name system-type) ".el")))
-  (if (file-exists-p system-specific-elisp)
-    (load system-specific-elisp)))
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; a bunch of random utility functions
 ;;
 (require 'dino-utility)
-;xxxx
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; flycheck, always
+;;
+(add-hook 'after-init-hook #'global-flycheck-mode)
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -79,6 +59,27 @@ selection to the kill ring"
 (require 'apigee)
 (setq apigee-apiproxies-home "~/dev/apiproxies/")
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; go language
+;;
+(add-to-list 'load-path "/usr/local/go/misc/emacs")
+(require 'go-mode-load)
+
+(setenv "GOPATH" "/Users/dino/dev/go/libs")
+(setenv "PATH" (concat (getenv "PATH") ":" "/Users/dino/dev/go/libs/bin"))
+(add-to-list 'load-path "/Users/dino/dev/go/libs/src/github.com/dougm/goflymake")
+
+(defun dino-go-mode-fn ()
+  (require 'flymake)
+  (require 'go-flycheck)
+  (and (file-name-directory buffer-file-name)
+       (progn
+         ;;(flymake-mode 1)
+       (setq goflymake-path "/Users/dino/dev/go/libs/bin/goflymake"))))
+
+
+(add-hook 'go-mode-hook 'dino-go-mode-fn)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; backups
@@ -154,20 +155,15 @@ selection to the kill ring"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; httpget
-
 (require 'httpget)
-;;(setq httpget--wget-prog "c:\\dev\\dotnet\\wget\\wget.exe")
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Word-count minor mode
-
 (autoload 'word-count-mode "word-count"
           "Minor mode to count words." t nil)
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
 
@@ -275,9 +271,6 @@ selection to the kill ring"
 ;;(set-face-font 'tooltip "-*-Lucida Console-normal-r-*-*-11-82-96-96-c-*-iso8859-1")
 ;;(set-face-font 'tooltip "-outline-Lucida Sans Typewriter-normal-r-normal-normal-15-112-96-96-c-*-iso8859-1")
 ;;(set-face-font 'tooltip "-outline-Lucida Sans Typewriter-normal-r-normal-normal-13-97-96-96-c-*-iso8859-1")
-(if (or (eq system-type 'windows-nt)
-       (eq system-type 'darwin))
-(set-face-font 'tooltip "-outline-Lucida Console-normal-r-normal-normal-12-90-96-96-c-*-iso8859-1"))
 
 
 ;; (message (face-font 'tooltip))
@@ -326,9 +319,8 @@ selection to the kill ring"
   (interactive)
   (turn-on-font-lock)
 
-  xxxxx minor-mode
+  ;;;xxxxx minor-mode
   (hs-minor-mode 1)
-
 
   (local-set-key "\M-\C-R"  'indent-region)
   ;; Make sure autofill is OFF.
@@ -402,7 +394,6 @@ selection to the kill ring"
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 
 
 
@@ -671,12 +662,6 @@ Prompts for INPUT-DIR and OUTPUT-FILE if called-interactively"
   (when yas/recursive-edit-flag
     (throw 'exit nil)))
 (add-hook 'yas/after-exit-snippet-hook 'yas/after-exit-snippet-hook--recursive-edit)
-;; ------------------------------------------------
-
-
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
 
@@ -724,7 +709,6 @@ Prompts for INPUT-DIR and OUTPUT-FILE if called-interactively"
 (add-hook 'vbnet-mode-hook 'dino-vbnet-mode-fn)
 (add-hook 'vbs-mode-hook 'dino-vbnet-mode-fn)
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
 
@@ -770,7 +754,7 @@ Prompts for INPUT-DIR and OUTPUT-FILE if called-interactively"
 
 (require 'csslint)
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -828,7 +812,6 @@ Prompts for INPUT-DIR and OUTPUT-FILE if called-interactively"
 ;;                 ("\\.\\(htm\\|html\\)$"   .  "Template.htm" )
 ;;                 ) dc-auto-insert-alist ))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
 
@@ -841,7 +824,7 @@ Prompts for INPUT-DIR and OUTPUT-FILE if called-interactively"
             archive-zip-extract '("/Users/Dino/bin/unzip.exe" "-"))))
 
 (setq-default grep-command "grep -i ")
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -866,7 +849,7 @@ Prompts for INPUT-DIR and OUTPUT-FILE if called-interactively"
 
 (add-hook 'before-save-hook 'time-stamp)  ; update time stamps when saving
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 
 
 
@@ -887,13 +870,6 @@ Prompts for INPUT-DIR and OUTPUT-FILE if called-interactively"
   (local-set-key "\C-c\C-c"  'dino-dired-copy-file-to-dir-in-other-window)
   (local-set-key "\C-c\C-m"  'dino-dired-move-file-to-dir-in-other-window)
 
-  ;; on macosx, the builtin ls does not do the -X option, therefore
-  ;; we use "brew" to install coreutils which gives us gnu ls.
-  (let ((gls (purecopy "/usr/local/bin/gls")))
-    (if (and (eq system-type 'darwin)
-             (file-exists-p gls))
-        (setq insert-directory-program gls)))
-
   (local-set-key "F" 'dino-dired-do-find)
   (local-set-key "K" 'dired-kill-subdir)) ;; opposite of i (dired-maybe-insert-subdir)
 
@@ -903,7 +879,7 @@ Prompts for INPUT-DIR and OUTPUT-FILE if called-interactively"
 (setq ls-lisp-verbosity '(links uid))
 
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 
 
 
@@ -952,7 +928,7 @@ just auto-corrects on common mis-spellings by me. "
 
 (add-hook 'text-mode-hook 'dino-text-mode-hook-fn)
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 
 
 
@@ -2237,9 +2213,9 @@ i.e M-x kmacro-set-counter."
   (autopair-mode)
 
   ;; turn on flymake
-  (require 'flymake)
-  (local-set-key "\C-c\C-n"  'flymake-goto-next-error)
-  (local-set-key "\C-c\C-m"  'flymake-display-err-menu-for-current-line)
+  ;; (require 'flymake)
+  ;; (local-set-key "\C-c\C-n"  'flymake-goto-next-error)
+  ;; (local-set-key "\C-c\C-m"  'flymake-display-err-menu-for-current-line)
 
   ;; (require 'flymake-for-jslint-for-wsh)
   ;; ;;(setq flyjs-jslintwsh-location "c:\\users\\dino\\bin\\jslint-for-wsh.js")
@@ -2605,64 +2581,65 @@ i.e M-x kmacro-set-counter."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; disable tramp?
 ;;
+;; emacs file urls for SSH:
+;;     /ssh:root@localhost#10022:/opt/apigee4
 
-(defun dino-disable-tramp ()
-  "This function tries to disable tramp.
-
-It does this by doctoring the variable `file-name-handler-alist'
-to remove all tramp symbols in that alist. That list is used by
-emacs to connect to logic that handles filenames of various
-forms.  The list associates a regex with a function that handles
-filenames that match the regex.  When tramp loads, it injects
-pairs into that alist, so that filenames that look like URLs can
-be loaded via tramp magic.  Removing the tramp pairs unhooks
-tramp from the file name handling logic.
-
-Why would anyone want to do this?  I'll tell you: I've found
-tramp to be worse than useless on Windows, always turning on for
-reasons that are not apparent to me, providing no discernable
-utility, and interfering with normal, expected operation.
-
-When I use emacs to open a file that resides on a mapped
-drive (for example, G:\), tramp pipes in and begins trying to
-help.  It then messes up dired, somehow, so that I can no longer
-navigate in directories that are on mapped drives. Confoundingly,
-it also prevents me from closing buffers, including dired buffers
-and file buffers that are open on mapped drives. Why or how it
-would do this, I don't know, and I don't care to spend the time
-finding out. I think the basic problem is that the tramp regexes
-are broken, but I'm not sure why g:\ would be treated any
-differently than c:\.  In any case it isn't worth my time to find
-out.
-
-All these problems happened on Windows, but I still have weird
-behavior from tramp on MAcOS.  I have no idea why, but it's very
-unpleasant and requires me to stop and restart emacs
-periodically, because tramp goes haywire. Keep in mind that I
-never purposely invoke tramp.  I suppose sometimes I fat-finger
-something and it causes tramp to wake up and go crazy. It
-perpetually generates errors complaining about tramp-ftp-method
-being an unknown variable. WTF? It's a scourge.
-
-Tramp is documented as providing the ability to do remote file
-editing, via things like rsh/rcp and ssh/scp.  I don't want or
-need that.  I'll map my own drives, thanks, and I don't need
-emacs doing it for me.
-"
-  (interactive)
-  (let (new-alist)
-    (dolist (pair file-name-handler-alist)
-      (let ((sym (cdr pair)))
-        (if (string-match "^tramp-" (symbol-name sym))
-            (message "removing: %s" sym)
-          (message "keeping: %s" sym)
-          (setq new-alist
-                (cons pair new-alist)))))
-    (setq file-name-handler-alist (reverse new-alist)))
-  (tramp-unload-tramp)) ;;; please! go away!
-
-;; not sure this really works
-(eval-after-load "tramp" '(dino-disable-tramp))
+;; (defun dino-disable-tramp ()
+;;   "This function tries to disable tramp.
+;;
+;; It does this by doctoring the variable `file-name-handler-alist'
+;; to remove all tramp symbols in that alist. That list is used by
+;; emacs to connect to logic that handles filenames of various
+;; forms.  The list associates a regex with a function that handles
+;; filenames that match the regex.  When tramp loads, it injects
+;; pairs into that alist, so that filenames that look like URLs can
+;; be loaded via tramp magic.  Removing the tramp pairs unhooks
+;; tramp from the file name handling logic.
+;;
+;; Why would anyone want to do this?  I'll tell you: I've found
+;; tramp to be worse than useless on Windows, always turning on for
+;; reasons that are not apparent to me, providing no discernable
+;; utility, and interfering with normal, expected operation.
+;;
+;; When I use emacs to open a file that resides on a mapped
+;; drive (for example, G:\), tramp pipes in and begins trying to
+;; help.  It then messes up dired, somehow, so that I can no longer
+;; navigate in directories that are on mapped drives. Confoundingly,
+;; it also prevents me from closing buffers, including dired buffers
+;; and file buffers that are open on mapped drives. Why or how it
+;; would do this, I don't know, and I don't care to spend the time
+;; finding out. I think the basic problem is that the tramp regexes
+;; are broken, but I'm not sure why g:\ would be treated any
+;; differently than c:\.  In any case it isn't worth my time to find
+;; out.
+;;
+;; All these problems happened on Windows, but I still have weird
+;; behavior from tramp on MacOS.  I have no idea why, but it's very
+;; unpleasant and requires me to stop and restart emacs
+;; periodically, because tramp goes haywire. Keep in mind that I
+;; never purposely invoke tramp.  I suppose sometimes I fat-finger
+;; something and it causes tramp to wake up and go crazy. It
+;; perpetually generates errors complaining about tramp-ftp-method
+;; being an unknown variable. WTF? It's a scourge.
+;;
+;; Tramp is documented as providing the ability to do remote file
+;; editing, via things like rsh/rcp and ssh/scp.  That sounds really useful.
+;; Too bad it doesn't work.
+;; "
+;;   (interactive)
+;;   (let (new-alist)
+;;     (dolist (pair file-name-handler-alist)
+;;       (let ((sym (cdr pair)))
+;;         (if (string-match "^tramp-" (symbol-name sym))
+;;             (message "removing: %s" sym)
+;;           (message "keeping: %s" sym)
+;;           (setq new-alist
+;;                 (cons pair new-alist)))))
+;;     (setq file-name-handler-alist (reverse new-alist)))
+;;   (tramp-unload-tramp)) ;;; please! go away!
+;;
+;; ;; not sure this really works
+;; (eval-after-load "tramp" '(dino-disable-tramp))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -2781,6 +2758,13 @@ emacs doing it for me.
  '(ls-lisp-format-time-list (quote ("%Y-%m-%d %H:%M" "%Y-%m-%d %H:%M")))
  '(ls-lisp-use-localized-time-format t)
  '(temporary-file-directory "/tmp"))
+
+
+;; System-specific configuration
+;; Loads system-type config; e.g. "darwin.el" on Mac
+(let ((system-specific-elisp (concat "~/elisp/" (symbol-name system-type) ".el")))
+  (if (file-exists-p system-specific-elisp)
+    (load system-specific-elisp)))
 
 ;; auto-revert for all files.
 (add-hook 'find-file-hook

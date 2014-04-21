@@ -25,6 +25,30 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
+;; Windows only
+;; upon kill, check clipboard, and if exists, put it into the kill ring.
+(defadvice kill-new (before
+                     dino-kill-new-push-xselection-on-kill-ring
+                     activate)
+  "Before putting new kill onto the kill-ring, add the clipboard/external
+selection to the kill ring"
+  (let ((have-paste (and interprogram-paste-function
+                         (funcall interprogram-paste-function))))
+    (when have-paste (push have-paste kill-ring))))
+
+
+
+(set-face-font 'tooltip "-outline-Lucida Console-normal-r-normal-normal-12-90-96-96-c-*-iso8859-1")
+
+
+
+(let ((wget (purecopy "c:\\dev\\dotnet\\wget\\wget.exe")))
+  (and (file-exists-p wget)
+       (setq httpget--wget-prog wget)))
+
+
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TFS commands
 
