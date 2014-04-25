@@ -1,6 +1,6 @@
 ;;; emacs.el -- dino's em Dino's .emacs setup file.
 ;;
-;; Last saved: <2014-April-24 16:54:40>
+;; Last saved: <2014-April-25 10:34:23>
 ;;
 ;; Works with v24.2 of emacs.
 ;;
@@ -64,6 +64,11 @@
 (setq apigee-apiproxies-home "~/dev/apiproxies/")
 
 
+  (eval-after-load "flycheck"
+    '(progn
+       (setq-default flycheck-disabled-checkers '(emacs-lisp-checkdoc))))
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; go language
 ;;
@@ -74,6 +79,26 @@
 (setenv "GOPATH" "/Users/dino/dev/go/libs")
 
 (defun dino-go-mode-fn ()
+  ;;(setq-default)
+  (setq tab-width 2
+        standard-indent 2
+        indent-tabs-mode nil)
+
+  (eval-after-load "smarter-compile"
+    '(progn
+       (add-to-list
+        'smart-compile-compile-command-in-comments-extension-list
+        ".go")))
+
+    (eval-after-load "flycheck"
+    '(progn
+       (add-to-list
+        'flycheck-disabled-checkers 'go-build))) ;; go-gofmt?
+
+
+  (local-set-key "\M-\C-R"  'indent-region)
+  (local-set-key "\M-#"     'dino-indent-buffer)
+
   (require 'goflycheck)
   (flycheck-mode 1))
 
