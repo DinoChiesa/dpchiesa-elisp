@@ -1,6 +1,6 @@
 ;;; emacs.el -- dino's em Dino's .emacs setup file.
 ;;
-;; Last saved: <2014-April-21 13:47:35>
+;; Last saved: <2014-April-24 16:54:40>
 ;;
 ;; Works with v24.2 of emacs.
 ;;
@@ -68,22 +68,30 @@
 ;; go language
 ;;
 (add-to-list 'load-path "/usr/local/go/misc/emacs")
-(require 'go-mode-load)
+(require 'go-mode-load) ;; editing mode
 
+;; for flycheck/flymake or compile support, you need go on the path
 (setenv "GOPATH" "/Users/dino/dev/go/libs")
-(setenv "PATH" (concat (getenv "PATH") ":" "/Users/dino/dev/go/libs/bin"))
-(add-to-list 'load-path "/Users/dino/dev/go/libs/src/github.com/dougm/goflymake")
 
 (defun dino-go-mode-fn ()
-  (require 'flymake)
-  (require 'go-flycheck)
-  (and (file-name-directory buffer-file-name)
-       (progn
-         ;;(flymake-mode 1)
-       (setq goflymake-path "/Users/dino/dev/go/libs/bin/goflymake"))))
-
+  (require 'goflycheck)
+  (flycheck-mode 1))
 
 (add-hook 'go-mode-hook 'dino-go-mode-fn)
+
+;; (add-to-list 'load-path "/Users/dino/dev/go/libs/src/github.com/dougm/goflymake")
+;;
+;; (defun dino-go-mode-fn ()
+;;   ;;(require 'flymake)
+;;   (require 'go-flycheck)
+;;   (and (file-name-directory buffer-file-name)
+;;        (progn
+;;          ;;(flymake-mode 1)
+;;        (setq goflymake-path "/Users/dino/dev/go/libs/bin/goflymake"))))
+
+
+
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; backups

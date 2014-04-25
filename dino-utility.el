@@ -70,6 +70,24 @@
       (replace-match "" nil t))))
 
 
+(defun dino-add-path-if-not-present (pathlist)
+  "Add each directory in the PATHLIST to the system path and to `exec-path'.
+
+This is done intelligently: path directories are added only if the path exists,
+and is not already present on the path."
+  (let ((path-elts (split-string (getenv "PATH") ":")))
+    (dolist (path pathlist)
+      (and (file-directory-p path)
+           (progn
+             (and (not (member path path-elts))
+                  (setenv "PATH" (concat (getenv "PATH") ":" path)))
+             (and (not (member path exec-path))
+                  (setq exec-path (append exec-path (list path)))))))))
+
+
+
+
+
 (defun dino-toggle-frame-split ()
   "If the frame is split vertically, split it horizontally or vice versa.
 This works only when the frame is split into exactly two windows."
@@ -91,15 +109,14 @@ like XML mode or csharp mode."
   (indent-region (point-min) (point-max)))
 
 (defun dino-toggle-buffer-modified ()
-  "Toggles the buffer-modified-p value for the current buffer"
+  "Toggle the buffer-modified-p value for the current buffer."
   (interactive)
   (set-buffer-modified-p (not (buffer-modified-p))))
 
 (defun dino-do-markdown ()
-  "removes the `delete-trailing-whitespace' fn from the `before-save-hook'.
+  "Remove the `delete-trailing-whitespace' fn from the `before-save-hook'.
 This is important when editing markdown files which use trailing whitespace
-to indicate a newline.
-"
+to indicate a newline."
   (interactive)
   ;; see http://stackoverflow.com/questions/1931784
   (remove-hook 'write-contents-functions 'dino-delete-trailing-whitespace))

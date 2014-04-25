@@ -8,28 +8,25 @@
 ;;; Code:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; fixup path
-;; for each directory in the list, if it exists, and is not already
-;; present on the path, add it to path.
-(let ((path-elts (split-string (getenv "PATH") ":")))
-  (dolist (path '("/usr/local/bin"
-                  "/Library/Frameworks/Mono.framework/Versions/Current/bin"))
-    (and (file-directory-p path)
-         (not (member path path-elts))
-         (setenv "PATH" (concat (getenv "PATH") ":" path)))))
-
+;; fixup path for MacOSX
+;;
+(dino-add-path-if-not-present
+ '("/usr/local/bin"
+   "/usr/local/go/bin"
+   "/Users/dino/dev/go/libs/bin"
+   "/Library/Frameworks/Mono.framework/Versions/Current/bin"))
 
 (require 'csharp-mode)
 
 (defun csharp-set-flycheck-command ()
-  "Set the flycheck command, dynamically, as a side effect.
+  "Set the flycheck command for a C# module, dynamically, as a side effect.
 
 This function is intended for use as a before-syntax-check-hook with
 flycheck.  Use it like this:
 
     (add-hook 'flycheck-before-syntax-check-hook  #'csharp-set-flycheck-command)
 
-Then, in your csharp file, specify this in the comments at the header.
+Then, in your csharp file, specify this in the comments near the top of the file.
 
     // flycheck: gmcs -t:module /debug+ -pkg:dotnet %f
 
@@ -76,7 +73,7 @@ compiler. If you would like to use a different compiler, see
      (and (boundp 'smart-compile-alist)
           (let ((csharp-entry (assoc "\\.cs\\'" smart-compile-alist)))
             (if csharp-entry
-                (setcdr csharp-entry '("gmcs /t:exe /debug+ %f"))
+                (setcdr csharp-entry "gmcs /t:exe /debug+ %f")
               (add-to-list 'smart-compile-alist
                            '("\\.cs\\'"         . "gmcs /t:exe /debug+ %f")))))))
 
