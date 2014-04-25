@@ -52,7 +52,13 @@ and the following string is found on the 8th line of the buffer:
 
 It's ok to have whitespace between the marker and the following
 colon.  This function is intended for internal use.  goflycheck
-automatically attaches it as a flycheck hook."
+automatically attaches it as a flycheck hook.
+
+You need to make sure that the command you specify can be found
+in one of the directories in `exec-path'.  To do so, you may want
+something like this in your init.el or .emacs file:
+
+  (setq exec-path (append exec-path '(\"/usr/local/go/bin\")))"
 
   (let (start search-limit found)
     ;; determine what lines to look in
