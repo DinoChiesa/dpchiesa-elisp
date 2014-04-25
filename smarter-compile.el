@@ -314,6 +314,13 @@ These expando variables are available:
       %t  current time in 24-hr format ( 12:44:18 )
       %d  current date                 ( 2012-Mar-20 )
 
+To add to this list, use something like this elisp:
+
+  (eval-after-load \"smarter-compile\"
+    '(progn
+       (add-to-list
+        'smart-compile-compile-command-in-comments-extension-list
+        \".go\")))
  ")
 
 
@@ -385,7 +392,6 @@ string that follows it, or returns nil if that string is not
 found.  The default LINE-LIMIT is
 `smart-compile-comment-cmd-line-limit'.
 
-
 For example, suppose the following string is found at the top of
 the buffer:
 
@@ -431,7 +437,6 @@ colon.
               (buffer-substring-no-properties
                (match-beginning 1)
                (match-end 1))))))))
-
 
 
 (defun smart-compile-any (predicate sequence)
