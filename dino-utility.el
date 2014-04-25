@@ -81,8 +81,7 @@ and is not already present on the path."
            (progn
              (and (not (member path path-elts))
                   (setenv "PATH" (concat (getenv "PATH") ":" path)))
-             (and (not (member path exec-path))
-                  (setq exec-path (append exec-path (list path)))))))))
+             (add-to-list 'exec-path path))))))
 
 
 
