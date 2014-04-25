@@ -116,6 +116,9 @@ automatically when flycheck loads."
               (goflycheck-get-value-from-comments "flycheck" goflycheck-cmd-line-limit)))
          (and cmd-string
               (not (eq cmd-string ""))
+              (and (boundp 'flycheck-log-level)
+                   (> flycheck-log-level 2)
+                   (message "found command: %s" cmd-string))
               (let* ((cmd (split-string cmd-string " "))
                      (ferf (member "%f" cmd)))
                 (and ferf (setcar ferf 'source))
