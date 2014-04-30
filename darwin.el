@@ -101,7 +101,13 @@ compiler. If you would like to use a different compiler, see
 ;; handle copy/paste intelligently
 (defun copy-from-osx ()
   "Handle copy/paste intelligently on osx."
-  (shell-command-to-string "pbpaste"))
+  (let ((pbpaste (purecopy "/usr/bin/pbpaste")))
+    (if (and (eq system-type 'darwin)
+             (file-exists-p pbpaste))
+        (let ((tramp-mode nil)
+              (default-directory "~"))
+          (shell-command-to-string pbpaste)))))
+
 (defun paste-to-osx (text &optional push)
   "Handle copy/paste intelligently on osx.
 TEXT gets put into the Macosx clipboard.
@@ -116,6 +122,11 @@ The PUSH argument is ignored."
       interprogram-paste-function 'copy-from-osx)
 
 
+(defun turn-off-pbcopy ()
+  "disables the OSX integration to emacs cut/paste"
+  (interactive)
+  (setq interprogram-cut-function nil)
+  (setq interprogram-paste-function nil))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Allow auto decompression when opening binary .plist files,
