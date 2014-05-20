@@ -1,8 +1,8 @@
 ;;; emacs.el -- dino's em Dino's .emacs setup file.
 ;;
-;; Last saved: <2014-April-25 10:53:07>
+;; Last saved: <2014-May-20 15:13:31>
 ;;
-;; Works with v24.2 of emacs.
+;; Works with v24.3 of emacs.
 ;;
 
 ;;; Commentary:
@@ -2066,7 +2066,7 @@ This gets called by flymake itself."
   ;; But treating it as part of a word is counter-productive in an XML buffer.
   (if (boundp 'sgml-mode-syntax-table)
       (modify-syntax-entry ?' "\"" sgml-mode-syntax-table)
-    (modify-syntax-entry ?' "\""))
+    (modify-syntax-entry ?' ".")) ;; . = punctuation
 
   ;; http://stackoverflow.com/questions/1931784
   ;;(add-hook 'write-contents-functions 'dino-delete-trailing-whitespace)
