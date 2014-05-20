@@ -11,7 +11,7 @@
 ;; Requires   : s.el
 ;; License    : New BSD
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2014-April-17 13:23:13>
+;; Last-saved : <2014-May-20 15:09:55>
 ;;
 ;;; Commentary:
 ;;
@@ -193,6 +193,9 @@ the only possible value currently.")
   <EntityType value='${1:$$(yas/choose-value '(\"apiproduct\" \"app\" \"company\" \"companydeveloper\" \"consumerkey\" \"developer\"))}' />
   <EntityIdentifier type='${2:$$(yas/choose-value (let ((field1 (apigee--snippet-field 1))) (apigee-entity-id-types (buffer-substring-no-properties (yas/field-start field1) (yas/field-end field1)))))}' ref='${3:varName}' />
   <SecondaryIdentifier type='$4' ref='$5' />
+<!--
+  The result is stored in a variable:  AccessEntity.##
+-->
 </AccessEntity>\n")
 
      '("AssignMessage - remove query param"
@@ -328,6 +331,23 @@ the only possible value currently.")
     <Distributed>true</Distributed>
     <Synchronous>false</Synchronous>
     <PreciseAtSecondsLevel>false</PreciseAtSecondsLevel>
+<!--
+variables set by this policy include:
+
+ratelimit.{policy_name}.allowed.count
+ratelimit.{policy_name}.used.count
+ratelimit.{policy_name}.available.count
+ratelimit.{policy_name}.exceed.count
+ratelimit.{policy_name}.total.exceed.count
+ratelimit.{policy_name}.expiry.time
+ratelimit.{policy_name}.identifier
+ratelimit.{policy_name}.class
+ratelimit.{policy_name}.class.allowed.count
+ratelimit.{policy_name}.class.used.count
+ratelimit.{policy_name}.class.available.count
+ratelimit.{policy_name}.class.exceed.count
+ratelimit.{policy_name}.class.total.exceed.count
+-->
 </Quota>")
 
 
@@ -347,6 +367,23 @@ the only possible value currently.")
     <Distributed>true</Distributed>
     <Synchronous>false</Synchronous>
     <PreciseAtSecondsLevel>false</PreciseAtSecondsLevel>
+<!--
+variables set by this policy include:
+
+ratelimit.{policy_name}.allowed.count
+ratelimit.{policy_name}.used.count
+ratelimit.{policy_name}.available.count
+ratelimit.{policy_name}.exceed.count
+ratelimit.{policy_name}.total.exceed.count
+ratelimit.{policy_name}.expiry.time
+ratelimit.{policy_name}.identifier
+ratelimit.{policy_name}.class
+ratelimit.{policy_name}.class.allowed.count
+ratelimit.{policy_name}.class.used.count
+ratelimit.{policy_name}.class.available.count
+ratelimit.{policy_name}.class.exceed.count
+ratelimit.{policy_name}.class.total.exceed.count
+-->
 </Quota>")
 
 
@@ -357,6 +394,23 @@ the only possible value currently.")
   <TimeUnit ref='apiproduct.developer.quota.timeunit'/>
   <Allow countRef='apiproduct.developer.quota.limit'/>
   <Identifier ref='client_id'/>
+<!--
+variables set by this policy include:
+
+ratelimit.{policy_name}.allowed.count
+ratelimit.{policy_name}.used.count
+ratelimit.{policy_name}.available.count
+ratelimit.{policy_name}.exceed.count
+ratelimit.{policy_name}.total.exceed.count
+ratelimit.{policy_name}.expiry.time
+ratelimit.{policy_name}.identifier
+ratelimit.{policy_name}.class
+ratelimit.{policy_name}.class.allowed.count
+ratelimit.{policy_name}.class.used.count
+ratelimit.{policy_name}.class.available.count
+ratelimit.{policy_name}.class.exceed.count
+ratelimit.{policy_name}.class.total.exceed.count
+-->
 </Quota>\n")
 
           '("Quota - Reset"
@@ -902,16 +956,6 @@ apiproduct.developer.quota.timeunit*
 </OAuthV1>\n")
 
 
-     '("LookupCache"
-       "LookupCache"
-       "<LookupCache enabled='true' continueOnError='false' async='false' name='##'>
-    <CacheResource>${1:ApigeeCache}</CacheResource>
-    <AssignTo>${2:flowvariable}</AssignTo> <!-- name of flow variable -->
-    <Scope>${3:$$(yas/choose-value '(\"Exclusive\" \"Global\" \"Application\" \"Proxy\" \"Target\"))}</Scope>
-    <CacheKey>
-      <KeyFragment ref='${4:flowvariable.name}' />
-    </CacheKey>
-</LookupCache>")
 
      '("MessageLogging - SysLog"
        "MessageLogging-SysLog"
@@ -947,8 +991,29 @@ apiproduct.developer.quota.timeunit*
     </File>
 </MessageLogging>\n")
 
+     '("Cache - ResponseCache"
+     "ResponseCache"
+     "<ResponseCache enabled='true' continueOnError='false' async='false' name='##'>
+  <DisplayName>${1:##}</DisplayName>
+  <FaultRules/>
+  <Properties/>
+  <!-- composite item to use as cache key -->
+  <CacheKey>
+    <Prefix></Prefix>
+    <KeyFragment ref='${2:request.uri}' />
+  </CacheKey>
+  <CacheResource>${3:ApigeeCache}</CacheResource>
+  <Scope>${4:$$(yas/choose-value '(\"Exclusive\" \"Global\" \"Application\" \"Proxy\" \"Target\"))}</Scope>
+  <ExpirySettings>
+    <ExpiryDate></ExpiryDate>
+    <TimeOfDay></TimeOfDay>
+    <TimeoutInSec ref='insert.variable.here'>${5:6000}</TimeoutInSec>
+  </ExpirySettings>
+  <SkipCacheLookup>request.header.x-bypass-cache = \"true\"</SkipCacheLookup>
+  <SkipCachePopulation>request.header.x-bypass-cache = \"true\"</SkipCachePopulation>
+</ResponseCache>")
 
-     '("PopulateCache"
+     '("Cache - PopulateCache"
        "PopulateCache"
        "<PopulateCache name='##'>
   <CacheResource>${1:ApigeeCache}</CacheResource>
@@ -961,6 +1026,29 @@ apiproduct.developer.quota.timeunit*
     <TimeoutInSec>864000</TimeoutInSec> <!-- 864000 = 10 days -->
   </ExpirySettings>
 </PopulateCache>\n")
+
+          '("Cache - LookupCache"
+       "LookupCache"
+       "<LookupCache enabled='true' continueOnError='false' async='false' name='##'>
+    <CacheResource>${1:ApigeeCache}</CacheResource>
+    <AssignTo>${2:flowvariable}</AssignTo> <!-- name of flow variable -->
+    <Scope>${3:$$(yas/choose-value '(\"Exclusive\" \"Global\" \"Application\" \"Proxy\" \"Target\"))}</Scope>
+    <CacheKey>
+      <KeyFragment ref='${4:flowvariable.name}' />
+    </CacheKey>
+</LookupCache>")
+
+          '("Cache - InvalidateCache"
+       "InvalidateCache"
+          "<InvalidateCache name='##'>
+    <CacheResource>${1:ApigeeCache}</CacheResource>
+    <Scope>${2:$$(yas/choose-value '(\"Exclusive\" \"Global\" \"Application\" \"Proxy\" \"Target\"))}</Scope>
+    <CacheKey>
+      <!--  <Prefix>apiAccessToken</Prefix> -->
+      <KeyFragment ref='${3:flowvariable.name}' />
+    </CacheKey>
+    <PurgeChildEntries>true</PurgeChildEntries>
+</InvalidateCache>")
 
      '("RaiseAlert"
        "RaiseAlert"
@@ -1021,27 +1109,6 @@ $1
 ;;  <FaultRules/>
 ;;  <Properties/>
 
-     '("ResponseCache"
-     "ResponseCache"
-     "<ResponseCache enabled='true' continueOnError='false' async='false' name='##'>
-  <DisplayName>${1:##}</DisplayName>
-  <FaultRules/>
-  <Properties/>
-  <!-- composite item to use as cache key -->
-  <CacheKey>
-    <Prefix></Prefix>
-    <KeyFragment ref='${2:request.uri}' />
-  </CacheKey>
-  <CacheResource>${3:ApigeeCache}</CacheResource>
-  <Scope>${4:$$(yas/choose-value '(\"Exclusive\" \"Global\" \"Application\" \"Proxy\" \"Target\"))}</Scope>
-  <ExpirySettings>
-    <ExpiryDate></ExpiryDate>
-    <TimeOfDay></TimeOfDay>
-    <TimeoutInSec ref='insert.variable.here'>${5:6000}</TimeoutInSec>
-  </ExpirySettings>
-  <SkipCacheLookup>request.header.x-bypass-cache = \"true\"</SkipCacheLookup>
-  <SkipCachePopulation>request.header.x-bypass-cache = \"true\"</SkipCachePopulation>
-</ResponseCache>")
 
      '("XSL"
        "XSL"
@@ -1081,7 +1148,6 @@ $1
 
 (defvar apigee-upload-command-alist nil
   "alist used at runtime to cache the upload commands")
-
 
 
 (defun apigee-insure-trailing-slash (path)
@@ -1244,6 +1310,7 @@ what is returned from the java snippet:
   (let ((ct (current-time)))
     (format "%d" (+ (* (+ (* (car ct) 65536) (cadr ct)) 1000) (/ (caddr ct) 1000)))))
 
+
 (defun apigee-insert-java-time-in-millis ()
   "inserts a string into the current buffer that contains a number equal in value to
 what is returned from the java snippet:
@@ -1367,12 +1434,33 @@ structure, in the `apigee-apiproxies-home' directory.
   </HTTPTargetConnection>
 </TargetEndpoint>\n"))
 
+        (with-temp-file (concat apiproxy-dir "policies/RaiseFault-UnknownRequest.xml")
+          (insert "<RaiseFault name='RaiseFault-UnknownRequest'>
+  <DisplayName>RaiseFault-UnknownRequest</DisplayName>
+  <Description></Description>
+  <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+  <FaultResponse>
+    <Set>
+      <Payload contentType='application/json'
+               variablePrefix='%' variableSuffix='#'><![CDATA[{
+  \"response\" : {
+    \"message\" : \"that request was unknown\"
+  }
+}
+]]></Payload>
+      <StatusCode></StatusCode>
+      <ReasonPhrase></ReasonPhrase>
+    </Set>
+  </FaultResponse>
+</RaiseFault>
+"))
+
         (with-temp-file (concat apiproxy-dir "proxies/default.xml")
           (insert
            "<ProxyEndpoint name='default'>
   <Description>Default Proxy</Description>
   <HTTPProxyConnection>
-    <BasePath>/v1/" (apigee--random-string) "</BasePath>
+    <BasePath>/v1/" proxy-name "</BasePath>
     <Properties/>
     <VirtualHost>default</VirtualHost>
     <VirtualHost>secure</VirtualHost>
@@ -1401,6 +1489,14 @@ structure, in the `apigee-apiproxies-home' directory.
       <Response/>
       <Condition>(proxy.pathsuffix MatchesPath \"/foo\") and (request.verb = \"GET\")</Condition>
     </Flow>
+
+    <Flow name='unknown request'>
+      <Request>
+        <Step><Name>RaiseFault-UnknownRequest</Name></Step>
+      </Request>
+      <Response/>
+    </Flow>
+
   </Flows>
 
   <RouteRule name='InvokeRouteRule'>
@@ -1713,6 +1809,53 @@ file, such as a Javascript, Python, or XSL policy.
     (and fullpath (find-file fullpath))))
 
 
+(defconst apigee-policy-help-alist
+  (list
+   '("ServiceCallout"
+     "/api-services/content/call-services-or-apis-using-servicecallout")
+   '("AssignMessage"
+     "/api-services/content/generate-or-modify-messages-using-assignmessage")
+   '("KeyValueMapOperations"
+     "/api-services/content/persist-data-using-keyvaluemap")
+   '("ExtractVariables"
+     "/api-services/content/extract-message-content-using-extractvariables")
+   '("ExtractVariables"
+     "/api-services/content/reduce-latency-using-responsecache")
+   '("PopulateCache"
+     "/api-services/content/optimize-performance-using-cache")
+   '("InvalidateCache"
+     "/api-services/content/optimize-performance-using-cache")
+   '("LookupCache"
+     "/api-services/content/optimize-performance-using-cache")
+   '("Quota"
+     "/api-services/content/rate-limit-api-traffic-using-quota"))
+
+  "list of urls for help, associated to each policy type")
+
+
+(defun apigee--help-page-for-policy-type (policy-type)
+  "Return a URL for help given the POLICY-TYPE."
+  (concat "http://apigee.com/docs"
+        (or
+         (cadr (assoc policy-type apigee-policy-help-alist))
+          "/content/policy-reference-overview")))
+
+
+(defun apigee-open-help-intelligently ()
+  "interactive fn to open help for the policy in the current buffer."
+  (interactive)
+  (save-excursion
+    (widen)
+    (goto-char (point-min))
+    (and (looking-at "[:space:]*<\\?xml")
+         (re-search-forward "\\?>"))
+    (forward-word)
+    (backward-word)
+    (let ((help-page (apigee--help-page-for-policy-type (thing-at-point 'word))))
+        (and help-page
+             (start-process (concat "open " help-page) nil "open" help-page)))))
+
+
 
 (define-minor-mode apigee-mode
        "Toggle Apigee mode.
@@ -1725,6 +1868,7 @@ file, such as a Javascript, Python, or XSL policy.
       :keymap
       '(([f7] . apigee-open-resource-file-around-point)
         ([f8] . apigee-upload-bundle-with-pushapi)
+        ("\C-c?" . apigee-open-help-intelligently)
         )
       :group 'apigee)
 
