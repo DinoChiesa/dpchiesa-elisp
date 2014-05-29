@@ -3,26 +3,26 @@
 ;; Author: Dino Chiesa
 ;; Version: 0.1
 ;; Created: Sat, 31 Mar 2012  09:48
-;;
+;; Last Updated: <2014-May-28 19:57:05>
 
 
-(defun dino-js-varify (start end)
-  "Turn the selection into a string var declaration terminated with a semicolon."
-  (interactive "r")
-  (goto-char end)
-  (insert "';")
-  (goto-char start)
-  (insert "var x = '")
-  (backward-char 5)
-  (js-indent-line))
-  ;; (yas/expand-snippet elaborated-template (point) (point)))))))))))
+
+;; (defun dino-js-varify (start end)
+;;   "Turn the selection into a string var declaration terminated with a semicolon."
+;;   (interactive "r")
+;;   (goto-char end)
+;;   (insert "';")
+;;   (goto-char start)
+;;   (insert "var x = '")
+;;   (backward-char 5)
+;;   (js-indent-line))
+;;   ;; (yas/expand-snippet elaborated-template (point) (point)))))))))))
 
 
 (defun dino-js-beautify ()
   "replace the current buffer with the jsBeautify'd version."
   (interactive)
   (shell-command-on-region (point-min) (point-max) "~/js/jsBeautify.js" nil t))
-
 
 
 (eval-after-load "js"
@@ -196,70 +196,125 @@
                  (+ cur-indent (if close-curly 0 js-indent-level)))
              nil))))
 
-     ;; new helper fn to aid in handling commas in var statements
-     (defun js--continued-var-decl ()
-       "Helper function for `js--proper-indentation'.
+;; new helper fn to aid in handling commas in var statements
+(defun js--continued-var-decl ()
+  "Helper function for `js--proper-indentation'.
 Return the proper indentation of the current line if it continues
 a var declaration. otherwise nil.
 "
-       (save-excursion
-         (back-to-indentation)
-         (and (not (eq (point-at-bol) (point-min)))
-              (not (looking-at "[{]"))
-              (not (looking-at "var "))
-              (progn
-                (js--backward-syntactic-ws)
-                (and (char-before)
-                     (= (char-before) ?,)
-                     (or (js--backto-beginning-of-expression) t);; skip back
-                     (cond
-                      ((looking-at "var ")
-                       ;;(+ (current-column) js-indent-level)
-                       (+ (current-column) 4) ;; because var always gets +4
-                       )
-                      (t
-                       nil)))))))
+  (save-excursion
+    (back-to-indentation)
+    (and (not (eq (point-at-bol) (point-min)))
+         (not (looking-at "[{]"))
+         (not (looking-at "var "))
+         (progn
+           (js--backward-syntactic-ws)
+           (and (char-before)
+                (= (char-before) ?,)
+                (or (js--backto-beginning-of-expression) t);; skip back
+                (cond
+                 ((looking-at "var ")
+                  ;;(+ (current-column) js-indent-level)
+                  (+ (current-column) 4) ;; because var always gets +4
+                  )
+                 (t
+                  nil)))))))
 
-     ;; Redefine this to properly handle commas in var statements.
-     (defun js--proper-indentation (parse-status)
-       "Return the proper indentation for the current line."
-       (save-excursion
-         (back-to-indentation)
-         (cond ((nth 4 parse-status)
-                (js--get-c-offset 'c (nth 8 parse-status)))
-               ((nth 8 parse-status) 0) ; inside string
-               ((js--ctrl-statement-indentation))
-               ((js--first-stmt-in-curly))
-               ((js--continued-var-decl))
-               ((eq (char-after) ?#) 0)
-               ((save-excursion (js--beginning-of-macro)) 4)
-               ((nth 1 parse-status)
-                (let ((same-indent-p (looking-at
-                                      "[]})]\\|\\_<case\\_>\\|\\_<default\\_>"))
-                      (continued-expr-p (js--continued-expression-p)))
-                  (goto-char (nth 1 parse-status))
-                  (if (looking-at "[({[]\\s-*\\(/[/*]\\|$\\)")
-                      (progn
-                        (skip-syntax-backward " ")
-                        (when (eq (char-before) ?\)) (backward-list))
-                        (back-to-indentation)
-                        (cond (same-indent-p
-                               (current-column))
-                              (continued-expr-p
-                               (+ (current-column) (* 2 js-indent-level)
-                                  js-expr-indent-offset))
-                              (t
-                               (+ (current-column) js-indent-level))))
-                    (unless same-indent-p
-                      (forward-char)
-                      (skip-chars-forward " \t"))
-                    (current-column))))
 
-               ((js--continued-expression-p)
-                (+ js-indent-level js-expr-indent-offset))
-               (t 0))))
+(defun js--proper-indentation (parse-status)
+  "Return the proper indentation for the current line."
+  (save-excursion
+    (back-to-indentation)
+    (cond ((nth 4 parse-status)
+           (js--get-c-offset 'c (nth 8 parse-status)))
+          ((nth 8 parse-status) 0) ; inside string
+          ((js--ctrl-statement-indentation))
+          ((js--continued-var-decl))
+          ((eq (char-after) ?#) 0)
+          ((save-excursion (js--beginning-of-macro)) 4)
+          ((nth 1 parse-status)
+           ;; A single closing paren/bracket should be indented at the
+           ;; same level as the opening statement. Same goes for
+           ;; "case" and "default".
+           (let ((same-indent-p (looking-at
+                                 "[]})]\\|\\_<case\\_>\\|\\_<default\\_>"))
+                 (continued-expr-p (js--continued-expression-p)))
+             (goto-char (nth 1 parse-status)) ; go to the opening char
+             (if (looking-at "[({[]\\s-*\\(/[/*]\\|$\\)")
+                 (progn ; nothing following the opening paren/bracket
+                   (skip-syntax-backward " ")
+                   (when (eq (char-before) ?\)) (backward-list))
+                   (back-to-indentation)
+                   (cond (same-indent-p
+                          (if (looking-at "var ")
+                              (+ (current-column) 4)
+                          (current-column)))
+                         (continued-expr-p
+                          (+ (current-column) (* 2 js-indent-level)
+                             js-expr-indent-offset))
+                         ((looking-at "var ")
+                          (+ (current-column) js-indent-level 4))
+
+                         (t
+                          (+ (current-column) js-indent-level
+                             (pcase (char-after (nth 1 parse-status))
+                               (?\( js-paren-indent-offset)
+                               (?\[ js-square-indent-offset)
+                               (?\{ js-curly-indent-offset))))))
+               ;; If there is something following the opening
+               ;; paren/bracket, everything else should be indented at
+               ;; the same level.
+               (unless same-indent-p
+                 (forward-char)
+                 (skip-chars-forward " \t"))
+               (current-column))))
+
+          ((js--continued-expression-p)
+           (+ js-indent-level js-expr-indent-offset))
+          (t 0))))
+
 ))
 
+
+
+;; ;; Redefine this to properly handle commas in var statements.
+;; (defun js--proper-indentation (parse-status)
+;;   "Return the proper indentation for the current line."
+;;   (save-excursion
+;;     (back-to-indentation)
+;;     (cond ((nth 4 parse-status)
+;;            (js--get-c-offset 'c (nth 8 parse-status)))
+;;           ((nth 8 parse-status) 0) ; inside string
+;;           ((js--ctrl-statement-indentation))
+;;           ((js--first-stmt-in-curly))
+;;           ((js--continued-var-decl))
+;;           ((eq (char-after) ?#) 0)
+;;           ((save-excursion (js--beginning-of-macro)) 4)
+;;           ((nth 1 parse-status)
+;;            (let ((same-indent-p (looking-at
+;;                                  "[]})]\\|\\_<case\\_>\\|\\_<default\\_>"))
+;;                  (continued-expr-p (js--continued-expression-p)))
+;;              (goto-char (nth 1 parse-status))
+;;              (if (looking-at "[({[]\\s-*\\(/[/*]\\|$\\)")
+;;                  (progn
+;;                    (skip-syntax-backward " ")
+;;                    (when (eq (char-before) ?\)) (backward-list))
+;;                    (back-to-indentation)
+;;                    (cond (same-indent-p
+;;                           (current-column))
+;;                          (continued-expr-p
+;;                           (+ (current-column) (* 2 js-indent-level)
+;;                              js-expr-indent-offset))
+;;                          (t
+;;                           (+ (current-column) js-indent-level))))
+;;                (unless same-indent-p
+;;                  (forward-char)
+;;                  (skip-chars-forward " \t"))
+;;                (current-column))))
+;;
+;;           ((js--continued-expression-p)
+;;            (+ js-indent-level js-expr-indent-offset))
+;;           (t 0))))
 
 (provide 'js-mode-fixups)
 
