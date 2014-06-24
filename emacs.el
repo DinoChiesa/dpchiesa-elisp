@@ -1,6 +1,6 @@
 ;;; emacs.el -- dino's em Dino's .emacs setup file.
 ;;
-;; Last saved: <2014-May-20 15:13:31>
+;; Last saved: <2014-June-23 22:04:38>
 ;;
 ;; Works with v24.3 of emacs.
 ;;
@@ -115,6 +115,8 @@
 ;;        (setq goflymake-path "/Users/dino/dev/go/libs/bin/goflymake"))))
 
 
+
+(require 'dpreso)
 
 
 
@@ -231,7 +233,7 @@
 (global-set-key "\C-x\C-e"  'smarter-compile)
 (global-set-key "\C-x\C-g"  'auto-fill-mode)
 (global-set-key "\C-x\C-n"  'next-error)
-(global-set-key "\C-xt"     'dino-toggle-truncation)
+;(global-set-key "\C-xt"     'dino-toggle-truncation)
 (global-set-key "\M-\C-y"   'yank-pop)
 (global-set-key "\M-g"      'goto-line)
 (global-set-key "\M- "      'set-mark-command)
@@ -244,7 +246,7 @@
 (global-set-key "\C-cq"     'query-replace)
 (global-set-key "\C-cc"     'goto-char)
 (global-set-key "\C-cr"     'replace-regexp)
-(global-set-key "\C-ct"     'dino-insert-timeofday)
+(global-set-key "\C-xt"     'dino-insert-timeofday)
 ;;(global-set-key "\C-c\C-t"  'dino-insert-timestamp)
 (global-set-key "\C-c\C-t"  'dino-toggle-frame-split)
 (global-set-key "\C-cw"     'where-is)
@@ -353,13 +355,18 @@
 
 (defun dino-web-mode-fn ()
   "My hook for web mode"
-  (interactive)
+  ;;(interactive)
   (turn-on-font-lock)
 
   ;;;xxxxx minor-mode
-  (hs-minor-mode 1)
+  ;;(hs-minor-mode 1)
 
+  (linum-on)
+
+  ;; why I have to re-set this key is baffling to me.
+  ;; and this does not seem to work...
   (local-set-key "\M-\C-R"  'indent-region)
+
   ;; Make sure autofill is OFF.
   (auto-fill-mode -1)
   )
@@ -411,6 +418,14 @@
          ("\\.\\(wsc\\|wsf\\)$"               . xml-mode)            ; Windows Script Component, WSCript file.
          ("\\.\\(xjb\\)$"                     . xml-mode)            ; JAXB bindings file
          ) auto-mode-alist ))
+
+
+;; replace all html-mode in this alist with web-mode, which is more betta.
+(mapc
+     (lambda (pair)
+       (if (eq (cdr pair) 'html-mode)
+           (setcdr pair 'web-mode)))
+     auto-mode-alist)
 
 
 ;;;; Keep this snip !
@@ -2753,7 +2768,9 @@ i.e M-x kmacro-set-counter."
 ;;
 (require 'thesaurus)
 (thesaurus-set-bhl-api-key-from-file "~/BigHugeLabs.apikey.txt")
-(define-key global-map (kbd "C-x t") 'thesaurus-choose-synonym-and-replace)
+;;(define-key global-map (kbd "C-x t") 'thesaurus-choose-synonym-and-replace)
+(global-set-key "\C-ct"     'thesaurus-choose-synonym-and-replace)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
@@ -2770,6 +2787,7 @@ i.e M-x kmacro-set-counter."
 (require 'wordnik)
 (wordnik-set-api-key-from-file "~/wordnik.apikey.txt")
 (define-key global-map (kbd "C-c ?") 'wordnik-show-definition)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 

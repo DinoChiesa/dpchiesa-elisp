@@ -265,6 +265,12 @@ Otherwise, the format is like this:
     (setq dino-timeofday--last-inserted-marker (point-marker))))
 
 
+(defun dino-insert-current-time-millis ()
+  "function to insert the value like java's currentTimeMillis."
+  (interactive)
+  (let ((thing (shell-command-to-string
+                "perl -MTime::HiRes -e 'printf(\"%.0f\n\",Time::HiRes::time()*1000)'")))
+    (insert (substring thing 0 -1)))) ;; remove newline
 
 
 (defvar dino-uuidgen-prog
@@ -615,6 +621,7 @@ Eg,
       (error (format "%s is not a directory" targ)))
   (let ((x (run-with-timer 0 75 'dino-check-files-and-move src targ)))
     (add-to-list 'dino-move-timer-list (list src targ x))))
+
 
 
 
