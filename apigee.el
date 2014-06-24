@@ -1,6 +1,6 @@
 ;;; apigee.el --- utility functions for working with Apigee platform
 ;;
-;; Copyright (C) 2013 Dino Chiesa and Apigee Corporation
+;; Copyright (C) 2013,2014 Dino Chiesa and Apigee Corporation
 ;;
 ;; Author     : Dino Chiesa
 ;; Maintainer : Dino Chiesa <dpchiesa@hotmail.com>
@@ -11,7 +11,7 @@
 ;; Requires   : s.el
 ;; License    : New BSD
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2014-May-20 15:09:55>
+;; Last-saved : <2014-June-23 20:20:16>
 ;;
 ;;; Commentary:
 ;;
@@ -949,6 +949,19 @@ apiproduct.developer.quota.timeunit*
        "OAuthV1-VerifyAccessToken"
  "<OAuthV1 name='##'>
   <Operation>VerifyAccessToken</Operation>
+
+<!--
+
+By default, the access token is expected to be presented by the
+app in the Authorization HTTP header, according to the OAuth 2.0
+specification. Use the AccessToken element if the access token is
+available in a non-standard location, such as a query parameter,
+in the payload, or an HTTP header with a name other than
+Authorization.
+
+-->
+  <AccessToken>request.queryparam.token</AccessToken>
+
   <GenerateErrorResponse enabled='${1:$$(yas/choose-value '(\"true\" \"false\" ))}'>
     <Format>${2:$$(yas/choose-value '(\"FORM_PARAM\" \"XML\" ))}</Format>
     <Realm>http://oauth.apigee.com/oauth/1/</Realm>
@@ -1020,7 +1033,7 @@ apiproduct.developer.quota.timeunit*
   <Source>${2:variable.containing.value}</Source>
   <Scope>${3:$$(yas/choose-value '(\"Exclusive\" \"Global\" \"Application\" \"Proxy\" \"Target\"))}</Scope>
   <CacheKey>
-    <KeyFragment ref='${4:variable.containing.keyfrag' />
+    <KeyFragment ref='${4:variable.containing.keyfrag}' />
   </CacheKey>
   <ExpirySettings>
     <TimeoutInSec>864000</TimeoutInSec> <!-- 864000 = 10 days -->
@@ -1463,7 +1476,7 @@ structure, in the `apigee-apiproxies-home' directory.
     <BasePath>/v1/" proxy-name "</BasePath>
     <Properties/>
     <VirtualHost>default</VirtualHost>
-    <VirtualHost>secure</VirtualHost>
+    <!-- <VirtualHost>secure</VirtualHost> -->
   </HTTPProxyConnection>
 
   <FaultRules/>
@@ -1827,6 +1840,8 @@ file, such as a Javascript, Python, or XSL policy.
      "/api-services/content/optimize-performance-using-cache")
    '("LookupCache"
      "/api-services/content/optimize-performance-using-cache")
+   '("AccessEntity"
+     "/api-services/content/retrieve-entity-profiles-using-accessentity")
    '("Quota"
      "/api-services/content/rate-limit-api-traffic-using-quota"))
 
