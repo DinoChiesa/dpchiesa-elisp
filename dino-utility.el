@@ -85,8 +85,6 @@ and is not already present on the path."
 
 
 
-
-
 (defun dino-toggle-frame-split ()
   "If the frame is split vertically, split it horizontally or vice versa.
 This works only when the frame is split into exactly two windows."
@@ -531,6 +529,42 @@ Overwrites register 9. "
         (unless (= 10 (following-char))
           (forward-char))
         (insert "\n-->"))))))
+
+
+(defun dino-filter-list (condp lst)
+  "A filter. Emacs Lisp doesn't come with a filter function to keep
+elements that satisfya conditional and excise the elements that
+do not satisfy it. One can use mapcar to iterate over a list with
+a conditional, and then use delq to remove the nil
+values.
+
+Usage:
+
+ (let ((num-list '(1 'a 2 \"nil\" 3 nil 4)))
+    (dino-filter-list 'numberp num-list))   ;; ==> (1 2 3 4)
+"
+     (delq nil
+           (mapcar (lambda (x) (and (funcall condp x) x)) lst)))
+
+
+(defun dino-add-load-path-for-package (pkg)
+  "sets the load-path to load the named package.
+When downloading something from ELPA, the directory that contains
+the .el files is something like \"~/.emacs.d/elpa/org-20140414/\".
+
+But when that package gets updated the directory changes. This
+function finds the latest directory for the named package.
+"
+  (let ((pkg-dir "~/.emacs.d/elpa/")
+        ;; in lieu of flet
+        (pkg-match (lambda (dir) (string-prefix-p (concat pkg "-") dir t))))
+    (let ((dirlist (dino-filter-list pkg-match (directory-files pkg-dir))))
+      (setq dirlist (nreverse (sort dirlist 'string<)))
+      (add-to-list 'load-path
+                   (concat pkg-dir (car dirlist))) ;; "~/.emacs.d/elpa/org-20140414/"
+      )))
+
+
 
 
 (defun dino-is-directory (dir-name)

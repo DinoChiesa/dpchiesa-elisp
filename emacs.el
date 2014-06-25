@@ -1,6 +1,6 @@
 ;;; emacs.el -- dino's em Dino's .emacs setup file.
 ;;
-;; Last saved: <2014-June-23 22:04:38>
+;; Last saved: <2014-June-25 06:17:23>
 ;;
 ;; Works with v24.3 of emacs.
 ;;
@@ -44,12 +44,21 @@
 ;;  javascript.el, espresso, etc
 
 (add-to-list 'load-path "~/elisp")
-(add-to-list 'load-path "~/.emacs.d/elpa/s-1.9.0") ;; why?!!!?!
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; a bunch of random utility functions
 ;;
 (require 'dino-utility)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; set load-path for elpa things to take precedence over builtin
+;; packages.  Eg org mode, which gets updated more frequently than
+;; emacs.
+;;
+
+(dino-add-load-path-for-package "org")  ;; eg, "~/.emacs.d/elpa/org-20140414/"
+(dino-add-load-path-for-package "s")
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; flycheck, always
@@ -116,8 +125,14 @@
 
 
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; html5 presentations
+;;
 (require 'dpreso)
-
+(require 'org)
+(require 'ox-reveal)
+(setq org-reveal-root "http://cdn.jsdelivr.net/reveal.js/2.5.0/")
+(require 'org-fixups)
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -2737,6 +2752,7 @@ i.e M-x kmacro-set-counter."
 (require 'package)
 (add-to-list 'package-archives
              '("marmalade" . "http://marmalade-repo.org/packages/") t)
+(add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/") t)
 (package-initialize)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
