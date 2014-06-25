@@ -11,7 +11,7 @@
 ;; Requires   : s.el
 ;; License    : New BSD
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2014-June-23 20:20:16>
+;; Last-saved : <2014-June-25 06:25:40>
 ;;
 ;;; Commentary:
 ;;
@@ -53,6 +53,8 @@
 ;; LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY
 ;; WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 ;; POSSIBILITY OF SUCH DAMAGE.
+;;
+;;; Code:
 ;;
 
 (require 's) ;; magnars' long lost string library
@@ -1347,13 +1349,13 @@ if no file exists by that name in the given proxy.
   "Returns a string that contains a default policy name, uses a counter
 that is indexed per policy type within each API Proxy.
 "
-  (let ((val 1))
-    (flet ((next-name (v) (concat ptype "-" (format "%d" v))))
-      (let ((pname (next-name val)))
-        (while (not (apigee-policy-name-is-available pname))
-          (setq val (1+ val)
-                pname (next-name val)))
-        pname))))
+  (let ((val 1)
+        (next-name (lambda (v) (concat ptype "-" (format "%d" v))))) ;; in lieu of flet
+    (let ((pname (next-name val)))
+      (while (not (apigee-policy-name-is-available pname))
+        (setq val (1+ val)
+              pname (next-name val)))
+      pname)))
 
 
 (defun apigee--get-createdby ()
