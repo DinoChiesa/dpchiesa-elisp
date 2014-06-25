@@ -1,6 +1,6 @@
 ;;; emacs.el -- dino's em Dino's .emacs setup file.
 ;;
-;; Last saved: <2014-June-25 06:17:23>
+;; Last saved: <2014-June-25 09:55:36>
 ;;
 ;; Works with v24.3 of emacs.
 ;;
@@ -131,7 +131,8 @@
 (require 'dpreso)
 (require 'org)
 (require 'ox-reveal)
-(setq org-reveal-root "http://cdn.jsdelivr.net/reveal.js/2.5.0/")
+;;(setq org-reveal-root "http://cdn.jsdelivr.net/reveal.js/2.5.0/")
+(setq org-reveal-root "http://dinochiesa.github.io/rv/")
 (require 'org-fixups)
 
 
@@ -872,6 +873,7 @@ Prompts for INPUT-DIR and OUTPUT-FILE if called-interactively"
         ("makefile$"                   .  "Template.makefile" )
         ("\\.wixproj$"                 .  "Template.wixproj" )
         ("\\.rss$"                     .  "Template.rss" )
+        ("\\.org$"                     .  "Template.org" )
         ) )
 
 ;; (setq dc-auto-insert-alist
