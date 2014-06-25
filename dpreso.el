@@ -5,12 +5,12 @@
 ;; Author     : Dino Chiesa
 ;; Maintainer : Dino Chiesa <dpchiesa@hotmail.com>
 ;; Created    : June 2014
-;; Version    : 1.2
+;; Version    : 0.8
 ;; Keywords   :
-;; Requires   : s.el
+;; Requires   :
 ;; License    : New BSD
-;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2014-June-23 22:04:16>
+;; X-URL      : https://github.com/DinoChiesa/dpchiesa-elisp/blob/master/dpreso.el
+;; Last-saved : <2014-June-24 17:38:30>
 ;;
 ;;; Commentary:
 ;;
@@ -46,8 +46,18 @@
 ;; POSSIBILITY OF SUCH DAMAGE.
 ;;
 
-;;(require 's) ;; magnars' long lost string library
+(defgroup dpreso nil
+  "Tool for producing HTML5 presentations with text.")
 
+(defcustom dpreso-filesystem-dir "/Users/dino/dev/html/dpreso/"
+  "The filesystem directory in which to generate HTML files that hold the
+presentations. Should end in a slash."
+  :group 'dpreso)
+
+(defcustom dpreso-url-base "http://localhost:8080/html/dpreso/"
+  "The base URL at which generated presentations will be available.
+Should end in a slash"
+  :group 'dpreso)
 
 (defconst dpreso-re-topic "^\\([A-Za-z0-9]\\).+$")
 (defconst dpreso-re-lineitem "^\\* \\([A-Za-z0-9]\\).+$")
@@ -59,19 +69,13 @@
      "<!DOCTYPE html>
 <html>
   <head>
-    <title>Three Things</title>
+    <title>@@TITLE@@</title>
     <link rel='stylesheet' type='text/css' media='screen'
           href='http://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css'>
     <style type='text/css'>
-     body {
-       margin: 0 24px;
-     }
-     li {
-       font-size: 18px;
-     }
-     div.panel {
-       font-size: 24px;
-     }
+     body { margin: 0 24px; }
+     li { font-size: 18px; }
+     div.panel { font-size: 24px; }
     </style>
   </head>
 
@@ -112,8 +116,27 @@
 
 
 (defun dpreso-make-presentation ()
-  "Make an HTML5 preso that uses bootstrap and jquery accordion from
-the text file in the current buffer. "
+  "Make an HTML5 \"presentation\" that uses bootstrap and jquery accordion
+from the text file in the current buffer. The text should be constructed this
+way:
+
+  Slide Title 1
+  * bullet point 1
+  * bullet point 2
+  * bullet point 3
+
+  Title of Slide #2
+  * Can include hyperlinks <a href='http://example.com'>Thing here</a>
+  * Can include sub-bullets too
+  ** Prepend two asterisks to do that
+  ** There must be a space after the asterisk(s)
+
+  Rules
+  * You can have as many slides as you want
+  * and as many bullets per slide
+  * But currently, only 2-level lists are supported.
+
+"
   (interactive)
   (let (prompt
         bufname
@@ -136,7 +159,10 @@ the text file in the current buffer. "
         (widen)
         (goto-char (point-min))
         (with-current-buffer buf
-          (insert (cadr (assoc "page-head" dpreso-template-alist))))
+          (let ((p-head (cadr (assoc "page-head" dpreso-template-alist))))
+            (setq p-head
+                  (replace-regexp-in-string "@@TITLE@@" bufname p-head t t))
+            (insert p-head)))
 
         (while (re-search-forward dpreso-re-topic nil t)
           (let ((topic (match-string 0 nil))
@@ -181,8 +207,7 @@ the text file in the current buffer. "
             (insert (cadr (assoc "topic-foot" dpreso-template-alist))))))
 
       (let ((new-fname
-             (concat "/Users/dino/dev/html/dpreso/"
-                     (buffer-name buf))))
+             (concat dpreso-filesystem-dir (buffer-name buf))))
 
         (with-current-buffer buf
           (goto-char (point-max))
@@ -191,9 +216,7 @@ the text file in the current buffer. "
           (save-buffer))
 
         (call-process "open" nil t t
-                      (concat "http://localhost:8080/html/dpreso/"
-                              (buffer-name buf)))))))
-
+                      (concat dpreso-url-base (buffer-name buf)))))))
 
 
 (provide 'dpreso)
