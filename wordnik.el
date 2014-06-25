@@ -233,7 +233,8 @@ silly toy.
 This can be used in place of `message-box' on Windows.
 
 "
-  (flet ((rris (a1 a2 s) (replace-regexp-in-string a1 a2 s)))
+  (let (rris)
+    (fset 'rris 'replace-regexp-in-string)
     (let* ((msg (format format-string args))
            (ps-cmd
             ;; This is a command to be passed on the cmd.exe line.
@@ -342,14 +343,13 @@ number of lines of input. Also, it cannot handle wide lines.
 This function works around the display problems.
 Derived from http://stackoverflow.com/a/9966422/48082
 "
-  (flet ((get-item-text (elt c)
-                (concat (format "%d" (1+ c)) ": "
-                        (wordnik--justify
-                         (cdr (assoc 'text elt)))
-                        "\n")))
-
-    (let ((word (cdr (assoc 'word (elt defn 0)))))
-      (let ((menu-1 (make-sparse-keymap (concat "Definitions: " word)))
+  (let ((get-item-text (lambda (elt c)
+                         (concat (format "%d" (1+ c)) ": "
+                                 (wordnik--justify
+                                  (cdr (assoc 'text elt)))
+                                 "\n")))
+        (word (cdr (assoc 'word (elt defn 0)))))
+    (let ((menu-1 (make-sparse-keymap (concat "Definitions: " word)))
           (c (length defn)))
 
       (define-key menu-1 [menu-1-ok-event]
@@ -368,12 +368,12 @@ Derived from http://stackoverflow.com/a/9966422/48082
             (setq z (1- z))
             (define-key menu-1 (vector (intern (format "menu-1-item-event-%d-%d" c z)))
 
-            `(menu-item ,(purecopy (nth z parts))
-                      nil
-                      :keys ""
-                      :enable t)))))
+              `(menu-item ,(purecopy (nth z parts))
+                          nil
+                          :keys ""
+                          :enable t)))))
 
-      (x-popup-menu t menu-1)))))
+      (x-popup-menu t menu-1))))
 
 
 (defun wordnik-process-http-headers ()

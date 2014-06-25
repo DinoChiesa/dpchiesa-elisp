@@ -45,18 +45,19 @@ Returns nil if not found.
 
 
 
-    (defun get-matching-files-by-time (spec)
+    (defun get-matching-files-sorted-by-time (spec)
       "Get a list of filenames, with names matching SPEC. The files
     are ordered according to the last-modified time, with the most
     recently-modified file first.
     "
-      (flet ((by-mtime (a b)
+      ;; in lieu of flet
+      (let ((by-mtime (lambda (a b)
                        (let ((a-mtime (nth 5 (file-attributes a)))
                              (b-mtime (nth 5 (file-attributes b))))
                          (or (> (nth 0 a-mtime) (nth 0 b-mtime))
                              (and
                               (eq (nth 0 a-mtime) (nth 0 b-mtime))
-                              (> (nth 1 a-mtime) (nth 1 b-mtime)))))))
+                              (> (nth 1 a-mtime) (nth 1 b-mtime))))))))
 
       (let ((allfiles (file-expand-wildcards spec)))
         (sort allfiles 'by-mtime))))
@@ -213,7 +214,8 @@ the specified FILE."
             is the extension to use on the destination file. It should begin
             with a dot.
             "
-      (flet ((rris (a1 a2 s) (replace-regexp-in-string a1 a2 s)))
+      (let (rris)
+        (fset 'rris 'replace-regexp-in-string)
         (let* ((ext (or ext ".txt"))
                (url-tmpf (make-temp-file "emacs-wget-" nil ext))
                (ps-cmd (concat
@@ -273,7 +275,8 @@ the specified FILE."
 (defun msgbox-via-powershell (format-string &rest args)
   "display a message box via powershell and Windows Forms.
     "
-  (flet ((rris (a1 a2 s) (replace-regexp-in-string a1 a2 s)))
+  (let (rris)
+    (fset 'rris 'replace-regexp-in-string)
     (let ((msg (format format-string args)))
       (let ((powershell-exe  (concat
                               (getenv "windir")
@@ -336,7 +339,8 @@ the specified FILE."
 
         This function can work around that problem.
         "
-  (flet ((ok (&optional p1 &rest args) t))
+
+  (let ((ok (lambda (&optional p1 &rest args) t)))
 
     (let ((parts (split-string msg "\n"))
           (menu-1 (make-sparse-keymap "Attention"))
@@ -371,4 +375,3 @@ the specified FILE."
 newline char as a delimiter."
 
   (split-string string "\n" nil))
-

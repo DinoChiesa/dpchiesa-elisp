@@ -189,8 +189,10 @@ This is used within `spelchek.el' in only one case: to notify
 the user that he needs to register for an API key.
 
 "
-  (flet ((rris (a1 a2 s) (replace-regexp-in-string a1 a2 s)))
-    (let* ((msg (format format-string args))
+
+(let (rris)
+  (fset 'rris 'replace-regexp-in-string)
+  (let* ((msg (format format-string args))
            (ps-cmd
             ;; This is a command to be passed on the cmd.exe line.
             ;; Newlines encoded as \n or `n do not display properly. This
