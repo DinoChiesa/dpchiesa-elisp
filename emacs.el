@@ -1,6 +1,6 @@
 ;;; emacs.el -- dino's em Dino's .emacs setup file.
 ;;
-;; Last saved: <2014-June-25 09:55:36>
+;; Last saved: <2014-June-25 18:02:37>
 ;;
 ;; Works with v24.3 of emacs.
 ;;
@@ -133,6 +133,26 @@
 (require 'ox-reveal)
 ;;(setq org-reveal-root "http://cdn.jsdelivr.net/reveal.js/2.5.0/")
 (setq org-reveal-root "http://dinochiesa.github.io/rv/")
+(add-hook 'org-fixups/after-export-reveal-file
+          (lambda (filename)
+            (message "the file was exported to %s" expanded-filename)))
+
+(add-hook 'org-fixups/after-export-reveal-file
+          'my-copy-and-open)
+
+(defun my-copy-and-open (filename)
+  "fn to copy a file and open it in the browser."
+  (let* ((base-fname
+          (file-name-nondirectory filename))
+         (new-fname
+          (concat "/Users/dino/dev/html/dpreso/" base-fname)))
+
+    (rename-file filename new-fname t)
+    (call-process "open" nil t t
+                  (concat "http://localhost:8080/html/dpreso/"
+                          base-fname))))
+
+
 (require 'org-fixups)
 
 

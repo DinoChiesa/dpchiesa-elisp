@@ -1,6 +1,6 @@
 #+REVEAL-SLIDE-NUMBER: nil
 #+REVEAL_THEME: apigee
-#+OPTIONS: num:nil reveal_center:nil
+#+OPTIONS: num:nil reveal_center:t
 #+REVEAL_TITLE_SLIDE_TEMPLATE: nil
 
 * Quick HTML5 presentations
@@ -10,7 +10,11 @@ knew that.
 - Use org-mode and the ox-reveal add-in
 - Someone else built this. 
 - Emacs users need only to find it, and to learn how to use it. 
-  
+
+:PROPERTIES:
+:reveal_background: http://dinochiesa.github.io/images/Apigee-graphic-thing.png
+:END:
+
 * Org-mode
 Org-mode is a do-it-all mode for taking notes and lots of other things. People
 use it to maintain their calendars, to write todo lists, to organize
@@ -24,20 +28,13 @@ thoughts.
 
 * More on Org-mode
 - In org, you format your notes in a simple markup
-- Use asterisks to mark slide headers
-- dashes to mark bullets
-  - this is a sub-bullet
-  - just indent to get the hierarchy
-- Here is the actual source code for THIS SLIDE
-#+BEGIN_SRC org
-    * More on Org-mode
-    - In org, you format your notes in a simple markup
-    - Use asterisks to mark slide headers
-    - dashes to mark bullets
-      - this is a sub-bullet
-      - just indent to get the hierarchy
-    - Here is the source code for THIS SLIDE
-#+END_SRC
+| Markup        | effect             |
+|---------------+--------------------|
+| asterisk      | new slide          |
+| dash          | bullet in a list   |
+| indented dash | bullet in sub-list |
+|               |                    |
+
  
 
 * You can Export from an Org file
