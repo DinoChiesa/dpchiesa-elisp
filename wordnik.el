@@ -361,7 +361,7 @@ Derived from http://stackoverflow.com/a/9966422/48082
       ;; add lines to menu-1 in reverse order
       (while (> c 0)
         (setq c (1- c))
-        (let ((parts (split-string (get-item-text (elt defn c) c) "\n" nil))
+        (let ((parts (split-string (funcall get-item-text (elt defn c) c) "\n" nil))
               (z 0))
           (setq z (length parts))
           (while (> z 0)
