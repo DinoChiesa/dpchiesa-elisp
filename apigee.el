@@ -1,17 +1,17 @@
 ;;; apigee.el --- utility functions for working with Apigee platform
 ;;
-;; Copyright (C) 2013,2014 Dino Chiesa and Apigee Corporation
+;; Copyright (C) 2013,2014,2015 Dino Chiesa and Apigee Corporation
 ;;
 ;; Author     : Dino Chiesa
 ;; Maintainer : Dino Chiesa <dpchiesa@hotmail.com>
 ;; Created    : May 2013
-;; Modified   : November 2013
-;; Version    : 1.2
+;; Modified   : January 2015
+;; Version    : 1.4
 ;; Keywords   : apigee
-;; Requires   : s.el
+;; Requires   : s.el, request.el, dino-netrc.el
 ;; License    : New BSD
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2014-June-25 06:25:40>
+;; Last-saved : <2015-January-30 14:54:06>
 ;;
 ;;; Commentary:
 ;;
@@ -20,6 +20,8 @@
 ;;  - creating a new blank proxy
 ;;  - zipping and importing a bundle
 ;;  - adding a new policy to a bundle
+;;  - adding a new target to a bundle
+;;  - retrieving / updating a single resource in an existing API Proxy
 ;;  - validating a bundle (coming soon)
 ;;
 ;;
@@ -58,6 +60,8 @@
 ;;
 
 (require 's) ;; magnars' long lost string library
+(require 'request)
+(require 'dino-netrc)
 
 (defgroup apigee nil
   "Utility fns for use with the Apigee platform.")
@@ -103,6 +107,26 @@ Or you can customize this variable.
   :type 'string
   :group 'apigee)
 
+(defcustom apigee-cached-mgmt-server "https://api.enterprise.apigee.com"
+  "The mgmt server to use for API calls. Buffer local."
+  :type 'string
+  :group 'apigee)
+
+(defvar apigee-cached-org-name nil
+  "The Edge organization to use for API calls. Buffer local.")
+
+(defvar apigee-cached-apiproxy nil
+  "The Edge apiproxy to use for API calls. Buffer local.")
+
+(defvar apigee-cached-revision nil
+  "The Edge apiproxy to use for API calls. Buffer local.")
+
+(defvar apigee-cached-rsrc-name nil
+  "The resource name to use for API calls. Buffer local.")
+
+(defvar apigee-cached-rsrc-type nil
+  "The resource type to use for API calls. Buffer local.")
+
 
 ;; (defcustom apigee-prompt-mechanism 'x-popup-menu
 ;;   "The mechanism used to prompt the user for his choice.
@@ -141,6 +165,27 @@ the only possible value currently.")
 }
 ]]>")
    '("application/xml" "<message><here>%parsedRequest.client_id#</here></message>")))
+
+(defconst apigee-target-template
+  "<TargetEndpoint name='##'>
+  <Description>${1:##}</Description>
+  <PreFlow name='PreFlow'>
+    <Request>
+    </Request>
+    <Response/>
+  </PreFlow>
+  <PostFlow name='PostFlow'>
+    <Request>
+    </Request>
+    <Response/>
+  </PostFlow>
+  <Flows/>
+  <FaultRules/>
+  <HTTPTargetConnection>
+    <URL>${2:http://example.com/getSearchResults}</URL>
+  </HTTPTargetConnection>
+</TargetEndpoint>
+")
 
 
 (defconst apigee-http-status-message-alist
@@ -203,7 +248,7 @@ the only possible value currently.")
      '("AssignMessage - remove query param"
        "AssignMessage"
        "<AssignMessage enabled='true' continueOnError='false' async='false' name='##'>
-  <DisplayName>AssignMessage = Remove Query Param</DisplayName>
+  <DisplayName>AssignMessage - Remove Query Param</DisplayName>
   <FaultRules/>
   <Properties/>
   <Remove>
@@ -316,20 +361,32 @@ the only possible value currently.")
   </Get>
 </KeyValueMapOperations>\n")
 
+;    <FaultRules/>
+;    <Properties/>
+
+     '("SpikeArrest"
+       "SpikeArrest"
+"<SpikeArrest name='##'>
+    <DisplayName>##</DisplayName>
+    <!-- Identifier: optional -->
+    <Identifier ref='request.header.some-header-name'/>
+    <!-- MessageWeight: optional -->
+    <MessageWeight ref='request.header.weight'/>
+    <Rate>30ps</Rate>
+</SpikeArrest>")
+
 
      '("Quota - Enforce after VerifyAPIKey"
        "Quota"
        "<Quota async='false' continueOnError='false' enabled='true' name='##'>
     <DisplayName>##</DisplayName>
-    <FaultRules/>
-    <Properties/>
-    <Identifier ref='request.queryparam.apikey' />
+    <Identifier ref='${1:request.queryparam.apikey}' />
     <!-- the count specified is used unless overridden by the variable referenced here -->
-    <Allow countRef='verifyapikey.Verify-Api-Key.apiproduct.developer.quota.limit' count='1000'/>
+    <Allow countRef='verifyapikey.${2:VerifyAPIKey-1}.apiproduct.developer.quota.limit' count='1000'/>
     <!-- use the interval in the variable; if not present use the value specified here. -->
-    <Interval ref='verifyapikey.Verify-Api-Key.apiproduct.developer.quota.interval'>1</Interval>
+    <Interval ref='verifyapikey.$2.apiproduct.developer.quota.interval'>1</Interval>
     <!-- use the timeunit provided in the variable; if not present use the value specified here. -->
-    <TimeUnit ref='verifyapikey.Verify-Api-Key.apiproduct.developer.quota.timeunit'>${2:$$(yas/choose-value '(\"second\" \"minute\" \"hour\" \"day\" \"month\"))}</TimeUnit>
+    <TimeUnit ref='verifyapikey.$2.apiproduct.developer.quota.timeunit'>${3:$$(yas/choose-value '(\"second\" \"minute\" \"hour\" \"day\" \"month\"))}</TimeUnit>
     <Distributed>true</Distributed>
     <Synchronous>false</Synchronous>
     <PreciseAtSecondsLevel>false</PreciseAtSecondsLevel>
@@ -355,11 +412,12 @@ ratelimit.{policy_name}.class.total.exceed.count
 
      '("Quota - Enforce after OAuth2 VerifyAccessToken"
        "Quota"
-       "<Quota async='false' continueOnError='false' enabled='true' name='##'>
+       "<Quota name='##'>
     <DisplayName>##</DisplayName>
     <FaultRules/>
     <Properties/>
-    <Identifier ref='request.queryparam.apikey' />
+    <!-- use the client_id that is set after OAuthV2/VerifyApiKey -->
+    <Identifier ref='client_id' />
     <!-- the count specified is used unless overridden by the variable referenced here -->
     <Allow countRef='apiproduct.developer.quota.limit' count='1000'/>
     <!-- use the interval in the variable; if not present use the value specified here. -->
@@ -500,6 +558,7 @@ apiproduct.developer.quota.timeunit*
 </XMLToJSON>\n")
 
 
+
      '("ExtractVariables - from AccessEntity"
        "Extract"
        "<ExtractVariables name='##'>
@@ -514,6 +573,19 @@ apiproduct.developer.quota.timeunit*
     </Variable>
   </XMLPayload>
 </ExtractVariables>")
+
+
+     '("ExtractVariables - from request header"
+       "Extract"
+       "<ExtractVariables name='##'>
+  <Source>request</Source>
+  <VariablePrefix>requestheader</VariablePrefix>
+  <Header name='Authorization'>
+    <Pattern ignoreCase='false'>Bearer {oauthtoken}</Pattern>
+  </Header>
+  <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+</ExtractVariables>")
+
 
      '("ExtractVariables - XML"
        "Extract"
@@ -657,7 +729,7 @@ apiproduct.developer.quota.timeunit*
     <ResponseType>flow.variable</ResponseType> <!-- Optional -->
     <ClientId>flow.variable</ClientId> <!-- Optional -->
     <RedirectUri>flow.variable</RedirectUri> <!-- Optional -->
-    <Scope>flow.variable</Scope> <!-- Optional -->
+    <Scope>flow.variable</Scope> <!-- Optional, space-separated list -->
     <State>flow.variable</State> <!-- Optional -->
     <AppEndUser>flow.variable</AppEndUser> <!-- Optional -->
     <Attributes> <!-- Optional -->
@@ -1008,7 +1080,7 @@ Authorization.
 
      '("Cache - ResponseCache"
      "ResponseCache"
-     "<ResponseCache enabled='true' continueOnError='false' async='false' name='##'>
+     "<ResponseCache name='##'>
   <DisplayName>${1:##}</DisplayName>
   <FaultRules/>
   <Properties/>
@@ -1173,6 +1245,15 @@ does not end with a slash causes it to use the parent directory.
   (and path
        (if (s-ends-with? "/" path) path (concat path "/"))))
 
+(defun apigee-insure-no-trailing-slash (path)
+  "Insure the given path does not end with a slash. This is usedful with
+`filename-non-directory'.
+"
+  (and path
+       (if (s-ends-with? "/" path)
+           (substring path 0 (1- (length path)))
+         path)))
+
 
 (defun apigee-path-of-apiproxy ()
   "Returns the path of the directory that contains the
@@ -1196,27 +1277,29 @@ It always ends in slash.
 
 "
   (interactive)
-  (file-truename
-   (apigee-insure-trailing-slash
-    (let ((maybe-this (concat (file-name-directory default-directory) "apiproxy")))
-      (if (apigee--is-directory maybe-this)
-          (file-name-directory default-directory)
-        (let ((elts (reverse (split-string (file-name-directory default-directory) "/")))
-              r)
-          (while (and elts (not r))
-            (if (string= (car elts) "apiproxy")
-                (setq r (reverse (cdr elts)))
-              (setq elts (cdr elts))))
-          (if r
-              (mapconcat 'identity r "/") )))))))
+
+  (let ((path
+         (apigee-insure-trailing-slash
+          (let ((maybe-this (concat (file-name-directory default-directory) "apiproxy")))
+            (if (apigee--is-directory maybe-this)
+                (file-name-directory default-directory)
+              (let ((elts (reverse (split-string (file-name-directory default-directory) "/")))
+                    r)
+                (while (and elts (not r))
+                  (if (string= (car elts) "apiproxy")
+                      (setq r (reverse (cdr elts)))
+                    (setq elts (cdr elts))))
+                (if r
+                    (mapconcat 'identity r "/") )))))))
+    (and path (file-truename path))))
+
 
 
 (defun apigee-apiproxy-name ()
   "Get a name for the API Proxy bundle that contains
 the file or directory currently being edited.
 "
-  (interactive)
-  (let ((apiproxy-dir (apigee-path-of-apiproxy)))
+  (let ((apiproxy-dir (apigee-insure-no-trailing-slash (apigee-path-of-apiproxy))))
     (if apiproxy-dir
         (file-name-nondirectory apiproxy-dir))))
 
@@ -1351,11 +1434,30 @@ that is indexed per policy type within each API Proxy.
 "
   (let ((val 1)
         (next-name (lambda (v) (concat ptype "-" (format "%d" v))))) ;; in lieu of flet
-    (let ((pname (next-name val)))
+    (let ((pname (funcall next-name val)))
       (while (not (apigee-policy-name-is-available pname))
         (setq val (1+ val)
-              pname (next-name val)))
+              pname (funcall next-name val)))
       pname)))
+
+
+(defun apigee-target-name-is-available (tname)
+  (let* ((proxy-dir (apigee-path-of-apiproxy))
+         (targets-dir (concat proxy-dir "/apiproxy/targets/"))
+         (filename-to-check (concat targets-dir tname ".xml")))
+    (not (file-exists-p filename-to-check))))
+
+
+(defun apigee--suggested-target-name ()
+  "Returns a string that contains a suggested target name, uses a counter.
+"
+  (let ((val 1)
+        (next-name (lambda (v) (concat "target-" (format "%d" v))))) ;; in lieu of flet
+    (let ((tname (funcall next-name val)))
+      (while (not (apigee-target-name-is-available tname))
+        (setq val (1+ val)
+              tname (funcall next-name val)))
+      tname)))
 
 
 (defun apigee--get-createdby ()
@@ -1452,7 +1554,7 @@ structure, in the `apigee-apiproxies-home' directory.
         (with-temp-file (concat apiproxy-dir "policies/RaiseFault-UnknownRequest.xml")
           (insert "<RaiseFault name='RaiseFault-UnknownRequest'>
   <DisplayName>RaiseFault-UnknownRequest</DisplayName>
-  <Description></Description>
+  <Description>Unknown Request</Description>
   <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
   <FaultResponse>
     <Set>
@@ -1463,8 +1565,8 @@ structure, in the `apigee-apiproxies-home' directory.
   }
 }
 ]]></Payload>
-      <StatusCode></StatusCode>
-      <ReasonPhrase></ReasonPhrase>
+      <StatusCode>404</StatusCode>
+      <ReasonPhrase>Not Found</ReasonPhrase>
     </Set>
   </FaultResponse>
 </RaiseFault>
@@ -1636,6 +1738,17 @@ a new policy file.
 
 The intention is to display a cascading (multi-level) popup menu.
 
+The output is a multi-leveled hierarchy, like this:
+
+   (\"Insert a policy...\"
+     (\"AssignMessage\"
+       (\"AssignMessage - remove query param\" 1 )
+       (\"AssignMessage - set header\" 2 ))
+     (\"AccessEntity\"
+       (\"AccessEntity - developer\" 3)
+       (\"AccessEntity - app\" 4))
+       ....)
+
 "
   (let ((categories (nreverse (apigee--sort-strings
                      (apigee--remove-string-duplicates
@@ -1680,42 +1793,6 @@ The intention is to display a cascading (multi-level) popup menu.
 
 
 
-;; (defun apigee-prompt-user-with-policy-choices ()
-;;   "Prompt the user with the available choices.
-;; In this context the available choices is the hierarchical list
-;; of available policies.
-;;
-;; "
-;;   (let
-;;       ;; No need to sort here. The popup-menu gets its items sorted, and
-;;       ;; choosing any item returns an index into the original unsorted
-;;       ;; list.
-;;       ;;
-;;       ;; ((candidates
-;;       ;;    (sort apigee--policy-alist
-;;       ;;          (lambda (a b) (string< (car a) (car b) )) )))
-;;       ((candidates apigee--policy-alist))
-;;
-;;   (cond
-;;    ((not candidates) nil)
-;;    ((and (eq apigee-prompt-mechanism 'dropdown-list)
-;;          (featurep 'dropdown-list))
-;;     (let ((choice-n (dropdown-list (mapcar '(lambda (elt) (nth 0 elt)) candidates))))
-;;       (if (not (nilp choice-n))
-;;           choice-n
-;;         (keyboard-quit))))
-;;
-;;    (t
-;;     ;; NB:
-;;     ;; x-popup-menu displays in the proper location, near
-;;     ;; the cursor.
-;;     ;;
-;;     ;; x-popup-dialog always displays in the center
-;;     ;; of the frame, which makes for an annoying
-;;     ;; user-experience.
-;;     (x-popup-menu (apigee-get-menu-position)
-;;                   (apigee--generate-menu candidates))))))
-
 
 (defun apigee-prompt-user-with-policy-choices ()
   "Prompt the user with the available choices.
@@ -1731,6 +1808,54 @@ of available policies.
     ;; user-experience.
     (x-popup-menu (apigee-get-menu-position)
                   (apigee--generate-menu apigee--policy-alist)))
+
+
+(defun apigee-add-target ()
+  "Invoke this interactively, and the fn will prompt the user to
+specify the name of a new target. The fn will then create the appropriate
+XML file, and using yas/snippet, will prompt the user to fill in appropriate
+information for the target.
+
+"
+  (interactive)
+  (let ((apiproxy-dir (apigee-path-of-apiproxy)))
+    (if apiproxy-dir
+        (let ((targets-dir (concat apiproxy-dir "apiproxy/targets/"))
+              (have-name nil)
+              (raw-template apigee-target-template)
+              (target-name-prompt "target name: "))
+
+          ;; insure exists
+          (and (not (file-exists-p targets-dir))
+               (make-directory targets-dir))
+          (let* ((default-value (apigee--suggested-target-name))
+                 (target-name
+                  (let (n)
+                    (while (not have-name)
+                      (setq n (read-string target-name-prompt default-value nil default-value)
+                            have-name (apigee-target-name-is-available n)
+                            target-name-prompt "That name is in use. Target name: " ))
+                    n))
+
+                 (elaborated-template
+                  (progn
+                    (while (string-match "##" raw-template)
+                      (setq raw-template
+                            (replace-match target-name t t raw-template)))
+                    raw-template)))
+
+            ;; create the file, expand the snippet, save it.
+            (find-file (concat targets-dir target-name ".xml"))
+            ;; expand-snippet-sync does not return until the snip is expanded.
+            (yas/expand-snippet-sync elaborated-template (point) (point))
+            (save-buffer)
+            (apigee-mode 1)
+
+            ;; TODO: search in default proxy and add the target to the
+            ;; top of the list of targets.
+
+            )))))
+
 
 
 
@@ -1873,21 +1998,436 @@ file, such as a Javascript, Python, or XSL policy.
              (start-process (concat "open " help-page) nil "open" help-page)))))
 
 
+;; using API to update ONE resource
+(defun apigee--join-path-elements (root &rest dirs)
+  "Joins a series of directories together, inserting slashes as necessary,
+like Python's os.path.join."
+
+  (if (not dirs)
+      root
+    (apply 'apigee--join-path-elements
+           (let ((first (car dirs)))
+             (if (s-suffix? "/" root)
+                 (concat root
+                         (if (s-prefix? "/" first)
+                             (substring first 1 (length first))
+                           first))
+               (if (s-prefix? "/" first)
+                   (concat root first)
+                 (concat root "/" (car dirs)))))
+           (cdr dirs))))
+
+
+(defun apigee-update-resource-do-request (org api revision rsrc-type rsrc-name &optional mgmt-server)
+  "updates a resource in an API proxy. MGMT-SERVER should
+include the scheme and domain name. If not passed or not a string, then the
+value defaults to https://api.enterprise.apigee.com
+"
+  ;; get the mgmt server
+  (let ((default-mgmt "https://api.enterprise.apigee.com"))
+    (if (not (stringp mgmt-server))
+        (setq mgmt-server default-mgmt)))
+
+  (let ((hostname
+         (and
+          (numberp (string-match "\\<https?://\\([^/]+\\)" mgmt-server))
+          (match-string 1 mgmt-server)))
+        (rsrc-url (apigee--join-path-elements
+                   mgmt-server
+                   "/v1/o" org "apis" api "revisions" revision "resources" rsrc-type rsrc-name))
+        (record nil))
+
+    (and hostname
+
+         (if (setq record (dino-netrc-find hostname))
+             (progn
+               (request
+                rsrc-url
+                :headers `(("authorization" . ,(dino-netrc-basic-auth-header (cdr record)))
+                           ("content-type" . "application/octet-stream")
+                           ("accept" . "application/json"))
+                :type "PUT"
+                :data (buffer-substring-no-properties (point-min) (point-max))
+                :parser 'buffer-string
+                :complete (function*
+                           (lambda (&key response &allow-other-keys)
+                             (let ((status (request-response-status-code response))
+                                   (data (request-response-data response))
+                                   (e-thrown (request-response-error-thrown response)))
+                               ;;(message "COMPLETE Got status: %d" status)
+                               (when data
+                                 (with-current-buffer (get-buffer-create "*request response*")
+                                   (erase-buffer)
+                                   (insert data)
+                                   (goto-char (point-min))
+                                   ;; on success, the response looks like:
+                                   ;; {
+                                   ;;   "name" : "model.json",
+                                   ;;   "type" : "node"
+                                   ;; }
+                                   (setq data (json-read))
+                                   ;;(pop-to-buffer (current-buffer))
+                                   (message "Status: %d  Data: %s" status (prin1-to-string data))
+                                   )))))
+                :error (function* (lambda (&key error-thrown &allow-other-keys&rest _)
+                                    (message "Got error: %S" error-thrown))))
+               t)
+           (message "No record in .netrc found for host %s" hostname))
+         )))
+
+(defun apigee-retrieve-resource-do-request (org api revision rsrc-type rsrc-name &optional mgmt-server)
+  "retrieves a resource from an API proxy. MGMT-SERVER should
+include the scheme and domain name. If not passed or not a string, then the
+value defaults to https://api.enterprise.apigee.com
+"
+  ;; get the mgmt server
+  (let ((default-mgmt "https://api.enterprise.apigee.com"))
+    (if (not (stringp mgmt-server))
+        (setq mgmt-server default-mgmt)))
+
+  (let ((hostname
+         (and
+          (numberp (string-match "\\<https?://\\([^/]+\\)" mgmt-server))
+          (match-string 1 mgmt-server)))
+        (rsrc-url (apigee--join-path-elements
+                   mgmt-server
+                   "/v1/o" org "apis" api "revisions" revision "resources" rsrc-type rsrc-name))
+        (record nil))
+
+    (and hostname
+         (if (setq record (dino-netrc-find hostname))
+             (request
+              rsrc-url
+              :headers `(("authorization" . ,(dino-netrc-basic-auth-header (cdr record)))
+                         ("accept" . "application/json"))
+              :type "GET"
+              :data (buffer-substring-no-properties (point-min) (point-max))
+              :parser 'buffer-string
+              :sync 't
+              )
+           (message "No record in .netrc found for host %s" hostname)
+           nil)
+         )))
+
+(defun apigee--get-mgmt-server (iactive)
+  "prompts the user for the Edge management server."
+  (let ((default-mgmt "https://api.enterprise.apigee.com"))
+    (if apigee-cached-mgmt-server
+        (setq default-mgmt apigee-cached-mgmt-server))
+
+    (if iactive ;; implies the caller was called interactively
+        (let ((prompt "Edge mgmt server API endpoint: ")
+              (good-answer nil)
+              n)
+          (while (not good-answer)
+            (setq n (read-string prompt default-mgmt nil default-mgmt)
+                  good-answer (or (s-prefix? "http://" n)
+                                  (s-prefix? "https://" n))
+                  prompt "Provide a valid Edge Mgmt API Endpoint: " ))
+          n)
+      default-mgmt)))
+
+
+(defun apigee--get-org-name (iactive)
+  "prompts the user for the Edge organization to use."
+  (let (org
+        (prompt "organization: ")
+        (default-org (or apigee-cached-org-name "unknown")))
+    (setq org
+          (if iactive
+              (read-string prompt default-org nil default-org)
+            default-org))
+    (if (or (not org)
+            (not (stringp org))
+            (< (length org) 1))
+        (error "no organization name")
+      org)))
+
+(defun apigee--get-list-from-edge-api (rsrc-url)
+  "uses the Edge management API to return a list of ... something.
+apiproxies, revisions, resources, etc. This requires netork access.
+It will return in about 1 second."
+  (and
+   (let ((hostname
+          (and
+           (numberp (string-match "\\<https?://\\([^/]+\\)" rsrc-url))
+           (match-string 1 rsrc-url)))
+         (record nil))
+
+     (and hostname
+          (if (setq record (dino-netrc-find hostname))
+              (let ((result
+                     (request
+                      rsrc-url
+                      :headers `(("authorization" . ,(dino-netrc-basic-auth-header (cdr record)))
+                                 ("accept" . "application/json"))
+                      :type "GET"
+                      :parser 'buffer-string
+                      :sync 't
+                      :error (function* (lambda (&key error-thrown &allow-other-keys&rest _)
+                                          (message "Got error: %S" error-thrown))))))
+                (if result
+                    (with-current-buffer (get-buffer-create "*request response*")
+                      (erase-buffer)
+                      (insert (aref result 3))
+                      (goto-char (point-min))
+                      (let ((json-array-type 'list))
+                        ;;(pop-to-buffer (current-buffer))
+                        (setq result (apigee--sort-strings (json-read)))))))
+            (message "No record in .netrc found for host %s" hostname)
+            nil)
+          ))))
+
+
+(defun apigee--list-apiproxies (mgmt-server org)
+  "uses the Edge management API to return the list of API proxies at a given org.
+This requires network access and it will return in about 1 second."
+  ;; (apigee--list-apiproxies "https://api.enterprise.apigee.com" "cheeso")
+  (and
+   (stringp mgmt-server)
+   (let ((rsrc-url (apigee--join-path-elements mgmt-server "/v1/o" org "apis")))
+     (apigee--get-list-from-edge-api rsrc-url))))
+
+
+(defun apigee--list-apiproxy-revisions (mgmt-server org apiproxy)
+  "uses the Edge management API to return the list of revisions
+for a given API proxy at a given org. This requires network
+access and it will return in about 1 second."
+  (and
+   (stringp mgmt-server)
+   (let ((rsrc-url (apigee--join-path-elements mgmt-server "/v1/o" org "apis" apiproxy "revisions")))
+     (apigee--get-list-from-edge-api rsrc-url))))
+
+(defun apigee--list-apiproxy-resources (mgmt-server org apiproxy revision)
+  "uses the Edge management API to return the list of resources
+for a given revision of an API proxy at a given org. This
+requires network access and it will return in about 1 second."
+  ;; (apigee--list-apiproxy-resources "https://api.enterprise.apigee.com" "cheeso" "runload2" "1")
+  (and
+   (stringp mgmt-server)
+   (let ((rsrc-url (apigee--join-path-elements mgmt-server "/v1/o" org "apis" apiproxy "revisions" revision "resources")))
+     (apigee--get-list-from-edge-api rsrc-url))))
+
+(defun apigee--get-menu-structure-for-list (menu-title candidates)
+  "generate a keymap from a simple list of strings"
+  (let (item item-list)
+    (while candidates
+      (setq item (car candidates))
+      (setq candidates (cdr candidates))
+      (setq item-list (cons (cons item item) item-list)))
+
+    (list menu-title (cons menu-title (nreverse item-list)))))
+
+
+
+(defun apigee--get-apiproxy-name (mgmt-server org)
+  "prompts the user for the apiproxy name. Uses `x-popup-menu'
+to present the list of apiproxies from the given org.
+"
+  ;; (apigee--get-apiproxy-name "https://api.enterprise.apigee.com" "cheeso")
+
+  (let ((menu-struct
+         (apigee--get-menu-structure-for-list
+          "Select an apiproxy..."
+          (apigee--list-apiproxies mgmt-server org))))
+    (x-popup-menu (apigee-get-menu-position) menu-struct)))
+
+
+(defun apigee--get-apiproxy-revision (mgmt-server org apiproxy)
+  "prompts the user for the revision of the named apiproxy. Uses `x-popup-menu'
+to present the list of revisions. If there is only one option,
+just returns that item."
+
+  ;; (apigee--get-apiproxy-revision "https://api.enterprise.apigee.com" "cheeso" "runload2")
+  (let ((revisions (apigee--list-apiproxy-revisions mgmt-server org apiproxy)))
+    (and revisions
+         (if (eq (length revisions) 1)
+             (car revisions)
+           (x-popup-menu (apigee-get-menu-position)
+                         (apigee--get-menu-structure-for-list
+                          "Select a revision..." revisions))))))
+
+
+(defun apigee--get-apiproxy-revision-resource (mgmt-server org apiproxy revision)
+  "prompts the user for a resource available in the given
+revision of the named apiproxy. Uses `x-popup-menu' to present
+the list of resources. If there is only one option, just returns
+that item."
+  ;; https://api.enterprise.apigee.com/v1/o/cheeso/apis/runload2/revisions/1/resources
+  ;; (apigee--get-apiproxy-revision-resource "https://api.enterprise.apigee.com" "cheeso" "runload2" "1")
+  (let ((resources (apigee--list-apiproxy-resources mgmt-server org apiproxy revision)))
+         (cond
+          ((not resources)
+           (error "There are no resources available in that apiproxy."))
+          ((eq (length resources) 1)
+               (message "selecting resource %s" (car resources))
+               (car resources))
+          (t
+           (x-popup-menu (apigee-get-menu-position)
+                         (apigee--get-menu-structure-for-list
+                          "Select a resource..." resources))))))
+
+(defun apigee--resource-type (resource-path)
+  "returns the resource type, one of (\"node\" \"xsl\" \"java\" \"jsc\"),
+given the resource path. For example, given \"node://model.json\", returns \"node\" "
+  (let ((re "\\<\\([a-z]+\\)://\\(.+\\)"))
+    (and resource-path
+         (string-match re resource-path)
+         (match-string 1 resource-path))))
+
+(defun apigee--resource-name (resource-path)
+  "returns the resource name given the resource path. For example, given
+\"node://model.json\", returns \"model.json\" "
+  (let ((re "\\<\\([a-z]+\\)://\\(.+\\)"))
+    (and resource-path
+         (string-match re resource-path)
+         (match-string 2 resource-path))))
+
+(defun apigee--apply-appropriate-mode (rsrc-type)
+  "sets the appropriate mode for the newly created buffer"
+  (cond
+   ((string= rsrc-type "xsl")
+    (xml-mode))
+   ((string= rsrc-type "java")
+    (java-mode))
+   ((string= rsrc-type "jsc")
+    (js-mode))
+   ((string= rsrc-type "node")
+    (js-mode))
+   (t nil)))
+
+
+(defun apigee-retrieve-resource ()
+  "retrieve a particular resource in Edge via the API. See also
+`apigee-update-current-resource' . "
+  (interactive)
+  (let (mgmt-server org apiproxy revision resource rsrc-type rsrc-name buf1
+                    (iactive (called-interactively-p 'any)))
+
+    ;; get a new buffer
+    (with-current-buffer (generate-new-buffer "*apigee*")
+      (setq buf1 (current-buffer))
+      (erase-buffer)
+      (setq buffer-file-name nil)
+      (goto-char (point-min))
+      (normal-mode t)
+      (setq mgmt-server (apigee--get-mgmt-server iactive)
+            org (apigee--get-org-name iactive)))
+
+    (setq apiproxy (apigee--get-apiproxy-name mgmt-server org)
+          revision (apigee--get-apiproxy-revision mgmt-server org apiproxy)
+          resource (apigee--get-apiproxy-revision-resource mgmt-server org apiproxy revision)
+          rsrc-type (apigee--resource-type resource)
+          rsrc-name (apigee--resource-name resource))
+
+    ;; validate the resource type
+    (if (or (not rsrc-type)
+            (not (member rsrc-type '("xsl" "node" "jsc" "java"))))
+        (error (format "Unexpected resource type: %s" (or rsrc-type "??"))))
+
+    (message "getting %s/apis/%s/revisions/%s/resources/%s/%s"
+             org apiproxy revision rsrc-type rsrc-name)
+
+    ;; invoke the API call
+    (let ((result
+           (apigee-retrieve-resource-do-request org apiproxy revision rsrc-type
+                                          rsrc-name mgmt-server)))
+      (if result
+          (with-current-buffer buf1
+            (goto-char (point-min))
+            (insert (aref result 3))
+            (goto-char (point-min))
+            (rename-buffer (format "%s-%s-%s-%s" org apiproxy revision resource) t)
+            (setq buffer-file-name rsrc-name
+                  default-directory "~/"
+                  apigee-cached-mgmt-server mgmt-server
+                  apigee-cached-org-name org
+                  apigee-cached-apiproxy apiproxy
+                  apigee-cached-revision revision
+                  apigee-cached-rsrc-type rsrc-type
+                  apigee-cached-rsrc-name rsrc-name
+                  )
+            (run-hooks 'find-file-hook)
+            (apigee--apply-appropriate-mode rsrc-type)
+            (apigee-mode t)
+            (pop-to-buffer (current-buffer))
+            )))))
+
+
+
+(defun apigee-update-current-resource ()
+  "update the current resource in Edge via the API. See also
+`apigee-retrieve-resource' ."
+  (interactive)
+  (let (org apiproxy (revision "1") rsrc-type rsrc-name mgmt-server
+            (iactive (called-interactively-p 'any)))
+
+    (setq mgmt-server (or apigee-cached-mgmt-server
+                          (apigee--get-mgmt-server iactive))
+          org (or apigee-cached-org-name
+                  (apigee--get-org-name iactive))
+          apiproxy (or apigee-cached-apiproxy
+                       (apigee--get-apiproxy-name mgmt-server org))
+          rsrc-type (or apigee-cached-rsrc-type
+                        (file-name-nondirectory
+                         (apigee-insure-no-trailing-slash
+                          (file-name-directory default-directory))))
+          rsrc-name (or apigee-cached-rsrc-name
+                        (file-name-nondirectory buffer-file-name)))
+
+    ;; validate the resource type
+    (if (or (not rsrc-type)
+            (not (member rsrc-type '("xsl" "node" "jsc" "java"))))
+        (error (format "Unexpected resource type: %s" (or rsrc-type "??"))))
+
+    ;; confirm revision
+    (if apigee-cached-revision
+        (setq revision apigee-cached-revision)
+      (if (called-interactively-p 'any)
+          (let ((prompt "revision: "))
+            (setq revision (read-string prompt revision nil revision)))))
+
+    (if (or (not revision)
+            (not (> (string-to-number revision) 0)))
+        (error "invalid revision"))
+
+    (message "updating %s/apis/%s/revisions/%s/resources/%s/%s"
+             org apiproxy revision rsrc-type rsrc-name)
+
+    ;; invoke the API call
+    (apigee-update-resource-do-request org apiproxy revision rsrc-type rsrc-name mgmt-server)))
+
 
 (define-minor-mode apigee-mode
-       "Toggle Apigee mode.
-     Allows apigee-specific functions when editing policy, proxy, and target files. "
-       ;; The initial value.
-      :init-value nil
-      ;; The indicator for the mode line.
-      :lighter " Apigee"
-      ;; The minor mode bindings.
-      :keymap
-      '(([f7] . apigee-open-resource-file-around-point)
-        ([f8] . apigee-upload-bundle-with-pushapi)
-        ("\C-c?" . apigee-open-help-intelligently)
-        )
-      :group 'apigee)
+  "When invoked with no argument, toggle Apigee Edge mode.
+
+Invoke with t to turn apigee-mode on; nil to turn off.
+
+The mode provides functions specific to Apigee Edge when editing files
+for API Proxies. This includes policy, proxy, resource, and target files. "
+  ;; The initial value.
+  :init-value nil
+  ;; The indicator for the mode line.
+  :lighter " Apigee"
+  ;; The minor mode bindings.
+  :keymap
+  '(([f7] . apigee-open-resource-file-around-point)
+    ([f8] . apigee-upload-bundle-with-pushapi)
+    ("\C-c?" . apigee-open-help-intelligently)
+    ("\C-cu" . apigee-update-current-resource)
+    ("\C-cr" . apigee-retrieve-resource)
+    ("\C-cp" . apigee-upload-bundle-with-pushapi)
+    )
+  :version "1.4"
+  :group 'apigee
+
+  ;; body code that runs each time mode is enabled or disabled
+  (progn
+    ;; set up buffer-local variables
+    (if apigee-mode
+        (progn
+          (make-local-variable 'apigee-cached-mgmt-server)
+          (make-local-variable 'apigee-cached-org-name)))))
 
 
 (provide 'apigee)
