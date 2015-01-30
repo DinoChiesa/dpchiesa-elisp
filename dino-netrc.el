@@ -11,7 +11,7 @@
 ;; To use:
 ;; within a program call:
 ;;
-;;   (dino-get-netrc-login "api.fiddlesticks.com")
+;;   (dino-netrc-find "api.fiddlesticks.com")
 ;;
 ;; ...to get a list of (machine username password) for the
 ;; api.fiddlesticks.com host.
