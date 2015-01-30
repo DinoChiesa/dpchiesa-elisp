@@ -1,0 +1,7 @@
+# key : getType
+# name : function getType(x) {...}
+# --
+function getType(obj) {
+  return Object.prototype.toString.call(obj);
+}
+

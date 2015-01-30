@@ -1,0 +1,7 @@
+# key : rand
+# name : function rand(..){...}
+# --
+function rand(min, max) {
+  var delta = max - min + 1;
+  return Math.floor(Math.random() * delta) + min;
+}

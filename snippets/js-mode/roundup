@@ -1,0 +1,7 @@
+# key : roundup
+# name : function roundup(..){...}
+# --
+function roundUp(x,factor){ return x - (x%factor) + (x%factor>0 && factor); }
+var r = roundUp(345, 50);
+
+

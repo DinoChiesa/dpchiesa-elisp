@@ -1,5 +1,5 @@
-#key : sing
-#name : singleton { ... }
+# key : sing
+# name : singleton { ... }
 # --
 var ${1:fname} = (function () {
     var privateVariable;

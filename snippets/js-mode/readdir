@@ -1,0 +1,8 @@
+# key : readdir
+# name : read files from a dir
+# --
+var fs = require('fs'),
+    files = fs.readdirSync('${1:/Users/dino/Documents}');
+files.forEach(function(item, ix){
+  console.log('file found: ' + item);
+});

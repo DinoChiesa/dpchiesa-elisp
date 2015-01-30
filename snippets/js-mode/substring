@@ -1,4 +1,4 @@
-# key : sub
+# key : substring
 # name : S.substring(...)
 # --
 ${1:S}.substring(${2:from},${3:optionalTo});

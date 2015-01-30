@@ -1,5 +1,5 @@
 # key : re
 # name : new RegExp()
 # --
-var ${1:re} = new RegExp(${2:"[^abc]+"}, ${3:'gi'});
-
+var ${1:re} = new RegExp(${2:"[^abc]+"}, ${3:'gi'}),
+    result = $1.exec(${4});

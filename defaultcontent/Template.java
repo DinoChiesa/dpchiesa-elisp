@@ -6,10 +6,11 @@
 // Author: @AUTHOR@
 // Created @DATE@
 //
-// Last saved: <2014-March-19 22:45:11>
+// Last saved: <2014-July-24 21:32:14>
 // ------------------------------------------------------------------
 //
-@INSERTFILE(/Users/Dino/elisp/defaultcontent/Copyright.txt)@
+// Copyright (c) 2014 Dino Chiesa
+// All rights reserved.
 //
 // ------------------------------------------------------------------
 
@@ -17,6 +18,7 @@ package com.ionic.whatever;
 
 import java.util.Hashtable;
 import java.util.Enumeration;
+import java.util.ArrayList;
 
 public class @BASEFILENAMELESSEXTENSION@ {
     private final String optString = "vu:p:s:"; // getopt style
