@@ -1,6 +1,6 @@
 ;;; emacs.el -- dino's em Dino's .emacs setup file.
 ;;
-;; Last saved: <2014-June-25 18:02:37>
+;; Last saved: <2015-January-30 11:13:23>
 ;;
 ;; Works with v24.3 of emacs.
 ;;
@@ -154,6 +154,12 @@
 
 
 (require 'org-fixups)
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; WSD mode
+;;
+(require 'wsd-mode)
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -413,13 +419,15 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; adjustment to mode mappings
 ;
-;; In the regexp's, the trailing \\' represents "end of string".
-;; The $ represents the zero-width place before newline.
-;; They are equivalent unless there is a filename with a new line in it
-;; (not likely).
+;; NB: In the regexp's, the trailing \\' represents "end of string".
+;; The $ represents the zero-width place before newline.  They are
+;; equivalent unless there is a filename with a new line in it (not
+;; likely).
+;;
 (setq auto-mode-alist
       (append
        '(
+         ("\\.yaml$"                          . yaml-mode)
          ("\\.\\(war\\|ear\\|WAR\\|EAR\\)\\'" . archive-mode)        ; java archives
          ;;("\\.s?html?\\'"                     . nxhtml-mumamo-mode)
          ("\\(Iirf\\|iirf\\|IIRF\\)\\(Global\\)?\\.ini$"   . iirf-mode)
@@ -482,7 +490,11 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; speedbar
 
+(require 'sr-speedbar) ;; put speedbar in same frame
+(setq speedbar-use-images nil)
+;; use sr-speedbar-open to open the speedbar window
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -649,7 +661,7 @@ Obviously nobody tested this. Open-sores software.
 It is unbelievable to me that it takes a custom-written function
 to accomplish this. I'm certain I must be doing something wrong,
 but I was unable to fall into a pit of success after much
-searching, wailing, and gnashing of teeth.
+searching.
 
 So I wrote this function which does what I think it should do,
 which is to recompile and then reload all the snippets in my
@@ -2112,13 +2124,13 @@ This gets called by flymake itself."
   (setq indent-tabs-mode nil)
 
   ;; Include single-quote as a string-quote char
-  ;; without this, it was being treated as part of a word,
+  ;; Without this, it was being treated as part of a word,
   ;; I guess because xml-mode is derived from text-mode where
   ;; it's an apostrophe used in contractions.
   ;; But treating it as part of a word is counter-productive in an XML buffer.
   (if (boundp 'sgml-mode-syntax-table)
-      (modify-syntax-entry ?' "\"" sgml-mode-syntax-table)
-    (modify-syntax-entry ?' ".")) ;; . = punctuation
+      (modify-syntax-entry ?\' "\"" sgml-mode-syntax-table)
+    (modify-syntax-entry ?\' ".")) ;; . = punctuation
 
   ;; http://stackoverflow.com/questions/1931784
   ;;(add-hook 'write-contents-functions 'dino-delete-trailing-whitespace)
@@ -2147,6 +2159,10 @@ This gets called by flymake itself."
 
 (add-hook 'sgml-mode-hook 'dino-xml-mode-fn)
 (add-hook 'nxml-mode-hook 'dino-xml-mode-fn)
+
+;; not sure why I have to do this again, here.
+(add-hook 'nxml-mode-hook
+          (lambda () (modify-syntax-entry ?\' ".")))
 
 
 (add-to-list 'hs-special-modes-alist
