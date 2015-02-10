@@ -11,7 +11,7 @@
 ;; Requires   : s.el, request.el, dino-netrc.el
 ;; License    : New BSD
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2015-January-30 14:54:06>
+;; Last-saved : <2015-February-10 13:33:42>
 ;;
 ;;; Commentary:
 ;;
@@ -1247,7 +1247,7 @@ does not end with a slash causes it to use the parent directory.
 
 (defun apigee-insure-no-trailing-slash (path)
   "Insure the given path does not end with a slash. This is usedful with
-`filename-non-directory'.
+`file-name-nondirectory'.
 "
   (and path
        (if (s-ends-with? "/" path)
@@ -2054,8 +2054,8 @@ value defaults to https://api.enterprise.apigee.com
                              (let ((status (request-response-status-code response))
                                    (data (request-response-data response))
                                    (e-thrown (request-response-error-thrown response)))
-                               ;;(message "COMPLETE Got status: %d" status)
-                               (when data
+                               (message "COMPLETE Got status: %d" status)
+                               (if data
                                  (with-current-buffer (get-buffer-create "*request response*")
                                    (erase-buffer)
                                    (insert data)
@@ -2068,7 +2068,10 @@ value defaults to https://api.enterprise.apigee.com
                                    (setq data (json-read))
                                    ;;(pop-to-buffer (current-buffer))
                                    (message "Status: %d  Data: %s" status (prin1-to-string data))
-                                   )))))
+                                   )
+                                 (message "Response: %s" (prin1-to-string response))
+
+                                 ))))
                 :error (function* (lambda (&key error-thrown &allow-other-keys&rest _)
                                     (message "Got error: %S" error-thrown))))
                t)
@@ -2256,16 +2259,16 @@ that item."
   ;; https://api.enterprise.apigee.com/v1/o/cheeso/apis/runload2/revisions/1/resources
   ;; (apigee--get-apiproxy-revision-resource "https://api.enterprise.apigee.com" "cheeso" "runload2" "1")
   (let ((resources (apigee--list-apiproxy-resources mgmt-server org apiproxy revision)))
-         (cond
-          ((not resources)
-           (error "There are no resources available in that apiproxy."))
-          ((eq (length resources) 1)
-               (message "selecting resource %s" (car resources))
-               (car resources))
-          (t
-           (x-popup-menu (apigee-get-menu-position)
-                         (apigee--get-menu-structure-for-list
-                          "Select a resource..." resources))))))
+    (cond
+     ((not resources)
+      (error "There are no resources available in that apiproxy."))
+     ((eq (length resources) 1)
+      (message "selecting resource %s" (car resources))
+      (car resources))
+     (t
+      (x-popup-menu (apigee-get-menu-position)
+                    (apigee--get-menu-structure-for-list
+                     "Select a resource..." resources))))))
 
 (defun apigee--resource-type (resource-path)
   "returns the resource type, one of (\"node\" \"xsl\" \"java\" \"jsc\"),
@@ -2331,7 +2334,7 @@ given the resource path. For example, given \"node://model.json\", returns \"nod
     ;; invoke the API call
     (let ((result
            (apigee-retrieve-resource-do-request org apiproxy revision rsrc-type
-                                          rsrc-name mgmt-server)))
+                                                rsrc-name mgmt-server)))
       (if result
           (with-current-buffer buf1
             (goto-char (point-min))
