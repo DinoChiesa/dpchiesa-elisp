@@ -1,6 +1,6 @@
 ;;; emacs.el -- dino's em Dino's .emacs setup file.
 ;;
-;; Last saved: <2015-January-30 11:13:23>
+;; Last saved: <2015-February-10 13:36:01>
 ;;
 ;; Works with v24.3 of emacs.
 ;;
@@ -254,6 +254,7 @@
 (global-set-key "\C-xw" 'dino-fixup-linefeeds)
 (global-set-key "\C-cg" 'httpget)
 (global-set-key "\C-cu" 'dino-insert-uuid)
+(global-set-key "\C-cf" 'dino-insert-filename)
 (global-set-key "\C-cl" 'lorem-ipsum)
 (global-set-key "\C-cb" 'dino-base64-insert-file)
 (global-set-key "\C-c1" 'just-one-space)
