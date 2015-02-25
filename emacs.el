@@ -1,6 +1,6 @@
 ;;; emacs.el -- dino's em Dino's .emacs setup file.
 ;;
-;; Last saved: <2015-February-10 13:36:01>
+;; Last saved: <2015-February-13 19:13:12>
 ;;
 ;; Works with v24.3 of emacs.
 ;;
@@ -126,12 +126,14 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; html5 presentations
+;; html5 presentations from org docs
 ;;
-(require 'dpreso)
+(require 'dpreso) ;; my own home-built thing. Org-export with reveal.js is cooler.
 (require 'org)
 (require 'ox-reveal)
 ;;(setq org-reveal-root "http://cdn.jsdelivr.net/reveal.js/2.5.0/")
+;; to use: M-x org-reveal-export-to-html
+
 (setq org-reveal-root "http://dinochiesa.github.io/rv/")
 (add-hook 'org-fixups/after-export-reveal-file
           (lambda (filename)
@@ -149,7 +151,7 @@
 
     (rename-file filename new-fname t)
     (call-process "open" nil t t
-                  (concat "http://localhost:8080/html/dpreso/"
+                  (concat "http://localhost:80/html/dpreso/"
                           base-fname))))
 
 
@@ -512,6 +514,11 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;;(require 'gist)
+
+;; Sometimes when invoking gist-buffer, you get an error like this:
+;; Invalid slot type: gh-gist-gist, id, string, nil
+;; If so, just run 'gist-list' and retry the gist-buffer.
 (eval-after-load "gist"
   '(progn
 ;; note that we added the DESCRIPTION argument
@@ -999,6 +1006,7 @@ just auto-corrects on common mis-spellings by me. "
       ("rigueur" "rigeuer" nil 1)
       ("riguer" "rigeuer" nil 1)
       ("hygeine" "hygiene" nil 0)
+      ("laucnhed" "launched" nil 0)
       ("comittee" "committee" nil 0)
       ("machien" "machine" nil 0)
       ("machiens" "machines" nil 0)

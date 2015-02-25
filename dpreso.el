@@ -10,7 +10,7 @@
 ;; Requires   :
 ;; License    : New BSD
 ;; X-URL      : https://github.com/DinoChiesa/dpchiesa-elisp/blob/master/dpreso.el
-;; Last-saved : <2014-June-24 17:38:30>
+;; Last-saved : <2015-February-13 19:12:27>
 ;;
 ;;; Commentary:
 ;;
@@ -54,7 +54,7 @@
 presentations. Should end in a slash."
   :group 'dpreso)
 
-(defcustom dpreso-url-base "http://localhost:8080/html/dpreso/"
+(defcustom dpreso-url-base "http://localhost:80/html/dpreso/"
   "The base URL at which generated presentations will be available.
 Should end in a slash"
   :group 'dpreso)
