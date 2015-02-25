@@ -11,7 +11,7 @@
 ;; Requires   : s.el, request.el, dino-netrc.el
 ;; License    : New BSD
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2015-February-10 13:33:42>
+;; Last-saved : <2015-February-25 13:42:32>
 ;;
 ;;; Commentary:
 ;;
@@ -610,9 +610,10 @@ apiproduct.developer.quota.timeunit*
 </ExtractVariables>")
 
 
-     '("ExtractVariables - JSON"
+     '("ExtractVariables - from JSON response"
        "Extract"
        "<ExtractVariables name='##'>
+  <Source>tokenResponse</Source>
   <VariablePrefix>$1</VariablePrefix>
   <JSONPayload>
     <Variable name='$2'>
@@ -640,19 +641,30 @@ apiproduct.developer.quota.timeunit*
      '("ServiceCallout"
        "ServiceCallout"
        "<ServiceCallout continueOnError='false' async='false' name='##'>
-    <DisplayName>##</DisplayName>
-    <FaultRules/>
-    <Properties/>
-    <Request variable='authenticationRequest' clearPayload='false'>
-        <IgnoreUnresolvedVariables>false</IgnoreUnresolvedVariables>
-    </Request>
-    <Response>authenticationResponse</Response>
-    <HTTPTargetConnection>
-      <Properties>
-        <Property name='success.codes'>2xx, 4xx, 5xx</Property>
-      </Properties>
-        <URL>${1:https://api.usergrid.com/globo/sandbox/token}</URL>
-    </HTTPTargetConnection>
+  <DisplayName>##</DisplayName>
+  <FaultRules/>
+  <Properties/>
+  <Request variable='authenticationRequest'>
+        <Set>
+          <!-- Shows how to request a token from usergrid. -->
+          <!-- FIXME: should retrieve secrets from vault -->
+           <Payload contentType='application/json' variablePrefix='%'
+                    variableSuffix='#'><![CDATA[{
+    \"grant_type\":\"client_credentials\",
+    \"client_id\":\"whatever\",
+    \"client_secret\":\"something-secret\"
+}]]></Payload>
+         <Verb>POST</Verb>
+         <Path>/demo24/wagov1/token</Path>
+      </Set>
+  </Request>
+  <Response>tokenResponse</Response>
+  <HTTPTargetConnection>
+    <Properties>
+      <Property name='success.codes'>2xx, 4xx, 5xx</Property>
+    </Properties>
+    <URL>${1:https://api.usergrid.com/}</URL>
+  </HTTPTargetConnection>
 </ServiceCallout>\n")
 
      '("OAuthV2 - GenerateAccessToken auth_code, client creds, passwd"
@@ -1110,7 +1122,10 @@ Authorization.
     <KeyFragment ref='${4:variable.containing.keyfrag}' />
   </CacheKey>
   <ExpirySettings>
-    <TimeoutInSec>864000</TimeoutInSec> <!-- 864000 = 10 days -->
+    <!-- include one of the following... -->
+    <TimeOfDay ref='time_variable'>hh:mm:ss</TimeOfDay>
+    <TimeoutInSec ref='duration_variable'>864000</TimeoutInSec> <!-- 864000 = 10 days -->
+    <ExpiryDate ref='date_variable'>mm-dd-yyyy</ExpiryDate>
   </ExpirySettings>
 </PopulateCache>\n")
 
@@ -1295,6 +1310,39 @@ It always ends in slash.
 
 
 
+(defun apigee-metadata-file-name ()
+  "Get the full path of the file that holds the metadata for the API Proxy
+bundle that contains the file or directory currently being edited.
+eg
+  /Users/dino/dev/apiproxies/wagov-corpdata-2/apiproxy/corpdata2.xml
+
+"
+  (let ((apiproxy-dir (apigee-insure-trailing-slash (apigee-path-of-apiproxy))))
+    (if apiproxy-dir
+        (let ((files
+               (directory-files
+                (concat apiproxy-dir "apiproxy/") t ".*\.xml$")))
+          (car files)))))
+
+(defun apigee--update-last-modified()
+  "updates the last modified time in the metadata file for the current proxy."
+
+  (let ((path-to-metadata-file (apigee-metadata-file-name))
+        fileChanged-p )
+    (with-temp-buffer
+      (insert-file-contents path-to-metadata-file)
+      ;; process text
+      (goto-char (point-min))
+      (if (re-search-forward "\\(<LastModifiedAt>\\)\\([^<]+\\)\\(</LastModifiedAt>\\)" nil t)
+          (setq fileChanged-p
+                (or
+                 (replace-match (concat "\\1"
+                                        (apigee--java-get-time-in-millis)
+                                        "\\3"))
+                 t)))
+      (when fileChanged-p (write-region 1 (point-max) path-to-metadata-file)))))
+
+
 (defun apigee-apiproxy-name ()
   "Get a name for the API Proxy bundle that contains
 the file or directory currently being edited.
@@ -1376,6 +1424,9 @@ that contains the file or directory currently being edited.
     (and proxy-dir
          (file-exists-p apigee-upload-bundle-pgm)
          (let ((this-cmd (assoc proxy-dir apigee-upload-command-alist)))
+           ;; modify the LastModifiedAt time in the bundle file
+           (apigee--update-last-modified)
+           ;; interactively invoke the command (and allow user to change)
            (set (make-local-variable 'compile-command)
                 (or (cdr this-cmd)
                     (concat
@@ -2417,6 +2468,7 @@ for API Proxies. This includes policy, proxy, resource, and target files. "
   '(([f7] . apigee-open-resource-file-around-point)
     ([f8] . apigee-upload-bundle-with-pushapi)
     ("\C-c?" . apigee-open-help-intelligently)
+    ("\C-ch" . apigee-open-help-intelligently)
     ("\C-cu" . apigee-update-current-resource)
     ("\C-cr" . apigee-retrieve-resource)
     ("\C-cp" . apigee-upload-bundle-with-pushapi)
