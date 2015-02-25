@@ -9,6 +9,7 @@
 ;;; Code:
 ;;
 
+(require 'org)
 
 (if (fboundp 'org-reveal-template)
     ;; re-define this function to allow omitting the title slide,
