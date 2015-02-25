@@ -3,7 +3,7 @@
 ;; Author: Dino Chiesa
 ;; Version: 0.1
 ;; Created: Sat, 31 Mar 2012  09:48
-;; Last Updated: <2014-May-28 19:57:05>
+;; Last Updated: <2015-February-16 11:51:35>
 
 
 
@@ -273,6 +273,171 @@ a var declaration. otherwise nil.
            (+ js-indent-level js-expr-indent-offset))
           (t 0))))
 
+
+;;;;;
+;; I think I need to add the following to js--font-lock-keywords-3:
+;;
+;;    (js--continued-var-decl-matcher
+;;     (1 font-lock-variable-name-face nil t))
+
+
+(defun js--fontlock-continued-var-decl-matcher (limit)
+  "Font-lock matcher for variable names 2...N in a multi-line variable declaration.
+"
+  (condition-case nil
+      (save-restriction
+        (narrow-to-region (point-min) limit)
+
+        (let ((found
+               (save-excursion
+                 (back-to-indentation)
+                 (and (not (eq (point-at-bol) (point-min)))
+                      (not (looking-at "[{]"))
+                      (not (looking-at "var "))
+                      (progn
+                        (js--backward-syntactic-ws)
+                        (and (char-before)
+                             (= (char-before) ?,)
+                             (not (= (char-before) ?=))
+                             (or (js--backto-beginning-of-expression) t);; skip back
+                             (cond
+                              ((looking-at "var ")
+                               t)
+                              (t nil))))))))
+          (if found
+              (re-search-forward
+               (concat "\\(" js--name-re "\\)")))))
+
+    ;; Conditions to handle
+    (scan-error nil)
+    (end-of-buffer nil)))
+
+(defconst js--font-lock-keywords-3
+  `(
+    ;; This goes before keywords-2 so it gets used preferentially
+    ;; instead of the keywords in keywords-2. Don't use override
+    ;; because that will override syntactic fontification too, which
+    ;; will fontify commented-out directives as if they weren't
+    ;; commented out.
+    ,@cpp-font-lock-keywords ; from font-lock.el
+
+    ,@js--font-lock-keywords-2
+
+    ("\\.\\(prototype\\)\\_>"
+     (1 font-lock-constant-face))
+
+    ;; Highlights class being declared, in parts
+    (js--class-decl-matcher
+     ,(concat "\\(" js--name-re "\\)\\(?:\\.\\|.*$\\)")
+     (goto-char (match-beginning 1))
+     nil
+     (1 font-lock-type-face))
+
+    ;; Highlights parent class, in parts, if available
+    (js--class-decl-matcher
+     ,(concat "\\(" js--name-re "\\)\\(?:\\.\\|.*$\\)")
+     (if (match-beginning 2)
+         (progn
+           (setq js--tmp-location (match-end 2))
+           (goto-char js--tmp-location)
+           (insert "=")
+           (goto-char (match-beginning 2)))
+       (setq js--tmp-location nil)
+       (goto-char (point-at-eol)))
+     (when js--tmp-location
+       (save-excursion
+         (goto-char js--tmp-location)
+         (delete-char 1)))
+     (1 font-lock-type-face))
+
+    ;; Highlights parent class
+    (js--class-decl-matcher
+     (2 font-lock-type-face nil t))
+
+    ;; Dojo needs its own matcher to override the string highlighting
+    (,(js--make-framework-matcher
+       'dojo
+       "^\\s-*dojo\\.declare\\s-*(\""
+       "\\(" js--dotted-name-re "\\)"
+       "\\(?:\"\\s-*,\\s-*\\(" js--dotted-name-re "\\)\\)?")
+     (1 font-lock-type-face t)
+     (2 font-lock-type-face nil t))
+
+    ;; Match Dojo base classes. Of course Mojo has to be different
+    ;; from everything else under the sun...
+    (,(js--make-framework-matcher
+       'dojo
+       "^\\s-*dojo\\.declare\\s-*(\""
+       "\\(" js--dotted-name-re "\\)\"\\s-*,\\s-*\\[")
+     ,(concat "[[,]\\s-*\\(" js--dotted-name-re "\\)\\s-*"
+              "\\(?:\\].*$\\)?")
+     (backward-char)
+     (end-of-line)
+     (1 font-lock-type-face))
+
+    ;; continued Dojo base-class list
+    (,(js--make-framework-matcher
+       'dojo
+       "^\\s-*" js--dotted-name-re "\\s-*[],]")
+     ,(concat "\\(" js--dotted-name-re "\\)"
+              "\\s-*\\(?:\\].*$\\)?")
+     (if (save-excursion (backward-char)
+                         (js--inside-dojo-class-list-p))
+         (forward-symbol -1)
+       (end-of-line))
+     (end-of-line)
+     (1 font-lock-type-face))
+
+    ;; variable declarations
+    ,(list
+      (concat "\\_<\\(const\\|var\\|let\\)\\_>\\|" js--basic-type-re)
+      (list #'js--variable-decl-matcher nil nil nil))
+
+    ;; continued variable decls - dino
+    (js--fontlock-continued-var-decl-matcher
+     (1 font-lock-variable-name-face nil t))
+
+    ;; class instantiation
+    ,(list
+      (concat "\\_<new\\_>\\s-+\\(" js--dotted-name-re "\\)")
+      (list 1 'font-lock-type-face))
+
+    ;; instanceof
+    ,(list
+      (concat "\\_<instanceof\\_>\\s-+\\(" js--dotted-name-re "\\)")
+      (list 1 'font-lock-type-face))
+
+    ;; formal parameters
+    ,(list
+      (concat
+       "\\_<function\\_>\\(\\s-+" js--name-re "\\)?\\s-*(\\s-*"
+       js--name-start-re)
+      (list (concat "\\(" js--name-re "\\)\\(\\s-*).*\\)?")
+            '(backward-char)
+            '(end-of-line)
+            '(1 font-lock-variable-name-face)))
+
+    ;; continued formal parameter list
+    ,(list
+      (concat
+       "^\\s-*" js--name-re "\\s-*[,)]")
+      (list js--name-re
+            '(if (save-excursion (backward-char)
+                                 (js--inside-param-list-p))
+                 (forward-symbol -1)
+               (end-of-line))
+            '(end-of-line)
+            '(0 font-lock-variable-name-face))))
+  "Level three font lock for `js-mode'.")
+
+
+(defconst js--font-lock-keywords
+  '(js--font-lock-keywords-3 js--font-lock-keywords-1
+                                   js--font-lock-keywords-2
+                                   js--font-lock-keywords-3)
+  "Font lock keywords for `js-mode'.  See `font-lock-keywords'.")
+
+
 ))
 
 
@@ -315,6 +480,8 @@ a var declaration. otherwise nil.
 ;;           ((js--continued-expression-p)
 ;;            (+ js-indent-level js-expr-indent-offset))
 ;;           (t 0))))
+
+
 
 (provide 'js-mode-fixups)
 
