@@ -11,7 +11,7 @@
 ;; Requires   : s.el, request.el, dino-netrc.el
 ;; License    : New BSD
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2015-February-25 13:42:32>
+;; Last-saved : <2015-March-09 12:09:42>
 ;;
 ;;; Commentary:
 ;;
@@ -245,19 +245,22 @@ the only possible value currently.")
 -->
 </AccessEntity>\n")
 
-     '("AssignMessage - remove query param"
+     '("AssignMessage - remove query param or header"
        "AssignMessage"
-       "<AssignMessage enabled='true' continueOnError='false' async='false' name='##'>
-  <DisplayName>AssignMessage - Remove Query Param</DisplayName>
+       "<AssignMessage name='##'>
+  <DisplayName>##</DisplayName>
   <FaultRules/>
   <Properties/>
   <Remove>
     <QueryParams>
-      <QueryParam name='${2:apikey}'/>
+      <QueryParam name='${1:apikey}'/>
     </QueryParams>
+    <Headers>
+      <Header name='${2:apikey}'/>
+    </Headers>
   </Remove>
-  <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
-  <AssignTo createNew='false' transport='http' type='request'></AssignTo>
+  <IgnoreUnresolvedVariables>${3:$$(yas/choose-value '(\"true\" \"false\" ))}</IgnoreUnresolvedVariables>
+  <AssignTo createNew='false' transport='http' type='${4:$$(yas/choose-value '(\"request\" \"response\" ))}'></AssignTo>
 </AssignMessage>\n")
 
      '("AssignMessage - set query param"
@@ -318,6 +321,7 @@ the only possible value currently.")
      "<AssignMessage name='##'>
   <DisplayName>AssignMessage</DisplayName>
   <Description>$1</Description>
+  <!-- <AssignTo createNew='false' transport='http' type='request'></AssignTo> -->
   <IgnoreUnresolvedVariables>false</IgnoreUnresolvedVariables>
   <Set>
     <Payload contentType='${2:$$(yas/choose-value (reverse (apigee--sort-strings (mapcar 'car apigee-message-payload-template-alist))))}'
@@ -378,7 +382,7 @@ the only possible value currently.")
 
      '("Quota - Enforce after VerifyAPIKey"
        "Quota"
-       "<Quota async='false' continueOnError='false' enabled='true' name='##'>
+       "<Quota name='##'>
     <DisplayName>##</DisplayName>
     <Identifier ref='${1:request.queryparam.apikey}' />
     <!-- the count specified is used unless overridden by the variable referenced here -->
@@ -488,7 +492,7 @@ ratelimit.{policy_name}.class.total.exceed.count
 
      '("VerifyAPIKey" ;;  - query param or header
        "VerifyAPIKey"
-     "<VerifyAPIKey enabled='true' continueOnError='false' async='false'  name='##'>
+     "<VerifyAPIKey name='##'>
     <DisplayName>Verify API Key</DisplayName>
     <APIKey ref='${1:$$(yas/choose-value '(\"request.queryparam.apikey\" \"request.header.X-Apikey\"))}'></APIKey>
 <!--
@@ -528,8 +532,9 @@ apiproduct.developer.quota.timeunit*
      '("JSONToXML"
        "JSONToXML"
        "<JSONToXML name='##'>
-  <Options>
-  </Options>
+  <Source>{${1:variable.name}</Source>
+  <OutputVariable>{${2:variable.name}</OutputVariable>
+  <Options/>
 </JSONToXML>")
 
      '("XMLToJSON"
@@ -670,17 +675,19 @@ apiproduct.developer.quota.timeunit*
      '("OAuthV2 - GenerateAccessToken auth_code, client creds, passwd"
        "OAuthV2-GenerateAccessToken"
        "<OAuthV2 name='##'>
-    <DisplayName>OAuthV2 - GenerateAccessToken</DisplayName>
+    <DisplayName>##</DisplayName>
     <Operation>GenerateAccessToken</Operation>
     <FaultRules/>
     <Properties/>
     <!-- ExpiresIn, in milliseconds. The ref is optional. The explicitly specified -->
     <!-- value is the default, when the ref cannot be resolved.                    -->
+    <!-- 2400000 = 40 minutes                                                      -->
     <ExpiresIn ref='flow.variable'>2400000</ExpiresIn>
 
-    <!-- RefreshTokenExpiresIn is optional; if it is not specified, the default    -->
-    <!-- value will be used which is -1 (no expiration).                           -->
-    <RefreshTokenExpiresIn>3600000</RefreshTokenExpiresIn>
+    <!-- RefreshTokenExpiresIn, in milliseconds. Optional; if it is not            -->
+    <!-- specified, the default value will be used which is -1 (no expiration).    -->
+    <!-- 691200000 = 8 days                                                        -->
+    <RefreshTokenExpiresIn>691200000</RefreshTokenExpiresIn>
 
     <SupportedGrantTypes>
         <!-- keep one or more of the following -->
@@ -688,6 +695,7 @@ apiproduct.developer.quota.timeunit*
         <GrantType>password</GrantType>
         <GrantType>client_credentials</GrantType>
     </SupportedGrantTypes>
+
     <!-- variable that specifies the requested grant type -->
     <GrantType>${1:$$(yas/choose-value '(\"request.queryparam.grant_type\" \"request.formparam.grant_type\" \"flowVariable.something\" ))}</GrantType>
 
@@ -712,14 +720,51 @@ apiproduct.developer.quota.timeunit*
 
     <ExternalAuthorization>${2:$$(yas/choose-value '(\"true\" \"false\" ))}</ExternalAuthorization>
 
+    <!-- Optional: these attributes get associated to the token.       -->
+    <!-- They will be available to the api proxy whenever the token is -->
+    <!-- subsequently validated.                                       -->
+    <Attributes>
+      <Attribute name='attr_name1' ref='flow.variable1' display='true|false'>value1</Attribute>
+      <Attribute name='attr_name2' ref='flow.variable2' display='true|false'>value2</Attribute>
+    </Attributes>
+
     <GenerateResponse enabled='true'/>
     <!--
-    If you include GenerateResponse, then the response is sent directly to the caller.
-    If you omit GenerateResponse, then these flow variables are set on success:
-      oauthv2accesstoken.{policy_name}.access_token
-      oauthv2accesstoken.{policy_name}.token_type
-      oauthv2accesstoken.{policy_name}.expires_in
-      oauthv2accesstoken.{policy_name}.refresh_token
+
+    If you include GenerateResponse and have enabled='true', then
+    the response is sent directly to the caller. The payload looks like
+    this:
+
+    {
+     \"issued_at\": \"1420262924658\",
+     \"scope\": \"READ\",
+     \"application_name\": \"ce1e94a2-9c3e-42fa-a2c6-1ee01815476b\",
+     \"refresh_token_issued_at\": \"1420262924658\",
+     \"status\": \"approved\",
+     \"refresh_token_status\": \"approved\",
+     \"api_product_list\": \"[PremiumWeatherAPI]\",
+     \"expires_in\": \"1799\",
+     \"developer.email\": \"tesla@weathersample.com\",
+     \"organization_id\": \"0\",
+     \"token_type\": \"BearerToken\",
+     \"refresh_token\": \"fYACGW7OCPtCNDEnRSnqFlEgogboFPMm\",
+     \"client_id\": \"5jUAdGv9pBouF0wOH5keAVI35GBtx3dT\",
+     \"access_token\": \"2l4IQtZXbn5WBJdL6EF7uenOWRsi\",
+     \"organization_name\": \"docs\",
+     \"refresh_token_expires_in\": \"0\",
+     \"refresh_count\": \"0\"
+    }
+
+    If you omit GenerateResponse or have enabled='false', then
+    these flow variables are set on success:
+
+      oauthv2accesstoken.##.access_token
+      oauthv2accesstoken.##.token_type
+      oauthv2accesstoken.##.expires_in
+      oauthv2accesstoken.##.refresh_token
+      oauthv2accesstoken.##.refresh_token_expires_in
+      oauthv2accesstoken.##.refresh_token_issued_at
+      oauthv2accesstoken.##.refresh_token_status
     -->
 </OAuthV2>\n")
 
@@ -732,11 +777,13 @@ apiproduct.developer.quota.timeunit*
     <Properties/>
     <!-- ExpiresIn, in milliseconds. The ref is optional. The explicitly specified -->
     <!-- value is the default, when the ref cannot be resolved.                    -->
+    <!-- 2400000 = 40 minutes -->
     <ExpiresIn ref='flow.variable'>2400000</ExpiresIn>
 
     <!-- RefreshTokenExpiresIn is optional; if it is not specified, the default    -->
     <!-- value will be used which is -1 (no expiration).                           -->
-    <RefreshTokenExpiresIn>3600000</RefreshTokenExpiresIn> <!-- Optional -->
+    <!-- 691200000 = 8 days -->
+    <RefreshTokenExpiresIn>691200000</RefreshTokenExpiresIn>
 
     <ResponseType>flow.variable</ResponseType> <!-- Optional -->
     <ClientId>flow.variable</ClientId> <!-- Optional -->
@@ -744,7 +791,11 @@ apiproduct.developer.quota.timeunit*
     <Scope>flow.variable</Scope> <!-- Optional, space-separated list -->
     <State>flow.variable</State> <!-- Optional -->
     <AppEndUser>flow.variable</AppEndUser> <!-- Optional -->
-    <Attributes> <!-- Optional -->
+
+    <!-- Optional: these attributes get associated to the token.       -->
+    <!-- They will be available to the api proxy whenever the token is -->
+    <!-- subsequently validated.                                       -->
+    <Attributes>
       <Attribute name='attr_name1' ref='flow.variable1' display='true|false'>value1</Attribute>
       <Attribute name='attr_name2' ref='flow.variable2' display='true|false'>value2</Attribute>
     </Attributes>
@@ -772,10 +823,10 @@ apiproduct.developer.quota.timeunit*
 
     <!--
       If <GenerateResponse/> is omitted, the policy sets these variables on success:
-        oauthv2accesstoken.{policy_name}.access_token
-        oauthv2accesstoken.{policy_name}.token_type
-        oauthv2accesstoken.{policy_name}.expires_in
-        oauthv2accesstoken.{policy_name}.refresh_token
+        oauthv2accesstoken.##.access_token
+        oauthv2accesstoken.##.token_type
+        oauthv2accesstoken.##.expires_in
+        oauthv2accesstoken.##.refresh_token
     -->
     <GenerateResponse enabled='true'/>
 </OAuthV2>\n")
@@ -900,13 +951,13 @@ apiproduct.developer.quota.timeunit*
     <ClientId>{client id}</ClientId>
     <!--
     On Success, the following flow variables will be set.
-      oauthv2client.{policy_name}.client_id
-      oauthv2client.{policy_name}.client_secret
-      oauthv2client.{policy_name}.redirection_uris
-      oauthv2client.{policy_name}.developer.email
-      oauthv2client.{policy_name}.developer.app.name
-      oauthv2client.{policy_name}.developer.id
-      oauthv2client.{policy_name}.{custom_attribute_name}
+      oauthv2client.##.client_id
+      oauthv2client.##.client_secret
+      oauthv2client.##.redirection_uris
+      oauthv2client.##.developer.email
+      oauthv2client.##.developer.app.name
+      oauthv2client.##.developer.id
+      oauthv2client.##.{custom_attribute_name}
     -->
 </GetOAuthV2Info>\n")
 
@@ -920,14 +971,14 @@ apiproduct.developer.quota.timeunit*
     <AccessToken>${2:BAADBEEF}</AccessToken>
     <!--
     On Success, the following flow variables will be set.
-      oauthv2accesstoken.{policy_name}.access_token
-      oauthv2accesstoken.{policy_name}.scope
-      oauthv2accesstoken.{policy_name}.refresh_token
-      oauthv2accesstoken.{policy_name}.accesstoken.{custom_attribute_name}
-      oauthv2accesstoken.{policy_name}.developer.id
-      oauthv2accesstoken.{policy_name}.developer.app.name
-      oauthv2accesstoken.{policy_name}.expires_in
-      oauthv2accesstoken.{policy_name}.status
+      oauthv2accesstoken.##.access_token
+      oauthv2accesstoken.##.scope
+      oauthv2accesstoken.##.refresh_token
+      oauthv2accesstoken.##.accesstoken.{custom_attribute_name}
+      oauthv2accesstoken.##.developer.id
+      oauthv2accesstoken.##.developer.app.name
+      oauthv2accesstoken.##.expires_in
+      oauthv2accesstoken.##.status
     -->
 </GetOAuthV2Info>\n")
 
@@ -940,11 +991,11 @@ apiproduct.developer.quota.timeunit*
     <RefreshToken ref='${1:flow.variable}'/>
     <RefreshToken>${2:refresh_token}</RefreshToken>
     <!--
-    On Success, the following flow variables will be set.
-      oauthv2accesstoken.<PolicyName>.refresh_token
-      oauthv2accesstoken.<PolicyName>.refresh_token_expires_in
-      oauthv2accesstoken.<PolicyName>.refresh_token_issued_at
-      oauthv2accesstoken.<PolicyName>.refresh_token_status
+    On Success, the following flow/context variables will be set.
+      oauthv2accesstoken.##.refresh_token
+      oauthv2accesstoken.##.refresh_token_expires_in
+      oauthv2accesstoken.##.refresh_token_issued_at
+      oauthv2accesstoken.##.refresh_token_status
     -->
 </GetOAuthV2Info>\n")
 
@@ -958,16 +1009,16 @@ apiproduct.developer.quota.timeunit*
     <AuthorizationCode>${2:BAADBEEF}</AuthorizationCode>
     <!--
     On Success, the following flow variables will be set.
-      oauthv2authcode.{policy_name}.client_id
-      oauthv2authcode.{policy_name}.organization_id
-      oauthv2authcode.{policy_name}.issued_at
-      oauthv2authcode.{policy_name}.expires_in
-      oauthv2authcode.{policy_name}.redirect_uri
-      oauthv2authcode.{policy_name}.status
-      oauthv2authcode.{policy_name}.state
-      oauthv2authcode.{policy_name}.scope
-      oauthv2authcode.{policy_name}.id
-      oauthv2authcode.{policy_name}.{custom_attribute_name}
+      oauthv2authcode.##.client_id
+      oauthv2authcode.##.organization_id
+      oauthv2authcode.##.issued_at
+      oauthv2authcode.##.expires_in
+      oauthv2authcode.##.redirect_uri
+      oauthv2authcode.##.status
+      oauthv2authcode.##.state
+      oauthv2authcode.##.scope
+      oauthv2authcode.##.id
+      oauthv2authcode.##.{custom_attribute_name}
     -->
 </GetOAuthV2Info>\n")
 
@@ -1182,7 +1233,7 @@ Authorization.
 
      '("RaiseFault - 302 Redirect"
        "RaiseFault-Redirect"
-       "<RaiseFault name='##' enabled='true' continueOnError='false' async='false'>
+       "<RaiseFault name='##'>
     <DisplayName>${1:##}</DisplayName>
     <FaultRules/>
     <Properties/>
@@ -1204,7 +1255,7 @@ $1
 
      '("Javascript"
        "Javascript"
-       "<Javascript enabled='true' continueOnError='false' async='false' name='##'>
+       "<Javascript name='##' timeLimit='200' >
     <DisplayName>${1:##}</DisplayName>
   <ResourceURL>jsc://${2:$$(apigee--fixup-script-name \"##\")}.js</ResourceURL>
 </Javascript>")
@@ -1214,7 +1265,7 @@ $1
 
      '("XSL"
        "XSL"
-       "<XSL enabled='true' continueOnError='false' async='false' name='##'>
+       "<XSL name='##'>
   <DisplayName>${1:##}</DisplayName>
   <FaultRules/>
   <Properties/>
@@ -2002,10 +2053,10 @@ file, such as a Javascript, Python, or XSL policy.
 
 (defconst apigee-policy-help-alist
   (list
-   '("ServiceCallout"
-     "/api-services/content/call-services-or-apis-using-servicecallout")
+   '("AccessEntity"
+     "/api-services/content/retrieve-entity-profiles-using-accessentity")
    '("AssignMessage"
-     "/api-services/content/generate-or-modify-messages-using-assignmessage")
+     "/api-services/reference/assign-message-policy")
    '("KeyValueMapOperations"
      "/api-services/content/persist-data-using-keyvaluemap")
    '("ExtractVariables"
@@ -2018,8 +2069,16 @@ file, such as a Javascript, Python, or XSL policy.
      "/api-services/content/optimize-performance-using-cache")
    '("LookupCache"
      "/api-services/content/optimize-performance-using-cache")
-   '("AccessEntity"
-     "/api-services/content/retrieve-entity-profiles-using-accessentity")
+   '("Javascript"
+     "/api-services/reference/javascript-policy")
+   '("Java"
+     "/api-services/reference/java-callout-policy")
+   '("JSONToXML"
+     "/api-services/reference/json-xml-policy")
+   '("XSL"
+     "/api-services/reference/xsl-transform-policy")
+   '("ServiceCallout"
+     "/api-services/reference/service-callout-policy")
    '("Quota"
      "/api-services/content/rate-limit-api-traffic-using-quota"))
 
