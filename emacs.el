@@ -1,6 +1,6 @@
 ;;; emacs.el -- dino's em Dino's .emacs setup file.
 ;;
-;; Last saved: <2015-February-13 19:13:12>
+;; Last saved: <2015-March-18 11:12:17>
 ;;
 ;; Works with v24.3 of emacs.
 ;;
@@ -1004,6 +1004,8 @@ just auto-corrects on common mis-spellings by me. "
   (define-abbrev-table 'text-mode-abbrev-table
     '(
       ("rigueur" "rigeuer" nil 1)
+      ("submint" "submit" nil 1)
+      ("rwquest" "request" nil 1)
       ("riguer" "rigeuer" nil 1)
       ("hygeine" "hygiene" nil 0)
       ("laucnhed" "launched" nil 0)
