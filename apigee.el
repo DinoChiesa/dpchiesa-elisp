@@ -11,7 +11,7 @@
 ;; Requires   : s.el, request.el, dino-netrc.el
 ;; License    : New BSD
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2015-March-09 12:09:42>
+;; Last-saved : <2015-March-24 15:39:59>
 ;;
 ;;; Commentary:
 ;;
@@ -420,7 +420,7 @@ ratelimit.{policy_name}.class.total.exceed.count
     <DisplayName>##</DisplayName>
     <FaultRules/>
     <Properties/>
-    <!-- use the client_id that is set after OAuthV2/VerifyApiKey -->
+    <!-- use the client_id that is set after OAuthV2/VerifyAPIKey -->
     <Identifier ref='client_id' />
     <!-- the count specified is used unless overridden by the variable referenced here -->
     <Allow countRef='apiproduct.developer.quota.limit' count='1000'/>
@@ -502,9 +502,10 @@ client_id: The consumer key (aka API key or app key) supplied by the requesting 
 client_secret: The consumer secret associated with the consumer key
 redirection_uris: Any redirect URIs in the request
 developer.app.name: The app name of the developer app making the request
-developer.id: The developerID of the developer registered as the owner of the requesting app
+developer.id: The developer ID of the developer registered as the owner of the requesting app
 failed: Set when API Key validation fails
-{custom_attribute_name_of_app}: Any custom attribute derived from the app profile
+developer.app.{custom_attribute_name} ?? - custom attribute on the app
+{custom_attribute_name_of_app}: Any custom attribute derived from the app profile?
 {custom_attribute_name_of_appkey}: Any custom attributes derived from the app key profile
 apiproduct.name*: The name of the API product used to validate the request
 apiproduct.{custom_attribute_name}*: Any custom attribute derived from the API product profile
@@ -897,7 +898,7 @@ apiproduct.developer.quota.timeunit*
 
      '("OAuthV2 - RefreshAccessToken"
        "OAuthV2-RefreshAccessToken"
-       "<OAuthV2 enabled='true' continueOnError='false' async='false' name='##'>
+       "<OAuthV2 enabled='true' name='##'>
     <DisplayName>OAuthV2 - RefreshAccessToken</DisplayName>
     <Operation>RefreshAccessToken</Operation>
     <FaultRules/>
@@ -1027,7 +1028,7 @@ apiproduct.developer.quota.timeunit*
      '("OAuthV1 - GetInfo - AppKey"
        "OAuthV1-GetOAuthV1Info"
      "<GetOAuthV1Info name='##'>
-     <!-- deprecated - use VerifyApiKey -->
+     <!-- deprecated - use VerifyAPIKey -->
   <AppKey ref='request.formparam.apikey'/>
 </GetOAuthV1Info>\n")
 
@@ -1182,7 +1183,7 @@ Authorization.
 
           '("Cache - LookupCache"
        "LookupCache"
-       "<LookupCache enabled='true' continueOnError='false' async='false' name='##'>
+       "<LookupCache name='##'>
     <CacheResource>${1:ApigeeCache}</CacheResource>
     <AssignTo>${2:flowvariable}</AssignTo> <!-- name of flow variable -->
     <Scope>${3:$$(yas/choose-value '(\"Exclusive\" \"Global\" \"Application\" \"Proxy\" \"Target\"))}</Scope>
@@ -1257,10 +1258,18 @@ $1
        "Javascript"
        "<Javascript name='##' timeLimit='200' >
     <DisplayName>${1:##}</DisplayName>
-  <ResourceURL>jsc://${2:$$(apigee--fixup-script-name \"##\")}.js</ResourceURL>
+  <ResourceURL>jsc://${2:$$(apigee--fixup-script-name \"##\" \"Javascript\")}.js</ResourceURL>
 </Javascript>")
 ;;  <FaultRules/>
 ;;  <Properties/>
+
+
+     '("Python"
+       "Python"
+       "<Script name='##'>
+    <DisplayName>${1:##}</DisplayName>
+  <ResourceURL>jsc://${2:$$(apigee--fixup-script-name \"##\" \"Python\")}.py</ResourceURL>
+</Script>")
 
 
      '("XSL"
@@ -1288,13 +1297,15 @@ $1
 
      '("JavaCallout"
        "JavaCallout"
-       "<JavaCallout name='##' enabled='true'
-             continueOnError='false' async='false'>
+       "<JavaCallout name='##'>
   <DisplayName>${1:##}</DisplayName>
-  <Properties/>
+  <Properties>
+    <Property name='a'>value-goes-here</Property>
+    <Property name='b'>another-value-here</Property>
+  </Properties>
   <FaultRules/>
   <ClassName>${2:com.company.ClassName}</ClassName>
-  <ResourceURL>java://${3:$$(apigee--fixup-script-name \"##\")}.jar</ResourceURL>
+  <ResourceURL>java://${3:$$(apigee--fixup-script-name \"##\" \"Java\")}.jar</ResourceURL>
 </JavaCallout>")
 ))
 
@@ -1736,13 +1747,14 @@ value that was expanded for field (N-1). "
     (nth (- field-num 1) (yas/snippet-fields snippet)))
 
 
-(defun apigee--fixup-script-name (name)
+(defun apigee--fixup-script-name (name &optional prefix)
   "returns a stripped name suitable for use for a file in the resources/jsc directory."
 
-  (let* ((prefix (downcase "Javascript-"))
-         (pos (length prefix)))
-    (if (and (>= (length name) (length prefix))
-             (string= prefix (downcase (substring name 0 pos))))
+  (let* ((default-prefix "Javascript")
+         (real-prefix (concat (downcase (if (stringp prefix) prefix default-prefix)) "-"))
+         (pos (length real-prefix)))
+    (if (and (>= (length name) (length real-prefix))
+             (string= real-prefix (downcase (substring name 0 pos))))
         (let ((s (substring name pos)))
           (concat (downcase (substring s 0 1)) (substring s 1)))
       name)))
@@ -2011,10 +2023,10 @@ appropriate.
 
                 ;; here, optionally open the resource file, if any
                 (cond
-                 ((or (string= ptype "Javascript") (string= ptype "XSL"))
+                 ((or (string= ptype "Javascript") (string= ptype "XSL") (string= ptype "Python"))
                     (save-excursion
                       (goto-char (point-min))
-                      (if (re-search-forward "<ResourceURL>\\(jsc\\|xsl\\)://\\(.+\\)</ResourceURL>" (point-max) t)
+                      (if (re-search-forward "<ResourceURL>\\(jsc\\|xsl\\|py\\)://\\(.+\\)</ResourceURL>" (point-max) t)
                           (let ((resource-type (match-string-no-properties 1))
                                 (resource-basename (match-string-no-properties 2)))
                             (if resource-basename
@@ -2071,6 +2083,8 @@ file, such as a Javascript, Python, or XSL policy.
      "/api-services/content/optimize-performance-using-cache")
    '("Javascript"
      "/api-services/reference/javascript-policy")
+   '("Python"
+     "/api-services/reference/python-script-policy")
    '("Java"
      "/api-services/reference/java-callout-policy")
    '("JSONToXML"
