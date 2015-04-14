@@ -7,6 +7,7 @@
 ;;
 ;; The netrc.el module provided with emacs does not handle netrc files
 ;; that use newlines as separators within records. This module fixes that.
+;; It's SO SIMPLE!
 ;;
 ;; To use:
 ;; within a program call:
