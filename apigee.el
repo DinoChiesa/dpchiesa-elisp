@@ -11,7 +11,7 @@
 ;; Requires   : s.el, request.el, dino-netrc.el
 ;; License    : New BSD
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2015-March-24 15:39:59>
+;; Last-saved : <2015-April-14 10:35:09>
 ;;
 ;;; Commentary:
 ;;
@@ -239,9 +239,11 @@ the only possible value currently.")
      "<AccessEntity name='##'>
   <EntityType value='${1:$$(yas/choose-value '(\"apiproduct\" \"app\" \"company\" \"companydeveloper\" \"consumerkey\" \"developer\"))}' />
   <EntityIdentifier type='${2:$$(yas/choose-value (let ((field1 (apigee--snippet-field 1))) (apigee-entity-id-types (buffer-substring-no-properties (yas/field-start field1) (yas/field-end field1)))))}' ref='${3:varName}' />
+  <!-- SecondaryIdentifier is not always required -->
   <SecondaryIdentifier type='$4' ref='$5' />
 <!--
   The result is stored in a variable:  AccessEntity.##
+  Next step is to use ExtractVariables to get a value from that entity.
 -->
 </AccessEntity>\n")
 
@@ -263,7 +265,7 @@ the only possible value currently.")
   <AssignTo createNew='false' transport='http' type='${4:$$(yas/choose-value '(\"request\" \"response\" ))}'></AssignTo>
 </AssignMessage>\n")
 
-     '("AssignMessage - set query param"
+     '("AssignMessage - set query param and/or headers"
        "AssignMessage"
        "<AssignMessage name='##'>
   <AssignTo createNew='false' type='${1:$$(yas/choose-value '(\"request\" \"response\"))}'/>
@@ -272,6 +274,9 @@ the only possible value currently.")
       <QueryParam name='${2:outgoingParamName}'>{request.queryparam.url}</QueryParam>
       <QueryParam name='apiKey'>Something</QueryParam>
     </QueryParams>
+    <Headers>
+      <Header name='Content-Type'>application/json</Header>
+    </Headers>
     <Verb>GET</Verb>
   </Set>
   <!-- Set other flow variables for use in the final response -->
@@ -338,6 +343,27 @@ the only possible value currently.")
 
 </AssignMessage>\n")
 
+     '("BasicAuthentication - Decode Inbound"
+       "BasicAuthentication"
+     "<BasicAuthentication name='##'>
+   <DisplayName>Decode Basic Authentication Header</DisplayName>
+   <Operation>Decode</Operation>
+   <IgnoreUnresolvedVariables>false</IgnoreUnresolvedVariables>
+   <User ref='inbound.username' />
+   <Password ref='inbound.password' />
+   <Source>request.header.Authorization</Source>
+</BasicAuthentication>\n")
+
+     '("BasicAuthentication - Encode Outbound"
+       "BasicAuthentication"
+     "<BasicAuthentication name='##'>
+   <DisplayName>Encode Basic Authentication Header</DisplayName>
+   <Operation>Encode</Operation>
+   <IgnoreUnresolvedVariables>false</IgnoreUnresolvedVariables>
+   <User ref='credentials.username' />
+   <Password ref='credentials.password; />
+   <AssignTo createNew="false">request.header.Authorization</AssignTo>
+</BasicAuthentication>\n")
 
      '("KVM - Put"
        "KVM-PUT"
@@ -1258,6 +1284,7 @@ $1
        "Javascript"
        "<Javascript name='##' timeLimit='200' >
     <DisplayName>${1:##}</DisplayName>
+  <IncludeURL>jsc://URI.js</IncludeURL> <!-- specify a shared resource here -->
   <ResourceURL>jsc://${2:$$(apigee--fixup-script-name \"##\" \"Javascript\")}.js</ResourceURL>
 </Javascript>")
 ;;  <FaultRules/>
@@ -1651,7 +1678,6 @@ structure, in the `apigee-apiproxies-home' directory.
   <PreFlow name='PreFlow'>
     <Request>
       <Step>
-        <FaultRules/>
         <Name>RaiseFault-UnknownRequest</Name>
       </Step>
     </Request>
@@ -2465,6 +2491,14 @@ given the resource path. For example, given \"node://model.json\", returns \"nod
             (insert (aref result 3))
             (goto-char (point-min))
             (rename-buffer (format "%s-%s-%s-%s" org apiproxy revision resource) t)
+
+            (make-local-variable 'apigee-cached-mgmt-server)
+            (make-local-variable 'apigee-cached-org-name)
+            (make-local-variable 'apigee-cached-apiproxy)
+            (make-local-variable 'apigee-cached-revision)
+            (make-local-variable 'apigee-cached-rsrc-type)
+            (make-local-variable 'apigee-cached-rsrc-name)
+
             (setq buffer-file-name rsrc-name
                   default-directory "~/"
                   apigee-cached-mgmt-server mgmt-server
@@ -2489,12 +2523,18 @@ given the resource path. For example, given \"node://model.json\", returns \"nod
   (let (org apiproxy (revision "1") rsrc-type rsrc-name mgmt-server
             (iactive (called-interactively-p 'any)))
 
+            (make-local-variable 'apigee-cached-mgmt-server)
+            (make-local-variable 'apigee-cached-org-name)
+            (make-local-variable 'apigee-cached-apiproxy)
+            (make-local-variable 'apigee-cached-rsrc-type)
+            (make-local-variable 'apigee-cached-rsrc-name)
+            (make-local-variable 'apigee-cached-revision)
+
     (setq mgmt-server (or apigee-cached-mgmt-server
                           (apigee--get-mgmt-server iactive))
           org (or apigee-cached-org-name
                   (apigee--get-org-name iactive))
-          apiproxy (or apigee-cached-apiproxy
-                       (apigee--get-apiproxy-name mgmt-server org))
+          apiproxy (or apigee-cached-apiproxy (apigee-apiproxy-name))
           rsrc-type (or apigee-cached-rsrc-type
                         (file-name-nondirectory
                          (apigee-insure-no-trailing-slash
@@ -2522,7 +2562,17 @@ given the resource path. For example, given \"node://model.json\", returns \"nod
              org apiproxy revision rsrc-type rsrc-name)
 
     ;; invoke the API call
-    (apigee-update-resource-do-request org apiproxy revision rsrc-type rsrc-name mgmt-server)))
+    (apigee-update-resource-do-request org apiproxy revision rsrc-type rsrc-name mgmt-server)
+
+    ;; cache the values for next time
+    (setq apigee-cached-mgmt-server mgmt-server
+          apigee-cached-org-name org
+          apigee-cached-apiproxy apiproxy
+          apigee-cached-rsrc-type rsrc-type
+          apigee-cached-rsrc-name rsrc-name
+          apigee-cached-revision revision)
+
+    ))
 
 
 (define-minor-mode apigee-mode
