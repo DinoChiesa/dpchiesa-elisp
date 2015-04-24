@@ -11,7 +11,7 @@
 ;; Requires   : s.el, request.el, dino-netrc.el
 ;; License    : New BSD
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2015-April-14 10:35:09>
+;; Last-saved : <2015-April-16 10:17:41>
 ;;
 ;;; Commentary:
 ;;
@@ -251,8 +251,6 @@ the only possible value currently.")
        "AssignMessage"
        "<AssignMessage name='##'>
   <DisplayName>##</DisplayName>
-  <FaultRules/>
-  <Properties/>
   <Remove>
     <QueryParams>
       <QueryParam name='${1:apikey}'/>
@@ -324,7 +322,7 @@ the only possible value currently.")
      '("AssignMessage - full response"
        "AssignMessage"
      "<AssignMessage name='##'>
-  <DisplayName>AssignMessage</DisplayName>
+  <DisplayName>##</DisplayName>
   <Description>$1</Description>
   <!-- <AssignTo createNew='false' transport='http' type='request'></AssignTo> -->
   <IgnoreUnresolvedVariables>false</IgnoreUnresolvedVariables>
