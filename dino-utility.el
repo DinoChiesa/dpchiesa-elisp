@@ -315,19 +315,9 @@ cycles through those formats as well as a simplified date format:
 (defun dino-insert-uuid ()
   "function to insert a new UUID at point."
   (interactive)
-  (save-excursion
-    (let ((beg (point))
-          (uuid (dino-uuid-gen)))
-      ;; If previous cmd was a kill, this separates the
-      ;; kill items:
-      (forward-char 1)
-      (forward-char -1)
-      ;; insert the text
-      (insert uuid)
-      ;; put the uuid in the kill-ring?:
-      (kill-region beg (point))
-      (yank)
-      (exchange-point-and-mark))))
+  (let ((uuid (dino-uuid-gen)))
+    (kill-new uuid) ;; forcibly insert into kill-ring
+    (insert uuid)))
 
 
 (defun dino-base64-encode-file (filename)
@@ -678,6 +668,33 @@ Eg,
       (error (format "%s is not a directory" targ)))
   (let ((x (run-with-timer 0 75 'dino-check-files-and-move src targ)))
     (add-to-list 'dino-move-timer-list (list src targ x))))
+
+
+
+(eval-after-load "nxml-mode"
+  '(progn
+     (defun nxml-where ()
+       "Display the hierarchy of XML elements the point is on as a path."
+       (interactive)
+       (let ((path nil))
+         (save-excursion
+           (save-restriction
+             (widen)
+             (while (and (< (point-min) (point)) ;; Doesn't error if point is at beginning of buffer
+                         (condition-case nil
+                             (progn
+                               (nxml-backward-up-element) ; always returns nil
+                               t)
+                           (error nil)))
+               (setq path (cons (xmltok-start-tag-local-name) path)))
+             (let ((xpath (concat "/" (mapconcat 'identity path "/"))))
+               (if (called-interactively-p t)
+                   (progn
+                     (kill-new xpath)
+                     (message "%s" xpath))
+                 xpath))))))))
+
+
 
 
 
