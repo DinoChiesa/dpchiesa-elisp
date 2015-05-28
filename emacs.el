@@ -1,6 +1,6 @@
 ;;; emacs.el -- dino's em Dino's .emacs setup file.
 ;;
-;; Last saved: <2015-March-18 11:12:17>
+;; Last saved: <2015-May-14 20:54:10>
 ;;
 ;; Works with v24.3 of emacs.
 ;;
@@ -1003,6 +1003,7 @@ just auto-corrects on common mis-spellings by me. "
 
   (define-abbrev-table 'text-mode-abbrev-table
     '(
+      ("somehting" "something" nil 1)
       ("rigueur" "rigeuer" nil 1)
       ("submint" "submit" nil 1)
       ("rwquest" "request" nil 1)
@@ -1011,6 +1012,7 @@ just auto-corrects on common mis-spellings by me. "
       ("laucnhed" "launched" nil 0)
       ("comittee" "committee" nil 0)
       ("machien" "machine" nil 0)
+      ("siilar" "similar" nil 0)
       ("machiens" "machines" nil 0)
       ("cusotmer" "customer" nil 0)
       ("recieve" "receive" nil 0)
@@ -1022,6 +1024,7 @@ just auto-corrects on common mis-spellings by me. "
       ("teh" "the" nil 1)
       ("becasue" "because" nil 1)
       ("btw" "by the way" nil 3)
+      ("omw" "on my way" nil 3)
       )
     ))
 
