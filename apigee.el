@@ -11,7 +11,7 @@
 ;; Requires   : s.el, request.el, dino-netrc.el
 ;; License    : New BSD
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2015-April-16 10:17:41>
+;; Last-saved : <2015-May-28 15:28:03>
 ;;
 ;;; Commentary:
 ;;
@@ -158,10 +158,9 @@ the only possible value currently.")
 (defconst apigee-message-payload-template-alist
   (list
    '("application/json" "<![CDATA[{
-  \"response\" : {
-    \"message\" : \"whatever\",
-    \"clientId\" : \"%parsedRequest.client_id#\"
-  }
+  \"status\" : true,
+  \"message\" : \"whatever\",
+  \"clientId\" : \"%parsedRequest.client_id#\"
 }
 ]]>")
    '("application/xml" "<message><here>%parsedRequest.client_id#</here></message>")))
@@ -561,6 +560,17 @@ apiproduct.developer.quota.timeunit*
   <OutputVariable>{${2:variable.name}</OutputVariable>
   <Options/>
 </JSONToXML>")
+
+     '("JSONThreatProtection"
+       "JSONThreatProtection"
+       "<JSONThreatProtection name='##'>
+   <ArrayElementCount>20</ArrayElementCount>
+   <ContainerDepth>10</ContainerDepth>
+   <ObjectEntryCount>15</ObjectEntryCount>
+   <ObjectEntryNameLength>50</ObjectEntryNameLength>
+   <Source>request</Source>
+   <StringValueLength>500</StringValueLength>
+</JSONThreatProtection>")
 
      '("XMLToJSON"
        "XMLToJSON"
@@ -1675,15 +1685,15 @@ structure, in the `apigee-apiproxies-home' directory.
   <Flows/>
   <PreFlow name='PreFlow'>
     <Request>
-      <Step>
-        <Name>RaiseFault-UnknownRequest</Name>
-      </Step>
+      <!-- remove this to allow requests -->
+      <Step><Name>RaiseFault-UnknownRequest</Name></Step>
     </Request>
     <Response/>
   </PreFlow>
 
   <HTTPTargetConnection>
     <Properties/>
+    <!-- modify this URL to point to something valid -->
     <URL>http://internal.example.com/v1/XYZ/something</URL>
   </HTTPTargetConnection>
 </TargetEndpoint>\n"))
@@ -1697,9 +1707,8 @@ structure, in the `apigee-apiproxies-home' directory.
     <Set>
       <Payload contentType='application/json'
                variablePrefix='%' variableSuffix='#'><![CDATA[{
-  \"response\" : {
-    \"message\" : \"that request was unknown\"
-  }
+  \"error\" : \"that request was unknown\",
+  \"message\" : \"try a different request.\"
 }
 ]]></Payload>
       <StatusCode>404</StatusCode>
@@ -1714,7 +1723,7 @@ structure, in the `apigee-apiproxies-home' directory.
            "<ProxyEndpoint name='default'>
   <Description>Default Proxy</Description>
   <HTTPProxyConnection>
-    <BasePath>/v1/" proxy-name "</BasePath>
+    <BasePath>/" proxy-name "</BasePath>
     <Properties/>
     <VirtualHost>default</VirtualHost>
     <!-- <VirtualHost>secure</VirtualHost> -->
@@ -1735,13 +1744,11 @@ structure, in the `apigee-apiproxies-home' directory.
     <Flow name='test " (apigee--random-string) " " (apigee--random-string) "'>
       <Description>insert description here</Description>
       <Request>
-        <Step>
-          <FaultRules/>
-          <Name>InsertPolicyNameHere</Name>
-        </Step>
+        <!-- insert real policies here -->
+        <Step><Name>InsertPolicyNameHere</Name></Step>
       </Request>
       <Response/>
-      <Condition>(proxy.pathsuffix MatchesPath \"/foo\") and (request.verb = \"GET\")</Condition>
+      <Condition>(proxy.pathsuffix MatchesPath \"/t1\") and (request.verb = \"GET\")</Condition>
     </Flow>
 
     <Flow name='unknown request'>
@@ -1753,9 +1760,13 @@ structure, in the `apigee-apiproxies-home' directory.
 
   </Flows>
 
+  <!-- keep this if using a target -->
   <RouteRule name='InvokeRouteRule'>
     <TargetEndpoint>default</TargetEndpoint>
   </RouteRule>
+
+  <!-- keep this if no target (eg, for oauth token generation and refresh) -->
+  <RouteRule name='NoRouteRule'/>
 
 </ProxyEndpoint>\n"))
 
@@ -2109,12 +2120,16 @@ file, such as a Javascript, Python, or XSL policy.
      "/api-services/reference/javascript-policy")
    '("Python"
      "/api-services/reference/python-script-policy")
+   '("OAuthV2"
+     "/api-services/content/authorize-requests-using-oauth-20")
    '("Java"
      "/api-services/reference/java-callout-policy")
    '("JSONToXML"
      "/api-services/reference/json-xml-policy")
    '("XSL"
      "/api-services/reference/xsl-transform-policy")
+   '("JSONThreatProtection"
+     "/api-services/reference/json-threat-protection-policy")
    '("ServiceCallout"
      "/api-services/reference/service-callout-policy")
    '("Quota"
