@@ -11,7 +11,7 @@
 ;; Requires   : s.el, request.el, dino-netrc.el
 ;; License    : New BSD
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2015-May-28 15:28:03>
+;; Last-saved : <2015-June-05 12:06:45>
 ;;
 ;;; Commentary:
 ;;
@@ -127,6 +127,8 @@ Or you can customize this variable.
 (defvar apigee-cached-rsrc-type nil
   "The resource type to use for API calls. Buffer local.")
 
+(defvar apigee--most-recently-used-upload-command nil
+  "the most recently used upload command")
 
 ;; (defcustom apigee-prompt-mechanism 'x-popup-menu
 ;;   "The mechanism used to prompt the user for his choice.
@@ -903,9 +905,9 @@ apiproduct.developer.quota.timeunit*
 </OAuthV2>\n")
 
      '("OAuthV2 - VerifyAccessToken"
-       "OAuthV2"
+       "OAuthV2-VerifyAccessToken"
        "<OAuthV2 name='##'>
-    <DisplayName>OAuthV2 - VerifyAccessToken</DisplayName>
+    <DisplayName>##</DisplayName>
     <Operation>VerifyAccessToken</Operation>
     <!-- pulls token from Authorization header as per OAuthV2.0 spec -->
     <!--
@@ -927,7 +929,6 @@ apiproduct.developer.quota.timeunit*
     -->
    <AccessToken>flow.variable</AccessToken> <!-- Optional -->
    <AccessTokenPrefix>Bearer</AccessTokenPrefix> <!-- Optional -->
-
 </OAuthV2>\n")
 
      '("OAuthV2 - RefreshAccessToken"
@@ -980,6 +981,7 @@ apiproduct.developer.quota.timeunit*
      '("OAuthV2 - GetClientInfo"
        "OAuthV2-Get-OAuthV2-Info-for-ClientId"
 "<GetOAuthV2Info name='##'>
+    <!-- http://apigee.com/docs/api-services/reference/get-oauth-v2-info-policy -->
     <!-- use one of the following: a referenced variable or -->
     <!-- an explicitly passed client_id -->
     <ClientId ref='{flow.variable}'/>
@@ -997,12 +999,12 @@ apiproduct.developer.quota.timeunit*
 </GetOAuthV2Info>\n")
 
      '("OAuthV2 - GetAccessTokenInfo"
-       "OAuthV2-Get-OAuthV2-Info-for-AccessToken"
+       "OAuthV2-GetTokenInfo"
      "<GetOAuthV2Info name='##'>
     <!-- http://apigee.com/docs/api-services/content/authorize-requests-using-oauth-20 -->
     <!-- use one of the following: a referenced variable or -->
     <!-- an explicitly passed access_token -->
-    <AccessToken ref='${1:openidconnect.access_token}'/>
+    <AccessToken ref='${1:request.queryparam.access_token}'/>
     <AccessToken>${2:BAADBEEF}</AccessToken>
     <!--
     On Success, the following flow variables will be set.
@@ -1291,7 +1293,7 @@ $1
      '("Javascript"
        "Javascript"
        "<Javascript name='##' timeLimit='200' >
-    <DisplayName>${1:##}</DisplayName>
+  <DisplayName>${1:##}</DisplayName>
   <IncludeURL>jsc://URI.js</IncludeURL> <!-- specify a shared resource here -->
   <ResourceURL>jsc://${2:$$(apigee--fixup-script-name \"##\" \"Javascript\")}.js</ResourceURL>
 </Javascript>")
@@ -1526,6 +1528,7 @@ that contains the file or directory currently being edited.
            ;; interactively invoke the command (and allow user to change)
            (set (make-local-variable 'compile-command)
                 (or (cdr this-cmd)
+                    apigee--most-recently-used-upload-command
                     (concat
                      apigee-upload-bundle-pgm " "
                      apigee-upload-bundle-args " "
@@ -1534,8 +1537,11 @@ that contains the file or directory currently being edited.
            (if this-cmd
                (setcdr this-cmd compile-command)
              (add-to-list 'apigee-upload-command-alist (cons proxy-dir compile-command)))
+           ;; save for next time:
+           (setq apigee--most-recently-used-upload-command compile-command)
            ;;(message (format "compile command: %s" compile-command))
            ))))
+
 
 
 (defun apigee--is-directory (dir-name)
@@ -1581,7 +1587,8 @@ if no file exists by that name in the given proxy.
 that is indexed per policy type within each API Proxy.
 "
   (let ((val 1)
-        (next-name (lambda (v) (concat ptype "-" (format "%d" v))))) ;; in lieu of flet
+        ;; lambda in lieu of flet
+        (next-name (lambda (v) (concat ptype "-" (format "%d" v)))))
     (let ((pname (funcall next-name val)))
       (while (not (apigee-policy-name-is-available pname))
         (setq val (1+ val)
@@ -2106,6 +2113,8 @@ file, such as a Javascript, Python, or XSL policy.
      "/api-services/reference/assign-message-policy")
    '("KeyValueMapOperations"
      "/api-services/content/persist-data-using-keyvaluemap")
+   '("GetOAuthV2Info"
+     "/api-services/reference/get-oauth-v2-info-policy")
    '("ExtractVariables"
      "/api-services/content/extract-message-content-using-extractvariables")
    '("ExtractVariables"
