@@ -11,7 +11,7 @@
 ;; Requires   : s.el, request.el, dino-netrc.el
 ;; License    : New BSD
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2015-June-05 12:06:45>
+;; Last-saved : <2015-June-11 08:18:47>
 ;;
 ;;; Commentary:
 ;;
@@ -165,6 +165,7 @@ the only possible value currently.")
   \"clientId\" : \"%parsedRequest.client_id#\"
 }
 ]]>")
+   '("application/x-www-form-urlencoded" "status=true&clientId=%parsedRequest.client_id#")
    '("application/xml" "<message><here>%parsedRequest.client_id#</here></message>")))
 
 (defconst apigee-target-template
@@ -194,19 +195,28 @@ the only possible value currently.")
    '("200" "OK")
    '("201" "Created")
    '("302" "Moved")
+   '("304" "Not Modified")
    '("400" "Bad Request")
    '("401" "Not Authorized")
+   '("403" "Forbidden")
    '("404" "Not Found")
+   '("410" "Gone")
+   '("429" "Too Many Requests")
    '("500" "Server Error")
+   '("501" "Not Implemented")
    '("503" "Server Busy")))
 
 (defconst apigee-entity-to-entity-id-types-alist
   (list
    '("apiproduct" ("apiproductname" "appname" "appid" "consumerkey"))
    '("app" ("appname" "appid" "consumerkey"))
+   '("authorizationcode" ("authorizationcode"))
    '("company" ("companyname" "appid" "consumerkey"))
    '("companydeveloper" ("companyname"))
    '("consumerkey" ("consumerkey"))
+   '("consumerkey_scope" ("consumerkey"))
+   '("requesttoken" ("requesttoken"))
+   '("verifier" ("verifier"))
    '("developer" ("developeremail" "developerid" "appid" "consumerkey"))))
 
 (defconst apigee-common-variable-list
@@ -977,9 +987,24 @@ apiproduct.developer.quota.timeunit*
     </Tokens>
 </OAuthV2>\n")
 
+     '("OAuthV2 - Delete Token"
+       "OAuthV2-DeleteToken"
+     "<DeleteOAuthV2Info name='##'>
+    <!-- keep one of the following -->
+    <AccessToken ref='access_token.flow.variable'/>
+    <AccessToken>{access_token}</AccessToken>
+</DeleteOAuthV2Info>\n")
+
+     '("OAuthV2 - Delete Code"
+       "OAuthV2-DeleteCode"
+"<DeleteOAuthV2Info name='##'>
+    <!-- keep one of the following -->
+    <AuthorizationCode ref='flow.variable'/>
+    <AuthorizationCode>{flow.variable}</AuthorizationCode>
+</DeleteOAuthV2Info>\n")
 
      '("OAuthV2 - GetClientInfo"
-       "OAuthV2-Get-OAuthV2-Info-for-ClientId"
+       "OAuthV2-GetInfo"
 "<GetOAuthV2Info name='##'>
     <!-- http://apigee.com/docs/api-services/reference/get-oauth-v2-info-policy -->
     <!-- use one of the following: a referenced variable or -->
@@ -1294,11 +1319,10 @@ $1
        "Javascript"
        "<Javascript name='##' timeLimit='200' >
   <DisplayName>${1:##}</DisplayName>
+  <Properties/>
   <IncludeURL>jsc://URI.js</IncludeURL> <!-- specify a shared resource here -->
   <ResourceURL>jsc://${2:$$(apigee--fixup-script-name \"##\" \"Javascript\")}.js</ResourceURL>
 </Javascript>")
-;;  <FaultRules/>
-;;  <Properties/>
 
 
      '("Python"
