@@ -1,6 +1,6 @@
 ;;; emacs.el -- dino's em Dino's .emacs setup file.
 ;;
-;; Last saved: <2015-May-28 16:06:03>
+;; Last saved: <2015-June-15 14:55:52>
 ;;
 ;; Works with v24.3 of emacs.
 ;;
@@ -287,7 +287,7 @@
 (global-set-key "\C-ck"     'global-set-key)
 (global-set-key "\C-cs"     'search-forward-regexp)
 (global-set-key "\C-cy"     'linum-mode)
-
+(global-set-key "\C-c\C-p"  'dino-copy-value-from-key-into-killring)
 (global-set-key "\C-cq"     'query-replace)
 (global-set-key "\C-cc"     'goto-char)
 (global-set-key "\C-cr"     'replace-regexp)

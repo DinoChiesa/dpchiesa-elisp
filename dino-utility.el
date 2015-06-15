@@ -670,6 +670,23 @@ Eg,
     (add-to-list 'dino-move-timer-list (list src targ x))))
 
 
+(defun dino-copy-value-from-key-into-killring (key)
+  "Extract a value based on the given KEY into the killring."
+  (interactive "skey: ")
+  (let ((buf (get-buffer "pwds.txt.gpg"))
+        ;; (dino-copy-value-from-key-into-killring "box-personal")
+        (regexp (concat "^[ \t]*\\b" key "\\b.+ \\([^ \r\n]+\\)$")))
+    (if buf
+        (with-current-buffer buf
+          (save-excursion
+            (save-restriction
+              (widen)
+              (goto-char (point-min))
+              (if (re-search-forward regexp nil t)
+                  (let ((value (match-string 1)))
+                    (and value
+                         (kill-new value))))))))))
+
 
 (eval-after-load "nxml-mode"
   '(progn
