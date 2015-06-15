@@ -11,7 +11,7 @@
 ;; Requires   : s.el, request.el, dino-netrc.el
 ;; License    : New BSD
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2015-June-11 08:18:47>
+;; Last-saved : <2015-June-15 14:24:10>
 ;;
 ;;; Commentary:
 ;;
@@ -369,9 +369,9 @@ the only possible value currently.")
    <DisplayName>Encode Basic Authentication Header</DisplayName>
    <Operation>Encode</Operation>
    <IgnoreUnresolvedVariables>false</IgnoreUnresolvedVariables>
-   <User ref='credentials.username' />
-   <Password ref='credentials.password; />
-   <AssignTo createNew="false">request.header.Authorization</AssignTo>
+   <User ref='credentials.username'/>
+   <Password ref='credentials.password'/>
+   <AssignTo createNew='false'>request.header.Authorization</AssignTo>
 </BasicAuthentication>\n")
 
      '("KVM - Put"
@@ -587,10 +587,8 @@ apiproduct.developer.quota.timeunit*
      '("XMLToJSON"
        "XMLToJSON"
        "<XMLToJSON name='##'>
-  <DisplayName>XML2JSON Mediation</DisplayName>
-  <Description>This policy converts the XML in a message to JSON, when
-  the content-type is text/xml. It can be applied on the request or the
-  response.</Description>
+  <Source>response</Source>
+  <OutputVariable>response</OutputVariable>
   <Format>yahoo</Format>
   <!--
   <Options>
@@ -881,10 +879,7 @@ apiproduct.developer.quota.timeunit*
      '("OAuthV2 - GenerateAuthorizationCode"
        "OAuthV2-GenerateAuthorizationCode"
        "<OAuthV2 name='##'>
-    <DisplayName>OAuthV2 - GenerateAuthorizationCode</DisplayName>
     <Operation>GenerateAuthorizationCode</Operation>
-    <FaultRules/>
-    <Properties/>
     <!-- ExpiresIn is milliseconds. 3600000 = 1 hour. -->
     <!-- The ref is optional. The explicitly specified value is the default, -->
     <!-- when the ref cannot be resolved. -->
@@ -904,8 +899,8 @@ apiproduct.developer.quota.timeunit*
     </Attributes>
 
     <!--
-      With <GenerateResponse/>, a response will be generated and returned.
-      Without it, then these flow variables are set on success:
+      With <GenerateResponse enabled='true'/>, a response will be generated and returned.
+      With enabled='false', then these flow variables are set on success:
         oauthv2authcode.<PolicyName>.code
         oauthv2authcode.<PolicyName>.redirect_uri
         oauthv2authcode.<PolicyName>.scope
@@ -1318,9 +1313,9 @@ $1
      '("Javascript"
        "Javascript"
        "<Javascript name='##' timeLimit='200' >
-  <DisplayName>${1:##}</DisplayName>
+  <!-- <DisplayName>${1:##}</DisplayName> -->
   <Properties/>
-  <IncludeURL>jsc://URI.js</IncludeURL> <!-- specify a shared resource here -->
+  <IncludeURL>jsc://URI.js</IncludeURL> <!-- optionally specify a shared resource here -->
   <ResourceURL>jsc://${2:$$(apigee--fixup-script-name \"##\" \"Javascript\")}.js</ResourceURL>
 </Javascript>")
 
@@ -1537,6 +1532,14 @@ currently being edited.
     (switch-to-buffer-other-window buffer)))
 
 
+(defun apigee--guess-upload-command (recent-command proxy-dir)
+  "non-interative function that takes the most recent command, and
+replaces the final element (the path of the apiproxy bundle) with
+the path of the current api proxy bundle."
+ (let ((cmd-elts (reverse (split-string recent-command))))
+   (setcar cmd-elts proxy-dir)
+   (s-join " " (reverse cmd-elts))))
+
 
 (defun apigee-upload-bundle-with-pushapi ()
   "Interactive fn that uses the pushapi script to upload the bundle
@@ -1552,7 +1555,7 @@ that contains the file or directory currently being edited.
            ;; interactively invoke the command (and allow user to change)
            (set (make-local-variable 'compile-command)
                 (or (cdr this-cmd)
-                    apigee--most-recently-used-upload-command
+                    (apigee--guess-upload-command apigee--most-recently-used-upload-command proxy-dir)
                     (concat
                      apigee-upload-bundle-pgm " "
                      apigee-upload-bundle-args " "
@@ -1565,7 +1568,6 @@ that contains the file or directory currently being edited.
            (setq apigee--most-recently-used-upload-command compile-command)
            ;;(message (format "compile command: %s" compile-command))
            ))))
-
 
 
 (defun apigee--is-directory (dir-name)
@@ -2159,6 +2161,8 @@ file, such as a Javascript, Python, or XSL policy.
      "/api-services/reference/java-callout-policy")
    '("JSONToXML"
      "/api-services/reference/json-xml-policy")
+   '("XMLToJSON"
+     "/api-services/reference/xml-json-policy")
    '("XSL"
      "/api-services/reference/xsl-transform-policy")
    '("JSONThreatProtection"
