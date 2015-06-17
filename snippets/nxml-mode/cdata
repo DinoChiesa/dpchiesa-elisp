@@ -1,6 +1,0 @@
-#key : cdata
-#name : CDATA
-# --
-<![CDATA[
- $0
-]]>

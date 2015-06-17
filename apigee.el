@@ -11,7 +11,7 @@
 ;; Requires   : s.el, request.el, dino-netrc.el
 ;; License    : New BSD
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2015-June-15 14:24:10>
+;; Last-saved : <2015-June-17 13:16:50>
 ;;
 ;;; Commentary:
 ;;
@@ -248,8 +248,8 @@ the only possible value currently.")
      '("AccessEntity"
      "AccessEntity"
      "<AccessEntity name='##'>
-  <EntityType value='${1:$$(yas/choose-value '(\"apiproduct\" \"app\" \"company\" \"companydeveloper\" \"consumerkey\" \"developer\"))}' />
-  <EntityIdentifier type='${2:$$(yas/choose-value (let ((field1 (apigee--snippet-field 1))) (apigee-entity-id-types (buffer-substring-no-properties (yas/field-start field1) (yas/field-end field1)))))}' ref='${3:varName}' />
+  <EntityType value='${1:$$(yas-choose-value '(\"apiproduct\" \"app\" \"company\" \"companydeveloper\" \"consumerkey\" \"developer\"))}' />
+  <EntityIdentifier type='${2:$$(yas-choose-value (let ((field1 (apigee--snippet-field 1))) (apigee-entity-id-types (buffer-substring-no-properties (yas-field-start field1) (yas-field-end field1)))))}' ref='${3:varName}' />
   <!-- SecondaryIdentifier is not always required -->
   <SecondaryIdentifier type='$4' ref='$5' />
 <!--
@@ -270,14 +270,14 @@ the only possible value currently.")
       <Header name='${2:apikey}'/>
     </Headers>
   </Remove>
-  <IgnoreUnresolvedVariables>${3:$$(yas/choose-value '(\"true\" \"false\" ))}</IgnoreUnresolvedVariables>
-  <AssignTo createNew='false' transport='http' type='${4:$$(yas/choose-value '(\"request\" \"response\" ))}'></AssignTo>
+  <IgnoreUnresolvedVariables>${3:$$(yas-choose-value '(\"true\" \"false\" ))}</IgnoreUnresolvedVariables>
+  <AssignTo createNew='false' transport='http' type='${4:$$(yas-choose-value '(\"request\" \"response\" ))}'></AssignTo>
 </AssignMessage>\n")
 
      '("AssignMessage - set query param and/or headers"
        "AssignMessage"
        "<AssignMessage name='##'>
-  <AssignTo createNew='false' type='${1:$$(yas/choose-value '(\"request\" \"response\"))}'/>
+  <AssignTo createNew='false' type='${1:$$(yas-choose-value '(\"request\" \"response\"))}'/>
   <Set>
     <QueryParams>
       <QueryParam name='${2:outgoingParamName}'>{request.queryparam.url}</QueryParam>
@@ -313,7 +313,7 @@ the only possible value currently.")
      "<AssignMessage name='##'>
   <IgnoreUnresolvedVariables>false</IgnoreUnresolvedVariables>
   <AssignVariable>
-    <Name>${1:originalRequestHeaders}.${2:$$(yas/choose-value '(\"Content-Type\" \"Accept\"))}</Name>
+    <Name>${1:originalRequestHeaders}.${2:$$(yas-choose-value '(\"Content-Type\" \"Accept\"))}</Name>
     <Ref>request.header.$2</Ref>
   </AssignVariable>
 </AssignMessage>\n")
@@ -338,9 +338,9 @@ the only possible value currently.")
   <!-- <AssignTo createNew='false' transport='http' type='request'></AssignTo> -->
   <IgnoreUnresolvedVariables>false</IgnoreUnresolvedVariables>
   <Set>
-    <Payload contentType='${2:$$(yas/choose-value (reverse (apigee--sort-strings (mapcar 'car apigee-message-payload-template-alist))))}'
+    <Payload contentType='${2:$$(yas-choose-value (reverse (apigee--sort-strings (mapcar 'car apigee-message-payload-template-alist))))}'
              variablePrefix='%' variableSuffix='#'>${2:$(cadr (assoc text apigee-message-payload-template-alist))}</Payload>
-    <StatusCode>${3:$$(yas/choose-value (reverse (apigee--sort-strings (mapcar 'car apigee-http-status-message-alist))))}</StatusCode>
+    <StatusCode>${3:$$(yas-choose-value (reverse (apigee--sort-strings (mapcar 'car apigee-http-status-message-alist))))}</StatusCode>
     <ReasonPhrase>${3:$(cadr (assoc text apigee-http-status-message-alist))}</ReasonPhrase>
   </Set>
 
@@ -378,7 +378,7 @@ the only possible value currently.")
        "KVM-PUT"
        "<KeyValueMapOperations name='##'
                        mapIdentifier='${1:nameOfMap}'>
-  <Scope>${2:$$(yas/choose-value '(\"organization\" \"environment\" \"apiproxy\"))}</Scope>
+  <Scope>${2:$$(yas-choose-value '(\"organization\" \"environment\" \"apiproxy\"))}</Scope>
   <Put override='true'>
     <Key>
       <Parameter ref='${3:variable.containing.key}'/>
@@ -392,7 +392,7 @@ the only possible value currently.")
        "KVM-Get"
        "<KeyValueMapOperations name='##'
                        mapIdentifier='${1:nameOfMap}'>
-  <Scope>${2:$$(yas/choose-value '(\"organization\" \"environment\" \"apiproxy\"))}</Scope>
+  <Scope>${2:$$(yas-choose-value '(\"organization\" \"environment\" \"apiproxy\"))}</Scope>
   <Get assignTo='${3:variable.to.set}' index='2'>
     <Key>
       <Parameter ref='${4:variable.containing.key}'/>
@@ -425,7 +425,7 @@ the only possible value currently.")
     <!-- use the interval in the variable; if not present use the value specified here. -->
     <Interval ref='verifyapikey.$2.apiproduct.developer.quota.interval'>1</Interval>
     <!-- use the timeunit provided in the variable; if not present use the value specified here. -->
-    <TimeUnit ref='verifyapikey.$2.apiproduct.developer.quota.timeunit'>${3:$$(yas/choose-value '(\"second\" \"minute\" \"hour\" \"day\" \"month\"))}</TimeUnit>
+    <TimeUnit ref='verifyapikey.$2.apiproduct.developer.quota.timeunit'>${3:$$(yas-choose-value '(\"second\" \"minute\" \"hour\" \"day\" \"month\"))}</TimeUnit>
     <Distributed>true</Distributed>
     <Synchronous>false</Synchronous>
     <PreciseAtSecondsLevel>false</PreciseAtSecondsLevel>
@@ -462,7 +462,7 @@ ratelimit.{policy_name}.class.total.exceed.count
     <!-- use the interval in the variable; if not present use the value specified here. -->
     <Interval ref='apiproduct.developer.quota.interval'>1</Interval>
     <!-- use the timeunit provided in the variable; if not present use the value specified here. -->
-    <TimeUnit ref='apiproduct.developer.quota.timeunit'>${2:$$(yas/choose-value '(\"second\" \"minute\" \"hour\" \"day\" \"month\"))}</TimeUnit>
+    <TimeUnit ref='apiproduct.developer.quota.timeunit'>${2:$$(yas-choose-value '(\"second\" \"minute\" \"hour\" \"day\" \"month\"))}</TimeUnit>
     <Distributed>true</Distributed>
     <Synchronous>false</Synchronous>
     <PreciseAtSecondsLevel>false</PreciseAtSecondsLevel>
@@ -529,7 +529,7 @@ ratelimit.{policy_name}.class.total.exceed.count
        "VerifyAPIKey"
      "<VerifyAPIKey name='##'>
     <DisplayName>Verify API Key</DisplayName>
-    <APIKey ref='${1:$$(yas/choose-value '(\"request.queryparam.apikey\" \"request.header.X-Apikey\"))}'></APIKey>
+    <APIKey ref='${1:$$(yas-choose-value '(\"request.queryparam.apikey\" \"request.header.X-Apikey\"))}'></APIKey>
 <!--
 Variables populated by this policy: verifyapikey.{policy_name}.
 
@@ -717,13 +717,17 @@ apiproduct.developer.quota.timeunit*
   </HTTPTargetConnection>
 </ServiceCallout>\n")
 
-     '("OAuthV2 - GenerateAccessToken auth_code, client creds, passwd"
+
+     ;; Wednesday, 17 June 2015
+     ;; the "created at" comment works around a bug in yas--eval-lisp, which
+     ;; causes a weird error in the first field expansion, for large snippets,
+     ;; when yas-choose-value us the function. i think.  adding this extra
+     ;; "dummy" field avoids the problem.
+          '("OAuthV2 - GenerateAccessToken auth_code, client creds, passwd"
        "OAuthV2-GenerateAccessToken"
        "<OAuthV2 name='##'>
-    <DisplayName>##</DisplayName>
+    <!-- created at ${1:$$(apigee--java-get-time-in-millis)} -->
     <Operation>GenerateAccessToken</Operation>
-    <FaultRules/>
-    <Properties/>
     <!-- ExpiresIn, in milliseconds. The ref is optional. The explicitly specified -->
     <!-- value is the default, when the ref cannot be resolved.                    -->
     <!-- 2400000 = 40 minutes                                                      -->
@@ -742,32 +746,35 @@ apiproduct.developer.quota.timeunit*
     </SupportedGrantTypes>
 
     <!-- variable that specifies the requested grant type -->
-    <GrantType>${1:$$(yas/choose-value '(\"request.queryparam.grant_type\" \"request.formparam.grant_type\" \"flowVariable.something\" ))}</GrantType>
+    <GrantType>${2:$$(yas-choose-value '(\"request.queryparam.grant_type\" \"request.formparam.grant_type\" \"flowVariable.something\" ))}</GrantType>
 
     <!--
     ExternalAuthorization is used to support external authorization. It is
     optional; if not present, the implied value is false. If it is present and
     true:
-        - this policy looks for a flow variable with the name 'oauth_external_authorization_status'.
-          which indicates the external authorization status.
-        - if 'oauth_external_authorization_status' is true, the policy does not
-          explicitly validate the client_id and client_secret.
+        - this policy looks for a flow variable with the fixed name
+          'oauth_external_authorization_status', which indicates the
+          external authorization status.
+
+        - if 'oauth_external_authorization_status' is true, the policy does
+          not explicitly validate the client_id and client_secret.
           Still, the client_id is expected to be present in the request.
 
-        - if 'oauth_external_authorization_status' is false,
-          this signals that external authorization has failed and the policy throws
-          an appropriate error message.
+        - if 'oauth_external_authorization_status' is false, thi signals
+          that external authorization has failed and the policy throws
+          an appropriate fault.
 
     If ExternalAuthorization is set to false or if the element is not present, then
     the policy validates the client_id and secret against the internal key store.
-
     -->
 
-    <ExternalAuthorization>${2:$$(yas/choose-value '(\"true\" \"false\" ))}</ExternalAuthorization>
+    <ExternalAuthorization>${3:$$(yas-choose-value '(\"true\" \"false\" ))}</ExternalAuthorization>
 
-    <!-- Optional: these attributes get associated to the token.       -->
-    <!-- They will be available to the api proxy whenever the token is -->
-    <!-- subsequently validated.                                       -->
+    <!--
+    Optional: these attributes get associated to the token.
+    They will be available to the api proxy whenever the token is
+    subsequently validated.
+    -->
     <Attributes>
       <Attribute name='attr_name1' ref='flow.variable1' display='true|false'>value1</Attribute>
       <Attribute name='attr_name2' ref='flow.variable2' display='true|false'>value2</Attribute>
@@ -811,6 +818,7 @@ apiproduct.developer.quota.timeunit*
       oauthv2accesstoken.##.refresh_token_issued_at
       oauthv2accesstoken.##.refresh_token_status
     -->
+
 </OAuthV2>\n")
 
      '("OAuthV2 - GenerateAccessToken - Implicit Grant"
@@ -818,8 +826,6 @@ apiproduct.developer.quota.timeunit*
        "<OAuthV2 name='##'>
     <DisplayName>OAuthV2 - GenerateAccessTokenImplicitGrant</DisplayName>
     <Operation>GenerateAccessTokenImplicitGrant</Operation>
-    <FaultRules/>
-    <Properties/>
     <!-- ExpiresIn, in milliseconds. The ref is optional. The explicitly specified -->
     <!-- value is the default, when the ref cannot be resolved.                    -->
     <!-- 2400000 = 40 minutes -->
@@ -849,22 +855,23 @@ apiproduct.developer.quota.timeunit*
     ExternalAuthorization is used to support external authorization. It is
     optional; if not present, the implied value is false. If it is present and
     true:
-        - this policy looks for a flow variable with the name 'oauth_external_authorization_status'.
-          which indicates the external authorization status.
+        - this policy looks for a flow variable with the fixed name
+          'oauth_external_authorization_status', which indicates the
+          external authorization status.
+
         - if 'oauth_external_authorization_status' is true, the policy does not
           explicitly validate the client_id and client_secret.
           Still, the client_id is expected to be present in the request.
 
         - if 'oauth_external_authorization_status' is false,
           this signals that external authorization has failed and the policy throws
-          an appropriate error message.
+          an appropriate fault.
 
     If ExternalAuthorization is set to false or if the element is not present, then
     the policy validates the client_id and secret against the internal key store.
-
     -->
 
-    <ExternalAuthorization>${2:$$(yas/choose-value '(\"true\" \"false\" ))}</ExternalAuthorization>
+    <ExternalAuthorization>${1:$$(yas-choose-value '(\"true\" \"false\" ))}</ExternalAuthorization>
 
     <!--
       If <GenerateResponse/> is omitted, the policy sets these variables on success:
@@ -977,7 +984,7 @@ apiproduct.developer.quota.timeunit*
        "<OAuthV2 name='##'>
     <Operation>InvalidateToken</Operation>
     <Tokens>
-        <Token type='${1:$$(yas/choose-value '(\"accesstoken\" \"refreshtoken\"))}'
+        <Token type='${1:$$(yas-choose-value '(\"accesstoken\" \"refreshtoken\"))}'
                cascade='true'>${2:flow.variable}</Token>
     </Tokens>
 </OAuthV2>\n")
@@ -1097,7 +1104,7 @@ apiproduct.developer.quota.timeunit*
      '("OAuthV1 - GetInfo - Token"
        "OAuthV1-GetOAuthV1Info"
      "<GetOAuthV1Info name='##'>
-  <${1:$$(yas/choose-value '(\"AccessToken\" \"RequestToken\" ))} ref='request.formparam.oauth_token'/>
+  <${1:$$(yas-choose-value '(\"AccessToken\" \"RequestToken\" ))} ref='request.formparam.oauth_token'/>
   <!--
   On Success, these variables will be populated:
     oauth_token
@@ -1114,11 +1121,11 @@ apiproduct.developer.quota.timeunit*
        "OAuthV1-GenerateRequestToken"
 "<OAuthV1 name='##'>
   <Operation>GenerateRequestToken</Operation>
-  <GenerateResponse enabled='${1:$$(yas/choose-value '(\"true\" \"false\" ))}'>
-    <Format>${2:$$(yas/choose-value '(\"FORM_PARAM\" \"XML\" ))}</Format>
+  <GenerateResponse enabled='${1:$$(yas-choose-value '(\"true\" \"false\" ))}'>
+    <Format>${2:$$(yas-choose-value '(\"FORM_PARAM\" \"XML\" ))}</Format>
   </GenerateResponse>
-  <GenerateErrorResponse enabled='${3:$$(yas/choose-value '(\"true\" \"false\" ))}'>
-    <Format>${4:$$(yas/choose-value '(\"FORM_PARAM\" \"XML\" ))}</Format>
+  <GenerateErrorResponse enabled='${3:$$(yas-choose-value '(\"true\" \"false\" ))}'>
+    <Format>${4:$$(yas-choose-value '(\"FORM_PARAM\" \"XML\" ))}</Format>
     <Realm>http://oauth.apigee.com/oauth/1/</Realm>
   </GenerateErrorResponse>
 </OAuthV1>\n")
@@ -1130,11 +1137,11 @@ apiproduct.developer.quota.timeunit*
   <!-- value is the default, when the variable reference cannot be resolved.     -->
   <ExpiresIn ref='flow.variable'>2400000</ExpiresIn>
   <Operation>GenerateAccessToken</Operation>
-  <GenerateResponse enabled='${1:$$(yas/choose-value '(\"true\" \"false\" ))}'>
-    <Format>${2:$$(yas/choose-value '(\"FORM_PARAM\" \"XML\" ))}</Format>
+  <GenerateResponse enabled='${1:$$(yas-choose-value '(\"true\" \"false\" ))}'>
+    <Format>${2:$$(yas-choose-value '(\"FORM_PARAM\" \"XML\" ))}</Format>
   </GenerateResponse>
-  <GenerateErrorResponse enabled='${3:$$(yas/choose-value '(\"true\" \"false\" ))}'>
-    <Format>${4:$$(yas/choose-value '(\"FORM_PARAM\" \"XML\" ))}</Format>
+  <GenerateErrorResponse enabled='${3:$$(yas-choose-value '(\"true\" \"false\" ))}'>
+    <Format>${4:$$(yas-choose-value '(\"FORM_PARAM\" \"XML\" ))}</Format>
     <Realm>http://oauth.apigee.com/oauth/1/</Realm>
   </GenerateErrorResponse>
 </OAuthV1>\n")
@@ -1156,8 +1163,8 @@ Authorization.
 -->
   <AccessToken>request.queryparam.token</AccessToken>
 
-  <GenerateErrorResponse enabled='${1:$$(yas/choose-value '(\"true\" \"false\" ))}'>
-    <Format>${2:$$(yas/choose-value '(\"FORM_PARAM\" \"XML\" ))}</Format>
+  <GenerateErrorResponse enabled='${1:$$(yas-choose-value '(\"true\" \"false\" ))}'>
+    <Format>${2:$$(yas-choose-value '(\"FORM_PARAM\" \"XML\" ))}</Format>
     <Realm>http://oauth.apigee.com/oauth/1/</Realm>
   </GenerateErrorResponse>
 </OAuthV1>\n")
@@ -1173,7 +1180,7 @@ Authorization.
     <BufferMessage>false</BufferMessage>
     <Syslog async='true'>
         <Host>${1:hostname.domain.com}</Host>
-        <Message>4G:{${2:$$(yas/choose-value apigee-common-variable-list)}}</Message>
+        <Message>4G:{${2:$$(yas-choose-value apigee-common-variable-list)}}</Message>
         <Port>514</Port>
     </Syslog>
     <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
@@ -1210,7 +1217,7 @@ Authorization.
     <KeyFragment ref='${2:request.uri}' />
   </CacheKey>
   <CacheResource>${3:ApigeeCache}</CacheResource>
-  <Scope>${4:$$(yas/choose-value '(\"Exclusive\" \"Global\" \"Application\" \"Proxy\" \"Target\"))}</Scope>
+  <Scope>${4:$$(yas-choose-value '(\"Exclusive\" \"Global\" \"Application\" \"Proxy\" \"Target\"))}</Scope>
   <ExpirySettings>
     <ExpiryDate></ExpiryDate>
     <TimeOfDay></TimeOfDay>
@@ -1225,7 +1232,7 @@ Authorization.
        "<PopulateCache name='##'>
   <CacheResource>${1:ApigeeCache}</CacheResource>
   <Source>${2:variable.containing.value}</Source>
-  <Scope>${3:$$(yas/choose-value '(\"Exclusive\" \"Global\" \"Application\" \"Proxy\" \"Target\"))}</Scope>
+  <Scope>${3:$$(yas-choose-value '(\"Exclusive\" \"Global\" \"Application\" \"Proxy\" \"Target\"))}</Scope>
   <CacheKey>
     <KeyFragment ref='${4:variable.containing.keyfrag}' />
   </CacheKey>
@@ -1242,7 +1249,7 @@ Authorization.
        "<LookupCache name='##'>
     <CacheResource>${1:ApigeeCache}</CacheResource>
     <AssignTo>${2:flowvariable}</AssignTo> <!-- name of flow variable -->
-    <Scope>${3:$$(yas/choose-value '(\"Exclusive\" \"Global\" \"Application\" \"Proxy\" \"Target\"))}</Scope>
+    <Scope>${3:$$(yas-choose-value '(\"Exclusive\" \"Global\" \"Application\" \"Proxy\" \"Target\"))}</Scope>
     <CacheKey>
       <KeyFragment ref='${4:flowvariable.name}' />
     </CacheKey>
@@ -1252,7 +1259,7 @@ Authorization.
        "InvalidateCache"
           "<InvalidateCache name='##'>
     <CacheResource>${1:ApigeeCache}</CacheResource>
-    <Scope>${2:$$(yas/choose-value '(\"Exclusive\" \"Global\" \"Application\" \"Proxy\" \"Target\"))}</Scope>
+    <Scope>${2:$$(yas-choose-value '(\"Exclusive\" \"Global\" \"Application\" \"Proxy\" \"Target\"))}</Scope>
     <CacheKey>
       <!--  <Prefix>apiAccessToken</Prefix> -->
       <KeyFragment ref='${3:flowvariable.name}' />
@@ -1264,7 +1271,7 @@ Authorization.
        "RaiseAlert"
        "<RaiseAlert name='##'>
     <Syslog>
-        <Message>4G: message text here {${1:$$(yas/choose-value apigee-common-variable-list)}}</Message>
+        <Message>4G: message text here {${1:$$(yas-choose-value apigee-common-variable-list)}}</Message>
         <Host>IP</Host>
         <Port>514</Port>
     </Syslog>
@@ -1279,9 +1286,9 @@ Authorization.
   <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
   <FaultResponse>
     <Set>
-      <Payload contentType='${3:$$(yas/choose-value (reverse (apigee--sort-strings (mapcar 'car apigee-message-payload-template-alist))))}'
+      <Payload contentType='${3:$$(yas-choose-value (reverse (apigee--sort-strings (mapcar 'car apigee-message-payload-template-alist))))}'
                variablePrefix='%' variableSuffix='#'>${3:$(cadr (assoc text apigee-message-payload-template-alist))}$0</Payload>
-      <StatusCode>${4:$$(yas/choose-value (reverse (apigee--sort-strings (mapcar 'car apigee-http-status-message-alist))))}</StatusCode>
+      <StatusCode>${4:$$(yas-choose-value (reverse (apigee--sort-strings (mapcar 'car apigee-http-status-message-alist))))}</StatusCode>
       <ReasonPhrase>${4:$(cadr (assoc text apigee-http-status-message-alist))}</ReasonPhrase>
     </Set>
   </FaultResponse>
@@ -1336,7 +1343,7 @@ $1
   <Properties/>
   <OutputVariable>request.content</OutputVariable>
   <ResourceURL>xsl://${2:##}.xsl</ResourceURL>
-  <Source>${3:$$(yas/choose-value '(\"request\" \"response\"))}</Source>
+  <Source>${3:$$(yas-choose-value '(\"request\" \"response\"))}</Source>
 </XSL>\n")
 
      '("AccessControl"
@@ -1812,7 +1819,7 @@ structure, in the `apigee-apiproxies-home' directory.
 active YAS snippet. This is a utility fn for use within
 apigee snippets, to allow expansion for field (N) to depend on the
 value that was expanded for field (N-1). "
-    (nth (- field-num 1) (yas/snippet-fields snippet)))
+    (nth (- field-num 1) (yas-snippet-fields snippet)))
 
 
 (defun apigee--fixup-script-name (name &optional prefix)
@@ -1995,7 +2002,7 @@ of available policies.
 (defun apigee-add-target ()
   "Invoke this interactively, and the fn will prompt the user to
 specify the name of a new target. The fn will then create the appropriate
-XML file, and using yas/snippet, will prompt the user to fill in appropriate
+XML file, and using yas-snippet, will prompt the user to fill in appropriate
 information for the target.
 
 "
@@ -2029,7 +2036,8 @@ information for the target.
             ;; create the file, expand the snippet, save it.
             (find-file (concat targets-dir target-name ".xml"))
             ;; expand-snippet-sync does not return until the snip is expanded.
-            (yas/expand-snippet-sync elaborated-template (point) (point))
+            ;;(yas-expand-snippet-sync elaborated-template (point) (point))
+            (yas-expand-snippet-sync elaborated-template )
             (save-buffer)
             (apigee-mode 1)
 
@@ -2046,7 +2054,7 @@ information for the target.
   "Invoke this interactively, and the fn will prompt the user to
 choose a policy type to insert. It will then ask for a name for
 the policy, create the appropriate XML file, and using
-yas/snippet, expand the template associated to the chosen policy,
+yas-snippet, expand the template associated to the chosen policy,
 into the policy file. It then will open any resource files as
 appropriate.
 
@@ -2085,7 +2093,7 @@ appropriate.
                 ;; create the file, expand the snippet, save it.
                 (find-file (concat policy-dir policy-name ".xml"))
                 ;; expand-snippet-sync does not return until the snip is expanded.
-                (yas/expand-snippet-sync elaborated-template (point) (point))
+                (yas-expand-snippet-sync elaborated-template (point) (point))
                 (save-buffer)
                 (apigee-mode 1)
 

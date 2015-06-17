@@ -1,6 +1,6 @@
 ;;; emacs.el -- dino's em Dino's .emacs setup file.
 ;;
-;; Last saved: <2015-June-15 14:55:52>
+;; Last saved: <2015-June-17 12:55:19>
 ;;
 ;; Works with v24.3 of emacs.
 ;;
@@ -643,108 +643,114 @@ With a prefix argument, makes a private paste."
 ;; see http://capitaomorte.github.com/yasnippet/snippet-organization.html
 ;;
 
-
 (require 'yasnippet)
-;;(require 's) ;; string library
 
-;; If I don't set both yas/snippet-dirs and yas/root-directory, I
-;; get complaints in *Messages*.
+;; ;; approach for 0.7.0:
+;; ;; If I don't set both yas/snippet-dirs and yas/root-directory, I
+;; ;; get complaints in *Messages*.
+;; (setq yas/snippet-dirs (list "~/elisp/snippets"))
+;; (yas/initialize)
+;; (setq yas/root-directory "~/elisp/snippets")
+;; (yas/load-directory yas/root-directory)
 
-(setq yas/snippet-dirs (list "~/elisp/snippets"))
-(yas/initialize)
-(setq yas/root-directory "~/elisp/snippets")
-(yas/load-directory yas/root-directory)
-
-(defun dino-recompile-then-reload-all-snippets (&optional dir)
-  "Recompile and reload all snippets in a toplevel snippets
-directory specified by DIR, or in `yas/root-directory' if DIR is
-not specified.
-
-A simple reload-all does not re-compile snippets; instead it
-reloads the 'precompiled' snippets. And, that's not really a good
-idea, because precompiling snippets manually does not compile
-them correctly: they lack the correct mode specification. Huh?
-Obviously nobody tested this. Open-sores software.
-
-It is unbelievable to me that it takes a custom-written function
-to accomplish this. I'm certain I must be doing something wrong,
-but I was unable to fall into a pit of success after much
-searching.
-
-So I wrote this function which does what I think it should do,
-which is to recompile and then reload all the snippets in my
-snippets directory.
-
-"
-  (interactive)
-  (let ((top-dir (or dir yas/root-directory)))
-    ;; delete all pre-compiled
-    (dolist (subdir (yas/subdirs top-dir))
-      (let ((fq-elfile (concat subdir "/.yas-compiled-snippets.el")))
-        (message (concat "checking " fq-elfile))
-        (if (file-exists-p fq-elfile)
-            (delete-file fq-elfile))))
-    (yas/compile-top-level-dir top-dir)
-    (yas/load-directory top-dir)))
+;; Wednesday, 17 June 2015, 12:45
+;; approach for 0.8.1:
+(setq yas-snippet-dirs (list "~/elisp/yasnippets"))
+(yas-global-mode 1)
+;;(yas-load-directory (car yas-snippet-dirs))
 
 
-;; REDEFINE
-;; This fixes up a defun in yasnippet.
-;; The original does not specify the mode in the yas/define-snippet
-;; call in the generated .el file.
-(defun yas/compile-snippets (input-dir &optional output-file)
-  "Compile snippets files in INPUT-DIR to OUTPUT-FILE file.
+;; I htink not needed for v0.8.1 of yasnippet.el
+;; (defun dino-recompile-then-reload-all-snippets (&optional dir)
+;;   "Recompile and reload all snippets in a toplevel snippets
+;; directory specified by DIR, or in `yas/root-directory' if DIR is
+;; not specified.
+;;
+;; A simple reload-all does not re-compile snippets; instead it
+;; reloads the 'precompiled' snippets. And, that's not really a good
+;; idea, because precompiling snippets manually does not compile
+;; them correctly: they lack the correct mode specification. Huh?
+;; Obviously nobody tested this. Open-sores software.
+;;
+;; It is unbelievable to me that it takes a custom-written function
+;; to accomplish this. I'm certain I must be doing something wrong,
+;; but I was unable to fall into a pit of success after much
+;; searching.
+;;
+;; So I wrote this function which does what I think it should do,
+;; which is to recompile and then reload all the snippets in my
+;; snippets directory.
+;;
+;; "
+;;   (interactive)
+;;   (let ((top-dir (or dir yas/root-directory)))
+;;     ;; delete all pre-compiled
+;;     (dolist (subdir (yas/subdirs top-dir))
+;;       (let ((fq-elfile (concat subdir "/.yas-compiled-snippets.el")))
+;;         (message (concat "checking " fq-elfile))
+;;         (if (file-exists-p fq-elfile)
+;;             (delete-file fq-elfile))))
+;;     (yas/compile-top-level-dir top-dir)
+;;     (yas/load-directory top-dir)))
 
-Prompts for INPUT-DIR and OUTPUT-FILE if called-interactively"
-  (interactive (let* ((input-dir (read-directory-name "Snippet dir "))
-                      (output-file (let ((ido-everywhere nil))
-                                     (read-file-name "Output file "
-                                                     input-dir nil nil
-                                                     ".yas-compiled-snippets.el"
-                                                     nil))))
-                 (list input-dir output-file)))
-  (let ((default-directory input-dir)
-        (major-mode-and-parents (yas/compute-major-mode-and-parents
-                                 (concat input-dir "/dummy"))))
-    (with-temp-file (setq output-file (or output-file ".yas-compiled-snippets.el"))
-      (flet ((yas/define-snippets
-              (mode snippets &optional parent-or-parents)
-              (insert (format ";;; %s - automatically compiled snippets for `%s' , do not edit!\n"
-                              (file-name-nondirectory output-file) mode))
-              (insert ";;;\n")
-              (let ((literal-snippets (list)))
-                (dolist (snippet snippets)
-                  (let ((key                    (first   snippet))
-                        (template-content       (second  snippet))
-                        (name                   (third   snippet))
-                        (condition              (fourth  snippet))
-                        (group                  (fifth   snippet))
-                        (expand-env             (sixth   snippet))
-                        (file                   nil) ;; (seventh snippet)) ;; omit on purpose
-                        (binding                (eighth  snippet))
-                        (uuid                    (ninth   snippet)))
-                    (push `(,key
-                            ,template-content
-                            ,name
-                            ,condition
-                            ,group
-                            ,expand-env
-                            ,file
-                            ,binding
-                            ,uuid)
-                          literal-snippets)))
-                (insert (pp-to-string `(yas/define-snippets ',mode ',literal-snippets ',parent-or-parents)))
-                (insert "\n\n")
-                (insert (format ";;; %s - automatically compiled snippets for `%s' end here\n"
-                                (file-name-nondirectory output-file) mode))
-                (insert ";;;"))))
-        (yas/load-directory-1 input-dir (car major-mode-and-parents)
-                              nil 'no-compiled-snippets))))
 
-  (if (and (called-interactively-p)
-           (yes-or-no-p (format "Open the resulting file (%s)? "
-                                (expand-file-name output-file))))
-      (find-file-other-window output-file)))
+;; ;; REDEFINE
+;; ;; This fixes up a defun in yasnippet.
+;; ;; The original does not specify the mode in the yas/define-snippet
+;; ;; call in the generated .el file.
+;; (defun yas/compile-snippets (input-dir &optional output-file)
+;;   "Compile snippets files in INPUT-DIR to OUTPUT-FILE file.
+;;
+;; Prompts for INPUT-DIR and OUTPUT-FILE if called-interactively"
+;;   (interactive (let* ((input-dir (read-directory-name "Snippet dir "))
+;;                       (output-file (let ((ido-everywhere nil))
+;;                                      (read-file-name "Output file "
+;;                                                      input-dir nil nil
+;;                                                      ".yas-compiled-snippets.el"
+;;                                                      nil))))
+;;                  (list input-dir output-file)))
+;;   (let ((default-directory input-dir)
+;;         (major-mode-and-parents (yas/compute-major-mode-and-parents
+;;                                  (concat input-dir "/dummy"))))
+;;     (with-temp-file (setq output-file (or output-file ".yas-compiled-snippets.el"))
+;;       (flet ((yas/define-snippets
+;;               (mode snippets &optional parent-or-parents)
+;;               (insert (format ";;; %s - automatically compiled snippets for `%s' , do not edit!\n"
+;;                               (file-name-nondirectory output-file) mode))
+;;               (insert ";;;\n")
+;;               (let ((literal-snippets (list)))
+;;                 (dolist (snippet snippets)
+;;                   (let ((key                    (first   snippet))
+;;                         (template-content       (second  snippet))
+;;                         (name                   (third   snippet))
+;;                         (condition              (fourth  snippet))
+;;                         (group                  (fifth   snippet))
+;;                         (expand-env             (sixth   snippet))
+;;                         (file                   nil) ;; (seventh snippet)) ;; omit on purpose
+;;                         (binding                (eighth  snippet))
+;;                         (uuid                    (ninth   snippet)))
+;;                     (push `(,key
+;;                             ,template-content
+;;                             ,name
+;;                             ,condition
+;;                             ,group
+;;                             ,expand-env
+;;                             ,file
+;;                             ,binding
+;;                             ,uuid)
+;;                           literal-snippets)))
+;;                 (insert (pp-to-string `(yas/define-snippets ',mode ',literal-snippets ',parent-or-parents)))
+;;                 (insert "\n\n")
+;;                 (insert (format ";;; %s - automatically compiled snippets for `%s' end here\n"
+;;                                 (file-name-nondirectory output-file) mode))
+;;                 (insert ";;;"))))
+;;         (yas/load-directory-1 input-dir (car major-mode-and-parents)
+;;                               nil 'no-compiled-snippets))))
+;;
+;;   (if (and (called-interactively-p)
+;;            (yes-or-no-p (format "Open the resulting file (%s)? "
+;;                                 (expand-file-name output-file))))
+;;       (find-file-other-window output-file)))
 
 
 
@@ -752,24 +758,26 @@ Prompts for INPUT-DIR and OUTPUT-FILE if called-interactively"
 ;; ------------------------------------------------
 
 ;;;; Expand snippet synchronously
-(defvar yas/recursive-edit-flag nil)
+(defvar yas--recursive-edit-flag nil)
 
-(defun yas/expand-sync ()
-  "Execute `yas/expand'. This function exits after expanding snippet."
+(defun yas-expand-sync ()
+  "Execute `yas-expand'. This function exits after expanding snippet."
   (interactive)
-  (let ((yas/recursive-edit-flag t))
-    (call-interactively 'yas/expand)
+  (let ((yas--recursive-edit-flag t))
+    (call-interactively 'yas-expand)
     (recursive-edit)))
 
-(defun yas/expand-snippet-sync (content &optional start end expand-env)
-  "Execute `yas/expand-snippet'. This function exits after expanding snippet."
-  (let ((yas/recursive-edit-flag t))
-    (yas/expand-snippet content start end expand-env)
+(defun yas-expand-snippet-sync (content &optional start end expand-env)
+  "Execute `yas-expand-snippet'. This function exits after expanding snippet."
+  (let ((yas--recursive-edit-flag t))
+    ;;(sit-for 0.6) ;; timing issue?
+    (yas-expand-snippet content start end expand-env)
+    ;;(sit-for 0.2) ;; timing issue?
     (recursive-edit)))
-(defun yas/after-exit-snippet-hook--recursive-edit ()
-  (when yas/recursive-edit-flag
+(defun my-yas-after-exit-snippet-hook--recursive-edit ()
+  (when yas--recursive-edit-flag
     (throw 'exit nil)))
-(add-hook 'yas/after-exit-snippet-hook 'yas/after-exit-snippet-hook--recursive-edit)
+(add-hook 'yas-after-exit-snippet-hook 'my-yas-after-exit-snippet-hook--recursive-edit)
 
 
 
@@ -799,7 +807,7 @@ Prompts for INPUT-DIR and OUTPUT-FILE if called-interactively"
 
   ;; for snippets support:
   (require 'yasnippet)
-  (yas/minor-mode-on)
+  (yas-minor-mode-on)
 
   (local-set-key "\C-c\C-n"  'flymake-goto-next-error)
   (local-set-key "\C-c\C-m"  'flymake-display-err-menu-for-current-line)
@@ -1444,7 +1452,7 @@ refers to relative paths.
 
          ;; for snippets support:
          (require 'yasnippet)
-         (yas/minor-mode-on)
+         (yas-minor-mode-on)
 
          ;; for flymake support:
          ;;(flymake-mode)
@@ -1804,7 +1812,7 @@ again, I haven't see that as a problem."
          ;; for skeleton stuff
          (set (make-local-variable 'skeleton-pair) t)
 
-         (yas/minor-mode-on)
+         (yas-minor-mode-on)
          (show-paren-mode 1)
          (hl-line-mode 1)
 
@@ -2251,7 +2259,7 @@ This gets called by flymake itself."
   (autopair-mode)
 
   ;; ya-snippet
-  (yas/minor-mode-on)
+  (yas-minor-mode-on)
 
   ;; use flymake with pyflakes
   (require 'flymake)
@@ -2360,7 +2368,7 @@ i.e M-x kmacro-set-counter."
   ;; ya-snippet
   ;;(add-to-list 'yas/known-modes 'espresso-mode) ;; need this?
   (add-to-list 'yas/known-modes 'js-mode) ;; need this?
-  (yas/minor-mode-on)
+  (yas-minor-mode-on)
 
   ;; wtf? Does this no longer work?
   (add-hook 'local-write-file-hooks
