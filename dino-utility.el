@@ -670,6 +670,7 @@ Eg,
     (add-to-list 'dino-move-timer-list (list src targ x))))
 
 
+
 (defun dino-copy-value-from-key-into-killring (key)
   "Extract a value based on the given KEY into the killring."
   (interactive "skey: ")
@@ -682,10 +683,11 @@ Eg,
             (save-restriction
               (widen)
               (goto-char (point-min))
-              (if (re-search-forward regexp nil t)
-                  (let ((value (match-string 1)))
-                    (and value
-                         (kill-new value))))))))))
+              (kill-new
+               (if (re-search-forward regexp nil t)
+                   (or (match-string 1) "no match?")
+                 "not found")))))
+      (kill-new "no file"))))
 
 
 (eval-after-load "nxml-mode"
