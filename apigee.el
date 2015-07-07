@@ -11,7 +11,7 @@
 ;; Requires   : s.el, request.el, dino-netrc.el
 ;; License    : New BSD
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2015-June-17 13:16:50>
+;; Last-saved : <2015-July-02 10:51:46>
 ;;
 ;;; Commentary:
 ;;
@@ -83,20 +83,20 @@ Specify the full path. Use this in your emacs:
 
    (require 'apigee)
    (setq apigee-upload-bundle-pgm \"~/dev/apiproxies/pushapi\"
-         apigee-upload-bundle-args \"-v\")
+         apigee-upload-bundle-args \"-v -d\")
 
 Or you can customize this variable.
 "
   :group 'apigee)
 
 
-(defcustom apigee-upload-bundle-args "-v"
+(defcustom apigee-upload-bundle-args "-v -d -o ORG -e ENV"
   "The arguments to pass to the script or program that
 uploads proxies to the Apigee gateway. Use this in your emacs:
 
    (require 'apigee)
    (setq apigee-upload-bundle-pgm \"~/dev/apiproxies\"
-         apigee-upload-bundle-args \"-v\")
+         apigee-upload-bundle-args \"-v -d\")
 
 Or you can customize this variable.
 "
@@ -119,7 +119,7 @@ Or you can customize this variable.
   "The Edge apiproxy to use for API calls. Buffer local.")
 
 (defvar apigee-cached-revision nil
-  "The Edge apiproxy to use for API calls. Buffer local.")
+  "The Edge apiproxy revision to use for API calls. Buffer local.")
 
 (defvar apigee-cached-rsrc-name nil
   "The resource name to use for API calls. Buffer local.")
@@ -339,9 +339,9 @@ the only possible value currently.")
   <IgnoreUnresolvedVariables>false</IgnoreUnresolvedVariables>
   <Set>
     <Payload contentType='${2:$$(yas-choose-value (reverse (apigee--sort-strings (mapcar 'car apigee-message-payload-template-alist))))}'
-             variablePrefix='%' variableSuffix='#'>${2:$(cadr (assoc text apigee-message-payload-template-alist))}</Payload>
+             variablePrefix='%' variableSuffix='#'>${2:$(cadr (assoc yas-text apigee-message-payload-template-alist))}</Payload>
     <StatusCode>${3:$$(yas-choose-value (reverse (apigee--sort-strings (mapcar 'car apigee-http-status-message-alist))))}</StatusCode>
-    <ReasonPhrase>${3:$(cadr (assoc text apigee-http-status-message-alist))}</ReasonPhrase>
+    <ReasonPhrase>${3:$(cadr (assoc yas-text apigee-http-status-message-alist))}</ReasonPhrase>
   </Set>
 
   <!-- Set this flow variable to indicate the response has been set -->
@@ -723,19 +723,25 @@ apiproduct.developer.quota.timeunit*
      ;; causes a weird error in the first field expansion, for large snippets,
      ;; when yas-choose-value us the function. i think.  adding this extra
      ;; "dummy" field avoids the problem.
-          '("OAuthV2 - GenerateAccessToken auth_code, client creds, passwd"
+          '("OAuthV2 - GenerateAccessToken auth_code, client creds"
        "OAuthV2-GenerateAccessToken"
        "<OAuthV2 name='##'>
-    <!-- created at ${1:$$(apigee--java-get-time-in-millis)} -->
+    <!-- created at ${1:$$(format-time-string \"%Y-%m-%dT%T%z\" (current-time) t)} -->
     <Operation>GenerateAccessToken</Operation>
-    <!-- ExpiresIn, in milliseconds. The ref is optional. The explicitly specified -->
-    <!-- value is the default, when the ref cannot be resolved.                    -->
-    <!-- 2400000 = 40 minutes                                                      -->
+    <!--
+    ExpiresIn, in milliseconds. The ref is optional. The explicitly specified
+    value is the default, when the variable reference cannot be resolved.
+      2400000 = 40 minutes
+      3600000 = 60 minutes
+    -->
     <ExpiresIn ref='flow.variable'>2400000</ExpiresIn>
 
-    <!-- RefreshTokenExpiresIn, in milliseconds. Optional; if it is not            -->
-    <!-- specified, the default value will be used which is -1 (no expiration).    -->
-    <!-- 691200000 = 8 days                                                        -->
+    <!--
+    RefreshTokenExpiresIn, in milliseconds. Optional; if it is not
+    specified, the default value will be used which is -1 (no expiration).
+      691200000 = 8 days
+      2592000000 = 30 days
+    -->
     <RefreshTokenExpiresIn>691200000</RefreshTokenExpiresIn>
 
     <SupportedGrantTypes>
@@ -821,19 +827,129 @@ apiproduct.developer.quota.timeunit*
 
 </OAuthV2>\n")
 
+          '("OAuthV2 - GenerateAccessToken password"
+            "OAuthV2-GenerateAccessToken"
+            "<OAuthV2 name='##'>
+    <!-- created at ${1:$$(format-time-string \"%Y-%m-%dT%T%z\" (current-time) t)} -->
+    <Operation>GenerateAccessToken</Operation>
+    <!--
+    ExpiresIn, in milliseconds. The ref is optional. The explicitly specified
+    value is the default, when the variable reference cannot be resolved.
+      2400000 = 40 minutes
+      3600000 = 60 minutes
+    -->
+    <ExpiresIn ref='flow.variable'>2400000</ExpiresIn>
+
+    <!--
+    RefreshTokenExpiresIn, in milliseconds. Optional; if it is not
+    specified, the default value will be used which is -1 (no expiration).
+      691200000 = 8 days
+      2592000000 = 30 days
+    -->
+    <RefreshTokenExpiresIn>691200000</RefreshTokenExpiresIn>
+
+    <SupportedGrantTypes>
+        <GrantType>password</GrantType>
+    </SupportedGrantTypes>
+
+    <!-- variable that specifies the requested grant type -->
+    <GrantType>${2:$$(yas-choose-value '(\"request.queryparam.grant_type\" \"request.formparam.grant_type\" \"flowVariable.something\" ))}</GrantType>
+
+  <UserName>login</UserName>
+  <PassWord>password</PassWord>
+
+    <!--
+    ExternalAuthorization is used to support external authorization. It is
+    optional; if not present, the implied value is false. If it is present and
+    true:
+        - this policy looks for a flow variable with the fixed name
+          'oauth_external_authorization_status', which indicates the
+          external authorization status.
+
+        - if 'oauth_external_authorization_status' is true, the policy does
+          not explicitly validate the client_id and client_secret.
+          Still, the client_id is expected to be present in the request.
+
+        - if 'oauth_external_authorization_status' is false, thi signals
+          that external authorization has failed and the policy throws
+          an appropriate fault.
+
+    If ExternalAuthorization is set to false or if the element is not present, then
+    the policy validates the client_id and secret against the internal key store.
+    -->
+
+    <ExternalAuthorization>${3:$$(yas-choose-value '(\"true\" \"false\" ))}</ExternalAuthorization>
+
+    <!--
+    Optional: these attributes get associated to the token.
+    They will be available to the api proxy whenever the token is
+    subsequently validated.
+    -->
+    <Attributes>
+      <Attribute name='attr_name1' ref='flow.variable1' display='true|false'>value1</Attribute>
+      <Attribute name='attr_name2' ref='flow.variable2' display='true|false'>value2</Attribute>
+    </Attributes>
+
+    <GenerateResponse enabled='true'/>
+    <!--
+
+    If you include GenerateResponse and have enabled='true', then
+    the response is sent directly to the caller. The payload looks like
+    this:
+
+    {
+     \"issued_at\": \"1420262924658\",
+     \"scope\": \"READ\",
+     \"application_name\": \"ce1e94a2-9c3e-42fa-a2c6-1ee01815476b\",
+     \"refresh_token_issued_at\": \"1420262924658\",
+     \"status\": \"approved\",
+     \"refresh_token_status\": \"approved\",
+     \"api_product_list\": \"[PremiumWeatherAPI]\",
+     \"expires_in\": \"1799\",
+     \"developer.email\": \"tesla@weathersample.com\",
+     \"organization_id\": \"0\",
+     \"token_type\": \"BearerToken\",
+     \"refresh_token\": \"fYACGW7OCPtCNDEnRSnqFlEgogboFPMm\",
+     \"client_id\": \"5jUAdGv9pBouF0wOH5keAVI35GBtx3dT\",
+     \"access_token\": \"2l4IQtZXbn5WBJdL6EF7uenOWRsi\",
+     \"organization_name\": \"docs\",
+     \"refresh_token_expires_in\": \"0\",
+     \"refresh_count\": \"0\"
+    }
+
+    If you omit GenerateResponse or have enabled='false', then
+    these flow variables are set on success:
+
+      oauthv2accesstoken.##.access_token
+      oauthv2accesstoken.##.token_type
+      oauthv2accesstoken.##.expires_in
+      oauthv2accesstoken.##.refresh_token
+      oauthv2accesstoken.##.refresh_token_expires_in
+      oauthv2accesstoken.##.refresh_token_issued_at
+      oauthv2accesstoken.##.refresh_token_status
+    -->
+
+</OAuthV2>\n")
+
      '("OAuthV2 - GenerateAccessToken - Implicit Grant"
        "OAuthV2-GenerateAccessToken"
        "<OAuthV2 name='##'>
     <DisplayName>OAuthV2 - GenerateAccessTokenImplicitGrant</DisplayName>
     <Operation>GenerateAccessTokenImplicitGrant</Operation>
-    <!-- ExpiresIn, in milliseconds. The ref is optional. The explicitly specified -->
-    <!-- value is the default, when the ref cannot be resolved.                    -->
-    <!-- 2400000 = 40 minutes -->
+    <!--
+    ExpiresIn, in milliseconds. The ref is optional. The explicitly specified
+    value is the default, when the variable reference cannot be resolved.
+      2400000 = 40 minutes
+      3600000 = 60 minutes
+    -->
     <ExpiresIn ref='flow.variable'>2400000</ExpiresIn>
 
-    <!-- RefreshTokenExpiresIn is optional; if it is not specified, the default    -->
-    <!-- value will be used which is -1 (no expiration).                           -->
-    <!-- 691200000 = 8 days -->
+    <!--
+    RefreshTokenExpiresIn, in milliseconds. Optional; if it is not
+    specified, the default value will be used which is -1 (no expiration).
+      691200000 = 8 days
+      2592000000 = 30 days
+    -->
     <RefreshTokenExpiresIn>691200000</RefreshTokenExpiresIn>
 
     <ResponseType>flow.variable</ResponseType> <!-- Optional -->
@@ -843,9 +959,11 @@ apiproduct.developer.quota.timeunit*
     <State>flow.variable</State> <!-- Optional -->
     <AppEndUser>flow.variable</AppEndUser> <!-- Optional -->
 
-    <!-- Optional: these attributes get associated to the token.       -->
-    <!-- They will be available to the api proxy whenever the token is -->
-    <!-- subsequently validated.                                       -->
+    <!--
+    Optional: these attributes get associated to the token.
+    They will be available to the api proxy whenever the token is
+    subsequently validated.
+    -->
     <Attributes>
       <Attribute name='attr_name1' ref='flow.variable1' display='true|false'>value1</Attribute>
       <Attribute name='attr_name2' ref='flow.variable2' display='true|false'>value2</Attribute>
@@ -887,9 +1005,12 @@ apiproduct.developer.quota.timeunit*
        "OAuthV2-GenerateAuthorizationCode"
        "<OAuthV2 name='##'>
     <Operation>GenerateAuthorizationCode</Operation>
-    <!-- ExpiresIn is milliseconds. 3600000 = 1 hour. -->
-    <!-- The ref is optional. The explicitly specified value is the default, -->
-    <!-- when the ref cannot be resolved. -->
+    <!--
+    ExpiresIn, in milliseconds. The ref is optional. The explicitly specified
+    value is the default, when the variable reference cannot be resolved.
+      2400000 = 40 minutes
+      3600000 = 60 minutes
+    -->
     <ExpiresIn ref='flow.variable'>2400000</ExpiresIn>
 
     <!-- The following are Optional -->
@@ -899,6 +1020,12 @@ apiproduct.developer.quota.timeunit*
     <Code>flow.variable</Code>
     <Scope>flow.variable</Scope>
     <State>flow.variable</State>
+
+    <!--
+    Optional: these attributes get associated to the code+token.
+    They will be available to the api proxy whenever the token is
+    subsequently validated.
+    -->
     <Attributes>
       <!-- If set to false, the attribute wont be delivered in the auth code response. -->
       <Attribute name='attr_name1' ref='flow.variable1' display='true|false'>value1</Attribute>
@@ -921,7 +1048,9 @@ apiproduct.developer.quota.timeunit*
        "<OAuthV2 name='##'>
     <DisplayName>##</DisplayName>
     <Operation>VerifyAccessToken</Operation>
-    <!-- pulls token from Authorization header as per OAuthV2.0 spec -->
+    <!-- by default, pulls token from Authorization header as per OAuthV2.0 spec -->
+    <AccessToken>flow.variable</AccessToken> <!-- Optional -->
+    <AccessTokenPrefix>Bearer</AccessTokenPrefix> <!-- Optional -->
     <!--
     This policy sets the following flow variables:
       organization_name
@@ -939,8 +1068,6 @@ apiproduct.developer.quota.timeunit*
       apiproduct.name*
       apiproduct.<custom_attribute_name>*
     -->
-   <AccessToken>flow.variable</AccessToken> <!-- Optional -->
-   <AccessTokenPrefix>Bearer</AccessTokenPrefix> <!-- Optional -->
 </OAuthV2>\n")
 
      '("OAuthV2 - RefreshAccessToken"
@@ -948,17 +1075,22 @@ apiproduct.developer.quota.timeunit*
        "<OAuthV2 enabled='true' name='##'>
     <DisplayName>OAuthV2 - RefreshAccessToken</DisplayName>
     <Operation>RefreshAccessToken</Operation>
-    <FaultRules/>
-    <Properties/>
     <Attributes/> <!-- not sure if valid here -->
+    <!--
+    client_id and client_secret are expected in the Authorization Header
+    passed as Basic Auth (concatenated with colon, then base64 encoded).
+    -->
 
-    <!-- ExpiresIn is milliseconds. 3600000 = 1 hour -->
-    <!-- The ref is optional. The explicitly specified value is the default, -->
-    <!-- when the ref cannot be resolved. -->
+    <!--
+    ExpiresIn, in milliseconds. The ref is optional. The explicitly specified
+    value is the default, when the variable reference cannot be resolved.
+      2400000 = 40 minutes
+      3600000 = 60 minutes
+    -->
     <ExpiresIn ref='flow.variable'>3600000</ExpiresIn>
 
     <ExternalAuthorization>false</ExternalAuthorization>
-    <GrantType>request.formparam.grant_type</GrantType>
+    <GrantType>request.formparam.grant_type</GrantType> <!-- must be \"refresh_token\" -->
     <RefreshToken>request.formparam.refresh_token</RefreshToken>
     <SupportedGrantTypes/>
 
@@ -982,10 +1114,10 @@ apiproduct.developer.quota.timeunit*
      '("OAuthV2 - InvalidateToken"
        "OAuthV2-InvalidateToken"
        "<OAuthV2 name='##'>
-    <Operation>InvalidateToken</Operation>
+    <Operation>InvalidateToken</Operation> <!-- aka \"Revoke\" token -->
     <Tokens>
         <Token type='${1:$$(yas-choose-value '(\"accesstoken\" \"refreshtoken\"))}'
-               cascade='true'>${2:flow.variable}</Token>
+               cascade='${2:$$(yas-choose-value '(\"true\" \"false\"))}'>${3:flow.variable}</Token>
     </Tokens>
 </OAuthV2>\n")
 
@@ -1008,11 +1140,14 @@ apiproduct.developer.quota.timeunit*
      '("OAuthV2 - GetClientInfo"
        "OAuthV2-GetInfo"
 "<GetOAuthV2Info name='##'>
-    <!-- http://apigee.com/docs/api-services/reference/get-oauth-v2-info-policy -->
-    <!-- use one of the following: a referenced variable or -->
-    <!-- an explicitly passed client_id -->
+    <!--
+    See http://apigee.com/docs/api-services/reference/get-oauth-v2-info-policy
+
+    Use one of the following forms: a referenced variable or
+    an explicitly passed client_id.
+     -->
     <ClientId ref='{flow.variable}'/>
-    <ClientId>{client id}</ClientId>
+    <ClientId>abcdefghijklmnop</ClientId>
     <!--
     On Success, the following flow variables will be set.
       oauthv2client.##.client_id
@@ -1086,8 +1221,6 @@ apiproduct.developer.quota.timeunit*
     -->
 </GetOAuthV2Info>\n")
 
-
-
      '("OAuthV1 - GetInfo - AppKey"
        "OAuthV1-GetOAuthV1Info"
      "<GetOAuthV1Info name='##'>
@@ -1133,8 +1266,12 @@ apiproduct.developer.quota.timeunit*
      '("OAuthV1 - GenerateAccessToken"
        "OAuthV1-GenerateAccessToken"
 "<OAuthV1 name='##'>
-  <!-- ExpiresIn, in milliseconds. The ref is optional. The explicitly specified -->
-  <!-- value is the default, when the variable reference cannot be resolved.     -->
+  <!--
+    ExpiresIn, in milliseconds. The ref is optional. The explicitly specified
+    value is the default, when the variable reference cannot be resolved.
+      2400000 = 40 minutes
+      3600000 = 60 minutes
+  -->
   <ExpiresIn ref='flow.variable'>2400000</ExpiresIn>
   <Operation>GenerateAccessToken</Operation>
   <GenerateResponse enabled='${1:$$(yas-choose-value '(\"true\" \"false\" ))}'>
@@ -1170,13 +1307,10 @@ Authorization.
 </OAuthV1>\n")
 
 
-
      '("MessageLogging - SysLog"
        "MessageLogging-SysLog"
        "<MessageLogging enabled='true' continueOnError='true' name='##'>
     <DisplayName>##</DisplayName>
-    <FaultRules/>
-    <Properties/>
     <BufferMessage>false</BufferMessage>
     <Syslog async='true'>
         <Host>${1:hostname.domain.com}</Host>
@@ -1191,13 +1325,13 @@ Authorization.
 
      '("MessageLogging - Log file"
        "MessageLogging-File"
-       "<MessageLogging enabled='true' continueOnError='true' name='##'>
+       "<MessageLogging name='##'>
     <DisplayName>##</DisplayName>
    <File>
         <Message>{system.time},{request.path},{response.header.X-time-total-elapsed},{response.header.X-time-target-elapsed},{response.status.code}
 </Message>
         <FileName>atlantis-perf.log</FileName>
-        <FileRotationOptions rotateFileOnStartup="true">
+        <FileRotationOptions rotateFileOnStartup='true'>
             <FileRotationType>SIZE</FileRotationType>
             <MaxFileSizeInMB>10</MaxFileSizeInMB>
             <MaxFilesToRetain>10</MaxFilesToRetain>
@@ -1209,11 +1343,9 @@ Authorization.
      "ResponseCache"
      "<ResponseCache name='##'>
   <DisplayName>${1:##}</DisplayName>
-  <FaultRules/>
-  <Properties/>
   <!-- composite item to use as cache key -->
   <CacheKey>
-    <Prefix></Prefix>
+    <Prefix>anything</Prefix>
     <KeyFragment ref='${2:request.uri}' />
   </CacheKey>
   <CacheResource>${3:ApigeeCache}</CacheResource>
@@ -1251,6 +1383,7 @@ Authorization.
     <AssignTo>${2:flowvariable}</AssignTo> <!-- name of flow variable -->
     <Scope>${3:$$(yas-choose-value '(\"Exclusive\" \"Global\" \"Application\" \"Proxy\" \"Target\"))}</Scope>
     <CacheKey>
+      <!--  <Prefix>apiAccessToken</Prefix> -->
       <KeyFragment ref='${4:flowvariable.name}' />
     </CacheKey>
 </LookupCache>")
@@ -1287,9 +1420,9 @@ Authorization.
   <FaultResponse>
     <Set>
       <Payload contentType='${3:$$(yas-choose-value (reverse (apigee--sort-strings (mapcar 'car apigee-message-payload-template-alist))))}'
-               variablePrefix='%' variableSuffix='#'>${3:$(cadr (assoc text apigee-message-payload-template-alist))}$0</Payload>
+               variablePrefix='%' variableSuffix='#'>${3:$(cadr (assoc yas-text apigee-message-payload-template-alist))}$0</Payload>
       <StatusCode>${4:$$(yas-choose-value (reverse (apigee--sort-strings (mapcar 'car apigee-http-status-message-alist))))}</StatusCode>
-      <ReasonPhrase>${4:$(cadr (assoc text apigee-http-status-message-alist))}</ReasonPhrase>
+      <ReasonPhrase>${4:$(cadr (assoc yas-text apigee-http-status-message-alist))}</ReasonPhrase>
     </Set>
   </FaultResponse>
 </RaiseFault>")
@@ -1299,8 +1432,6 @@ Authorization.
        "RaiseFault-Redirect"
        "<RaiseFault name='##'>
     <DisplayName>${1:##}</DisplayName>
-    <FaultRules/>
-    <Properties/>
     <FaultResponse>
       <Set>
         <Headers>
@@ -1321,7 +1452,10 @@ $1
        "Javascript"
        "<Javascript name='##' timeLimit='200' >
   <!-- <DisplayName>${1:##}</DisplayName> -->
-  <Properties/>
+  <Properties>
+    <!-- to retrieve properties in js code:   properties.prop1 -->
+    <Property name='prop1'>value-here</Property>
+  </Properties>
   <IncludeURL>jsc://URI.js</IncludeURL> <!-- optionally specify a shared resource here -->
   <ResourceURL>jsc://${2:$$(apigee--fixup-script-name \"##\" \"Javascript\")}.js</ResourceURL>
 </Javascript>")
@@ -1339,11 +1473,19 @@ $1
        "XSL"
        "<XSL name='##'>
   <DisplayName>${1:##}</DisplayName>
-  <FaultRules/>
-  <Properties/>
+  <Source>${3:$$(yas-choose-value '(\"request\" \"response\"))}</Source>
   <OutputVariable>request.content</OutputVariable>
   <ResourceURL>xsl://${2:##}.xsl</ResourceURL>
-  <Source>${3:$$(yas-choose-value '(\"request\" \"response\"))}</Source>
+
+  <!--
+  Parameters are optional. reference them in the XSL as:
+    <xsl:param name=\"uid\" select=\"''\"/>
+    <xsl:param name=\"pwd\" select=\"''\"/>
+  -->
+  <Parameters ignoreUnresolvedVariables='true'>
+    <Parameter name='uid' ref='authn.uid'/>
+    <Parameter name='pwd' ref='authn.pwd'/>
+  </Parameters>
 </XSL>\n")
 
      '("AccessControl"
@@ -1363,10 +1505,21 @@ $1
        "<JavaCallout name='##'>
   <DisplayName>${1:##}</DisplayName>
   <Properties>
-    <Property name='a'>value-goes-here</Property>
-    <Property name='b'>another-value-here</Property>
+    <Property name='propName1'>value-goes-here</Property>
+    <Property name='propName2'>another-value-here</Property>
   </Properties>
-  <FaultRules/>
+  <!--
+  To access properties in the callout, define a ctor that accepts a
+  java.util.Map argument:
+
+    import java.util.Map;
+    ...
+      private Map properties; // read-only
+      public CalloutClassName (Map properties) { this.properties = properties; }
+
+      ....
+        String propName1 = (String) this.properties.get(\"propName1\");
+  -->
   <ClassName>${2:com.company.ClassName}</ClassName>
   <ResourceURL>java://${3:$$(apigee--fixup-script-name \"##\" \"Java\")}.jar</ResourceURL>
 </JavaCallout>")
@@ -1539,13 +1692,16 @@ currently being edited.
     (switch-to-buffer-other-window buffer)))
 
 
-(defun apigee--guess-upload-command (recent-command proxy-dir)
-  "non-interative function that takes the most recent command, and
-replaces the final element (the path of the apiproxy bundle) with
-the path of the current api proxy bundle."
- (let ((cmd-elts (reverse (split-string recent-command))))
-   (setcar cmd-elts proxy-dir)
-   (s-join " " (reverse cmd-elts))))
+(defun apigee--guess-upload-command (proxy-dir)
+  "non-interative function that returns a guess for the upload
+command. It derives the guess from the most recently used
+command, replacing the final element of that command, which is
+the path of the apiproxy bundle, with the path of the current api
+proxy bundle."
+  (if apigee--most-recently-used-upload-command
+      (let ((cmd-elts (reverse (split-string apigee--most-recently-used-upload-command))))
+        (setcar cmd-elts proxy-dir)
+        (s-join " " (reverse cmd-elts)))))
 
 
 (defun apigee-upload-bundle-with-pushapi ()
@@ -1562,7 +1718,7 @@ that contains the file or directory currently being edited.
            ;; interactively invoke the command (and allow user to change)
            (set (make-local-variable 'compile-command)
                 (or (cdr this-cmd)
-                    (apigee--guess-upload-command apigee--most-recently-used-upload-command proxy-dir)
+                    (apigee--guess-upload-command proxy-dir)
                     (concat
                      apigee-upload-bundle-pgm " "
                      apigee-upload-bundle-args " "
@@ -1573,7 +1729,6 @@ that contains the file or directory currently being edited.
              (add-to-list 'apigee-upload-command-alist (cons proxy-dir compile-command)))
            ;; save for next time:
            (setq apigee--most-recently-used-upload-command compile-command)
-           ;;(message (format "compile command: %s" compile-command))
            ))))
 
 
@@ -2035,8 +2190,7 @@ information for the target.
 
             ;; create the file, expand the snippet, save it.
             (find-file (concat targets-dir target-name ".xml"))
-            ;; expand-snippet-sync does not return until the snip is expanded.
-            ;;(yas-expand-snippet-sync elaborated-template (point) (point))
+            ;; yas-expand-snippet-sync does not return until the snip is expanded.
             (yas-expand-snippet-sync elaborated-template )
             (save-buffer)
             (apigee-mode 1)
@@ -2092,7 +2246,7 @@ appropriate.
 
                 ;; create the file, expand the snippet, save it.
                 (find-file (concat policy-dir policy-name ".xml"))
-                ;; expand-snippet-sync does not return until the snip is expanded.
+                ;; yas-expand-snippet-sync does not return until the snip is expanded.
                 (yas-expand-snippet-sync elaborated-template (point) (point))
                 (save-buffer)
                 (apigee-mode 1)
@@ -2164,7 +2318,8 @@ file, such as a Javascript, Python, or XSL policy.
    '("Python"
      "/api-services/reference/python-script-policy")
    '("OAuthV2"
-     "/api-services/content/authorize-requests-using-oauth-20")
+     "/api-services/content/oauthv2-policy")
+   ;; "/api-services/content/authorize-requests-using-oauth-20")
    '("Java"
      "/api-services/reference/java-callout-policy")
    '("JSONToXML"
