@@ -1,6 +1,6 @@
 ;;; emacs.el -- dino's em Dino's .emacs setup file.
 ;;
-;; Last saved: <2015-June-17 12:55:19>
+;; Last saved: <2015-June-26 06:46:46>
 ;;
 ;; Works with v24.3 of emacs.
 ;;
@@ -65,21 +65,20 @@
 ;;
 (add-hook 'after-init-hook #'global-flycheck-mode)
 
+(eval-after-load "flycheck"
+  '(progn
+     (setq-default flycheck-disabled-checkers '(emacs-lisp-checkdoc))))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; apigee stuff
+;; stuff for Apigee Edge
 ;;
 (require 'apigee)
 (setq apigee-apiproxies-home "~/dev/apiproxies/")
 
 
-  (eval-after-load "flycheck"
-    '(progn
-       (setq-default flycheck-disabled-checkers '(emacs-lisp-checkdoc))))
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; go language
+;; the go language
 ;;
 (add-to-list 'load-path "/usr/local/go/misc/emacs")
 (require 'go-mode-load) ;; editing mode
@@ -876,8 +875,8 @@ With a prefix argument, makes a private paste."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; defaultcontent
 ;;
-;; This package inserts "default content" into a new  file of a given
-;; type, when it is first edited in emacs.
+;; This package inserts "default content" into a new file of a given
+;; type, when that file is newly created in emacs.
 ;; See the elisp/defaultcontent directory for templates.
 ;;
 ;; http://pagesperso-systeme.lip6.fr/Christian.Queinnec/Miscellaneous/defaultcontent.el
@@ -983,6 +982,7 @@ With a prefix argument, makes a private paste."
   ;; do not want auto-revert.
   ;; It doesn't work completely, and it may have side effects.
   ;; ;; (turn-on-auto-revert-mode)
+  ;; Anyway, there is a revert-on-timer thing provided in dired-fixups.el
 
   (local-set-key "\C-c\C-c"  'dino-dired-copy-file-to-dir-in-other-window)
   (local-set-key "\C-c\C-m"  'dino-dired-move-file-to-dir-in-other-window)
@@ -994,7 +994,6 @@ With a prefix argument, makes a private paste."
 
 ;; eliminate the gid in dired on windows
 (setq ls-lisp-verbosity '(links uid))
-
 
 
 
@@ -2662,7 +2661,10 @@ i.e M-x kmacro-set-counter."
 (defun bsd ()
   "inserts New BSD text at point"
   (interactive)
-  (insert-file-contents "c:\\users\\dino\\Documents\\BSD.txt"))
+  ;;(insert-file-contents "c:\\users\\dino\\Documents\\BSD.txt")
+  (insert-file-contents "~/Documents/License.BSD.txt")
+  )
+
 
 
 ;08.04.2003: Kai Großjohann
