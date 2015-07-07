@@ -3,7 +3,7 @@
 ;; Author: Dino Chiesa
 ;; Created: Sat, 31 Mar 2012  10:31
 ;; Package-Requires: ()
-;; Version: 2013.03.14
+;; Version: 2015.06.28
 ;; URL: https://github.com/DinoChiesa/dpchiesa-elisp/blob/master/dired-fixups.el
 ;; License: Public Domain
 ;; Keywords: dired
@@ -21,24 +21,26 @@
 ;;
 
 
+(require 'cl)
+(require 'dired)
 (require 'ls-lisp)
 
     ;; (defun ls-lisp-format-time (file-attr time-index now)
     ;;   "################")
 
-(defun ls-lisp-format-file-size (file-size human-readable)
+(defun ls-lisp-format-file-size (f-size human-readable)
   "This is a redefinition of the function from `dired.el'. This
 fixes the formatting of file sizes in dired mode, to support very
 large files. Without this change, dired supports 8 digits max,
 which is up to 10gb.  Some files are larger than that.
 "
-  (if (or (not human-readable)
-          (< file-size 1024))
-      (format (if (floatp file-size) " %11.0f" " %11d") file-size)
-    (do ((file-size (/ file-size 1024.0) (/ file-size 1024.0))
-         ;; kilo, mega, giga, tera, peta, exa
-         (post-fixes (list "k" "M" "G" "T" "P" "E") (cdr post-fixes)))
-        ((< file-size 1024) (format " %10.0f%s"  file-size (car post-fixes))))))
+  (if (or (not human-readable) (< f-size 1024))
+      (format (if (floatp f-size) " %11.0f" " %11d") f-size)
+    (let (post-fixes)
+      (do ((f-size (/ f-size 1024.0) (/ f-size 1024.0))
+           ;; kilo, mega, giga, tera, peta, exa
+           (post-fixes (list "k" "M" "G" "T" "P" "E") (cdr post-fixes)))
+          ((< f-size 1024) (format " %10.0f%s"  f-size (car post-fixes)))))))
 
 ;; On MacOS, the builtin ls program does not do the -X option. (lame)
 ;; The MacPorts version of GNU ls does. If it exists, use it.
@@ -110,7 +112,7 @@ time, and extension. Cycling works the same, with the s key.
                                         dired-actual-switches)
                new-sorting-switch))))))
 
-  (dired-sort-set-modeline)
+  (dired-sort-set-mode-line)
   (revert-buffer))
 
 
@@ -173,7 +175,7 @@ prefix arg, the next N files "
     (let ((dst-dir (expand-file-name (with-current-buffer (car other-visible-dired-buffers)
                                        default-directory))))
 
-      (mapcar '(lambda (f) (funcall fn f dst-dir 1))
+      (mapc '(lambda (f) (funcall fn f dst-dir 1))
               (dired-get-marked-files nil arg))
        (with-current-buffer (car other-visible-dired-buffers)
          (revert-buffer))
@@ -203,6 +205,25 @@ and quit.
     (dino-dired-copy-or-move-other-window #'copy-file))
 
 
+;; Auto-update capability with timer
+
+(defvar dired-file-modification-hash (make-hash-table :test 'equal))
+
+(defun maybe-revert-dired-buffers ()
+  (walk-windows
+   #'(lambda (win)
+       (with-selected-window win
+         (when (eq major-mode 'dired-mode)
+           (let ((mod (gethash default-directory dired-file-modification-hash)))
+             (unless (and mod
+                          (equal mod (nth 5 (file-attributes
+                                             default-directory))))
+               (setq mod (nth 5 (file-attributes default-directory)))
+               (puthash default-directory mod dired-file-modification-hash)
+               (dired-revert))))))
+   'no-mini 'all-frames))
+
+(run-with-idle-timer 1 t 'maybe-revert-dired-buffers)
 
 
 
