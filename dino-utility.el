@@ -673,21 +673,31 @@ Eg,
 
 (defun dino-copy-value-from-key-into-killring (key)
   "Extract a value based on the given KEY into the killring."
+  ;; eg, (dino-copy-value-from-key-into-killring "box-personal")
   (interactive "skey: ")
   (let ((buf (get-buffer "pwds.txt.gpg"))
-        ;; (dino-copy-value-from-key-into-killring "box-personal")
         (regexp (concat "^[ \t]*\\b" key "\\b.+ \\([^ \r\n]+\\)$")))
     (if buf
-        (with-current-buffer buf
-          (save-excursion
-            (save-restriction
-              (widen)
-              (goto-char (point-min))
-              (kill-new
-               (if (re-search-forward regexp nil t)
-                   (or (match-string 1) "no match?")
-                 "not found")))))
-      (kill-new "no file"))))
+        (let ((result
+               (with-current-buffer buf
+                 (save-excursion
+                   (save-restriction
+                     (widen)
+                     (goto-char (point-min))
+                     (if (re-search-forward regexp nil t)
+                         (or (match-string 1) 1) ;; 1 == regex error
+                       2 ;; 2 == not found
+                       ))))))
+          (cond
+           ((numberp result)
+            (message "not found")
+            (kill-new "--"))
+           (t
+            (kill-new result)
+            (message "found"))))
+      (kill-new "xx")
+      (message "no file"))))
+
 
 
 (eval-after-load "nxml-mode"
