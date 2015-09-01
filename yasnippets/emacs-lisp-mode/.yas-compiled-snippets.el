@@ -1,0 +1,8 @@
+;;; Compiled snippets and support files for `emacs-lisp-mode'
+;;; Snippet definitions:
+;;;
+(yas-define-snippets 'emacs-lisp-mode
+                     '(("bsd" ";;; License:\n;;\n;; Licensed under the Simplified BSD License.\n;;\n;; Redistribution and use in source and binary forms, with or without\n;; modification, is permitted provided that the following conditions\n;; are met: Redistributions of source code must retain the above\n;; copyright notice, this list of conditions and the following\n;; disclaimer.  Redistributions in binary form must reproduce the above\n;; copyright notice, this list of conditions and the following\n;; disclaimer in the documentation and/or other materials provided with\n;; the distribution.\n;;\n;; THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n;; \"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\n;; LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR\n;; A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT\n;; HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,\n;; INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,\n;; BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS\n;; OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED\n;; AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT\n;; LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY\n;; WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE\n;; POSSIBILITY OF SUCH DAMAGE.\n;;\n;; ------------------------------------------------------------------\n" "BSD License" nil nil nil nil nil nil)))
+
+
+;;; Do not edit! File generated at Fri Jul 24 18:52:09 2015
