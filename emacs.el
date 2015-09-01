@@ -1,6 +1,6 @@
 ;;; emacs.el -- dino's em Dino's .emacs setup file.
 ;;
-;; Last saved: <2015-June-26 06:46:46>
+;; Last saved: <2015-July-29 13:46:26>
 ;;
 ;; Works with v24.3 of emacs.
 ;;
@@ -659,7 +659,9 @@ With a prefix argument, makes a private paste."
 ;;(yas-load-directory (car yas-snippet-dirs))
 
 
-;; I htink not needed for v0.8.1 of yasnippet.el
+;; I think the following is not needed for v0.8.1 of yasnippet.el.
+;; To recompile all snippers you can just... `yas-recompile-all'
+;;
 ;; (defun dino-recompile-then-reload-all-snippets (&optional dir)
 ;;   "Recompile and reload all snippets in a toplevel snippets
 ;; directory specified by DIR, or in `yas/root-directory' if DIR is
@@ -2366,7 +2368,7 @@ i.e M-x kmacro-set-counter."
 
   ;; ya-snippet
   ;;(add-to-list 'yas/known-modes 'espresso-mode) ;; need this?
-  (add-to-list 'yas/known-modes 'js-mode) ;; need this?
+  ;;(add-to-list 'yas/known-modes 'js-mode) ;; need this?
   (yas-minor-mode-on)
 
   ;; wtf? Does this no longer work?
