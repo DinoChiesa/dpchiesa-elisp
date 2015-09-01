@@ -11,7 +11,7 @@
 ;; Requires   : s.el, request.el, dino-netrc.el
 ;; License    : New BSD
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2015-July-02 10:51:46>
+;; Last-saved : <2015-August-31 18:12:54>
 ;;
 ;;; Commentary:
 ;;
@@ -168,18 +168,23 @@ the only possible value currently.")
    '("application/x-www-form-urlencoded" "status=true&clientId=%parsedRequest.client_id#")
    '("application/xml" "<message><here>%parsedRequest.client_id#</here></message>")))
 
-(defconst apigee-target-template
-  "<TargetEndpoint name='##'>
-  <Description>${1:##}</Description>
+
+(defconst apigee--target-template-alist
+    (list
+     '("HTTPTarget"
+       "<TargetEndpoint name='##'>
+  <!-- <Description>${1:##}</Description> -->
   <PreFlow name='PreFlow'>
     <Request>
     </Request>
-    <Response/>
+    <Response>
+    </Response>
   </PreFlow>
   <PostFlow name='PostFlow'>
     <Request>
     </Request>
-    <Response/>
+    <Response>
+    </Response>
   </PostFlow>
   <Flows/>
   <FaultRules/>
@@ -188,6 +193,29 @@ the only possible value currently.")
   </HTTPTargetConnection>
 </TargetEndpoint>
 ")
+     '("ScriptTarget"
+       "<TargetEndpoint name='##'>
+  <!-- <Description>${1:##}</Description> -->
+  <PreFlow name='PreFlow'>
+    <Request>
+    </Request>
+    <Response>
+    </Response>
+  </PreFlow>
+  <PostFlow name='PostFlow'>
+    <Request>
+    </Request>
+    <Response>
+    </Response>
+  </PostFlow>
+  <Flows/>
+  <FaultRules/>
+  <ScriptTarget>
+      <ResourceURL>node://${2:nodeServer.js}</ResourceURL>
+  </ScriptTarget>
+</TargetEndpoint>
+")
+))
 
 
 (defconst apigee-http-status-message-alist
@@ -245,11 +273,16 @@ the only possible value currently.")
 
 (defconst apigee--policy-alist
     (list
+     ;; the "created at" comment works around a bug in yas--eval-lisp, which
+     ;; causes a weird error in the first field expansion, for large snippets,
+     ;; when yas-choose-value us the function. i think.  adding this extra
+     ;; "dummy" field avoids the problem.
      '("AccessEntity"
      "AccessEntity"
      "<AccessEntity name='##'>
-  <EntityType value='${1:$$(yas-choose-value '(\"apiproduct\" \"app\" \"company\" \"companydeveloper\" \"consumerkey\" \"developer\"))}' />
-  <EntityIdentifier type='${2:$$(yas-choose-value (let ((field1 (apigee--snippet-field 1))) (apigee-entity-id-types (buffer-substring-no-properties (yas-field-start field1) (yas-field-end field1)))))}' ref='${3:varName}' />
+    <!-- created at ${1:$$(format-time-string \"%Y-%m-%dT%T%z\" (current-time) t)} -->
+  <EntityType value='${2:$$(yas-choose-value '(\"apiproduct\" \"app\" \"company\" \"companydeveloper\" \"consumerkey\" \"developer\"))}' />
+  <EntityIdentifier type='${3:$$(yas-choose-value (let ((field1 (apigee--snippet-field 1))) (apigee-entity-id-types (buffer-substring-no-properties (yas--field-start field1) (yas--field-end field1)))))}' ref='${3:varName}' />
   <!-- SecondaryIdentifier is not always required -->
   <SecondaryIdentifier type='$4' ref='$5' />
 <!--
@@ -346,7 +379,7 @@ the only possible value currently.")
 
   <!-- Set this flow variable to indicate the response has been set -->
   <AssignVariable>
-    <Name>tokenResponse.ready</Name>
+    <Name>customResponse.assigned</Name>
     <Value>true</Value>
   </AssignVariable>
 
@@ -493,6 +526,9 @@ ratelimit.{policy_name}.class.total.exceed.count
   <TimeUnit ref='apiproduct.developer.quota.timeunit'/>
   <Allow countRef='apiproduct.developer.quota.limit'/>
   <Identifier ref='client_id'/>
+  <Distributed>true</Distributed>
+  <Synchronous>false</Synchronous>
+  <PreciseAtSecondsLevel>false</PreciseAtSecondsLevel>
 <!--
 variables set by this policy include:
 
@@ -525,11 +561,18 @@ ratelimit.{policy_name}.class.total.exceed.count
   </Quota>
 </ResetQuota>\n")
 
+     ;; Wednesday, 17 June 2015
+     ;; the "created at" comment works around a bug in yas--eval-lisp, which
+     ;; causes a weird error in the first field expansion, for large snippets,
+     ;; when yas-choose-value us the function. i think.  adding this extra
+     ;; "dummy" field avoids the problem.
+
      '("VerifyAPIKey" ;;  - query param or header
        "VerifyAPIKey"
      "<VerifyAPIKey name='##'>
+    <!-- created at ${1:$$(format-time-string \"%Y-%m-%dT%T%z\" (current-time) t)} -->
     <DisplayName>Verify API Key</DisplayName>
-    <APIKey ref='${1:$$(yas-choose-value '(\"request.queryparam.apikey\" \"request.header.X-Apikey\"))}'></APIKey>
+    <APIKey ref='${2:$$(yas-choose-value '(\"request.queryparam.apikey\" \"request.header.X-Apikey\"))}'></APIKey>
 <!--
 Variables populated by this policy: verifyapikey.{policy_name}.
 
@@ -1168,6 +1211,7 @@ apiproduct.developer.quota.timeunit*
     <!-- an explicitly passed access_token -->
     <AccessToken ref='${1:request.queryparam.access_token}'/>
     <AccessToken>${2:BAADBEEF}</AccessToken>
+    <RefreshToken ref='{flow.variable}'/>
     <!--
     On Success, the following flow variables will be set.
       oauthv2accesstoken.##.access_token
@@ -1350,6 +1394,7 @@ Authorization.
   </CacheKey>
   <CacheResource>${3:ApigeeCache}</CacheResource>
   <Scope>${4:$$(yas-choose-value '(\"Exclusive\" \"Global\" \"Application\" \"Proxy\" \"Target\"))}</Scope>
+  <UseAcceptHeader>true</UseAcceptHeader>
   <ExpirySettings>
     <ExpiryDate></ExpiryDate>
     <TimeOfDay></TimeOfDay>
@@ -1883,7 +1928,8 @@ structure, in the `apigee-apiproxies-home' directory.
       <!-- remove this to allow requests -->
       <Step><Name>RaiseFault-UnknownRequest</Name></Step>
     </Request>
-    <Response/>
+    <Response>
+    </Response>
   </PreFlow>
 
   <HTTPTargetConnection>
@@ -1939,10 +1985,12 @@ structure, in the `apigee-apiproxies-home' directory.
     <Flow name='test " (apigee--random-string) " " (apigee--random-string) "'>
       <Description>insert description here</Description>
       <Request>
-        <!-- insert real policies here -->
+        <!-- insert flow-specific policies here -->
         <Step><Name>InsertPolicyNameHere</Name></Step>
       </Request>
-      <Response/>
+      <Response>
+        <!-- and others here -->
+      </Response>
       <Condition>(proxy.pathsuffix MatchesPath \"/t1\") and (request.verb = \"GET\")</Condition>
     </Flow>
 
@@ -1974,7 +2022,7 @@ structure, in the `apigee-apiproxies-home' directory.
 active YAS snippet. This is a utility fn for use within
 apigee snippets, to allow expansion for field (N) to depend on the
 value that was expanded for field (N-1). "
-    (nth (- field-num 1) (yas-snippet-fields snippet)))
+  (nth (- field-num 1) (yas--snippet-fields snippet)))
 
 
 (defun apigee--fixup-script-name (name &optional prefix)
@@ -2073,7 +2121,7 @@ consist only of the unique members of the original list.
 ;;     ;; this works with x-popup-menu
 ;;     (cons "Insert a policy..." (nreverse menu))))
 
-(defun apigee--generate-menu (candidates)
+(defun apigee--generate-policy-menu (candidates)
   "From the list of candidates, generate a keymap suitable for
 use as a menu in `popup-menu' . Each item in the list of
 candidates is a list, (KEY TEMPLATE), where KEY is one of {Quota,
@@ -2135,6 +2183,43 @@ The output is a multi-leveled hierarchy, like this:
     keymap))
 
 
+(defun apigee--generate-target-menu (candidates)
+  "From the list of candidates, generate a keymap suitable for
+use as a menu in `x=popup-menu' . Each item in the list of
+candidates is a list, (KEY TEMPLATE), where KEY is one of
+{\"ScriptTarget\", \"HttpTarget\"}, and TEMPLATE is the template
+to fill in a new target file.
+
+The intention is to display a single-level popup menu.
+
+The output is a single-level hierarchy, like this:
+
+   (\"Insert a target...\"
+     (\"HttpTarget\" ... )
+     (\"ScriptTarget\" ... )
+   )
+"
+  (let ((keymap (make-sparse-keymap "Insert a target...")))
+
+    (let ((n 0)
+          (limit (length candidates))
+          (tags (mapcar 'car candidates)))
+
+      ;; sort by tag name here
+      (setq tags
+            (sort tags
+                  (lambda (a b) (not (string< (downcase a) (downcase  b) )) )))
+
+      (while (< n limit)
+        (let* ((tag (nth n tags))
+               (item (assoc tag candidates)))
+          (define-key keymap
+            (vector (intern (car item)))
+            (cons (car item) n)))
+        (setq n (1+ n)))
+
+    ;; this works with popup-menu
+    keymap)))
 
 
 
@@ -2151,7 +2236,23 @@ of available policies.
     ;; of the frame, which makes for an annoying
     ;; user-experience.
     (x-popup-menu (apigee-get-menu-position)
-                  (apigee--generate-menu apigee--policy-alist)))
+                  (apigee--generate-policy-menu apigee--policy-alist)))
+
+
+(defun apigee-prompt-user-with-target-choices ()
+  "Prompt the user with the available choices for targets.
+In this context the available choices is the list
+of available target templates.
+"
+    ;; NB:
+    ;; x-popup-menu displays in the proper location, near
+    ;; the cursor.
+    ;;
+    ;; x-popup-dialog always displays in the center
+    ;; of the frame, which makes for an annoying
+    ;; user-experience.
+    (x-popup-menu (apigee-get-menu-position)
+                  (apigee--generate-target-menu apigee--target-template-alist)))
 
 
 (defun apigee-add-target ()
@@ -2164,41 +2265,51 @@ information for the target.
   (interactive)
   (let ((apiproxy-dir (apigee-path-of-apiproxy)))
     (if apiproxy-dir
-        (let ((targets-dir (concat apiproxy-dir "apiproxy/targets/"))
-              (have-name nil)
-              (raw-template apigee-target-template)
-              (target-name-prompt "target name: "))
+        ;; Here, prompt user for options for targets.
+        ;; scripttarget, or regular.
+        (let* ((choice (apigee-prompt-user-with-target-choices))
+               (tag (symbol-name (car choice)))
+               (chosen (assoc tag apigee--target-template-alist)))
+          (when chosen
+            (let ((targets-dir (concat apiproxy-dir "apiproxy/targets/"))
+                  (have-name nil)
+                  (raw-template (cadr chosen))
+                  (target-name-prompt "target name: "))
 
-          ;; insure exists
-          (and (not (file-exists-p targets-dir))
-               (make-directory targets-dir))
-          (let* ((default-value (apigee--suggested-target-name))
-                 (target-name
-                  (let (n)
-                    (while (not have-name)
-                      (setq n (read-string target-name-prompt default-value nil default-value)
-                            have-name (apigee-target-name-is-available n)
-                            target-name-prompt "That name is in use. Target name: " ))
-                    n))
+              ;; insure exists
+              (and (not (file-exists-p targets-dir))
+                   (make-directory targets-dir))
 
-                 (elaborated-template
-                  (progn
-                    (while (string-match "##" raw-template)
-                      (setq raw-template
-                            (replace-match target-name t t raw-template)))
-                    raw-template)))
+              (let* ((default-value (apigee--suggested-target-name))
+                     (target-name
+                      (let (n)
+                        (while (not have-name)
+                          (setq n (read-string target-name-prompt default-value nil default-value)
+                                have-name (apigee-target-name-is-available n)
+                                target-name-prompt "That name is in use. Target name: " ))
+                        n))
 
-            ;; create the file, expand the snippet, save it.
-            (find-file (concat targets-dir target-name ".xml"))
-            ;; yas-expand-snippet-sync does not return until the snip is expanded.
-            (yas-expand-snippet-sync elaborated-template )
-            (save-buffer)
-            (apigee-mode 1)
+                     (elaborated-template
+                      (progn
+                        (while (string-match "##" raw-template)
+                          (setq raw-template
+                                (replace-match target-name t t raw-template)))
+                        raw-template)))
 
-            ;; TODO: search in default proxy and add the target to the
-            ;; top of the list of targets.
+                ;; create the file, expand the snippet, save it.
+                (find-file (concat targets-dir target-name ".xml"))
+                ;; yas-expand-snippet-sync does not return until the snip is expanded.
+                (yas-expand-snippet-sync elaborated-template )
+                (save-buffer)
+                (apigee-mode 1)
 
-            )))))
+                ;; TODO: search in default proxy and add the target to the
+                ;; top of the list of targets.
+                (kill-new (concat "<RouteRule name='" target-name "-rule'>
+  <TargetEndpoint>" target-name "</TargetEndpoint>
+</RouteRule>"))
+
+                )))))))
 
 
 
@@ -2269,6 +2380,9 @@ appropriate.
 
                  (t nil))
 
+                (kill-new policy-name)
+                (kill-new
+                 (concat "<Step><Name>" policy-name "</Step></Name>"))
                 )))))))
 
 
