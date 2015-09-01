@@ -226,6 +226,31 @@ and quit.
 (run-with-idle-timer 1 t 'maybe-revert-dired-buffers)
 
 
+;; This is a well-known fn name normally provided by dired-x, which I do
+;; not use.  So I provide my own definition. When opening a file from
+;; dired, it will use the command guessed here.
+(defun dired-guess-shell-command (prompt files)
+  "invoked by `dired-read-shell-command' to read the shell command
+for a given file or set of files. This function makes an intelligent guess."
+  (if (eq (length files) 1)
+
+      (let* ((file (car files))
+             (prompt (concat "! on " file " "))
+             (ext (file-name-extension file))
+             (initial
+              (if (member ext '("png" "jpg" "gif"))
+                  (concat "open -a seashore " (car files))
+                "")))
+        (read-shell-command prompt initial))
+
+    (let ((prompt (concat "! on ["
+                          (mapconcat 'identity files " ")
+                          "] ")))
+
+      (read-shell-command prompt))))
+
+
+
 
 (provide 'dired-fixups)
 
