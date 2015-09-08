@@ -1,6 +1,6 @@
 ;;; emacs.el -- dino's em Dino's .emacs setup file.
 ;;
-;; Last saved: <2015-July-29 13:46:26>
+;; Last saved: <2015-September-07 17:31:35>
 ;;
 ;; Works with v24.3 of emacs.
 ;;
@@ -125,10 +125,28 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; html5 presentations from org docs
+;; org mode, including html5 presentations from .org documents
+;;
+(require 'org)
+(org-babel-do-load-languages
+ 'org-babel-load-languages
+ '(
+   (sh . t)
+   (python . t)
+   (perl . t)
+   ))
+(defun my-org-confirm-babel-evaluate (lang body)
+  (not  ; don't ask for any of the following languages
+   (or
+    (string= lang "sh")
+    )))
+(setq org-confirm-babel-evaluate 'my-org-confirm-babel-evaluate)
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; including html5 presentations from .org documents
 ;;
 (require 'dpreso) ;; my own home-built thing. Org-export with reveal.js is cooler.
-(require 'org)
 (require 'ox-reveal)
 ;;(setq org-reveal-root "http://cdn.jsdelivr.net/reveal.js/2.5.0/")
 ;; to use: M-x org-reveal-export-to-html
@@ -152,8 +170,6 @@
     (call-process "open" nil t t
                   (concat "http://localhost:80/html/dpreso/"
                           base-fname))))
-
-
 (require 'org-fixups)
 
 
