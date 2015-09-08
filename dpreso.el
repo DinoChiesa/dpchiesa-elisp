@@ -10,7 +10,7 @@
 ;; Requires   :
 ;; License    : New BSD
 ;; X-URL      : https://github.com/DinoChiesa/dpchiesa-elisp/blob/master/dpreso.el
-;; Last-saved : <2015-February-13 19:12:27>
+;; Last-saved : <2015-September-07 17:27:58>
 ;;
 ;;; Commentary:
 ;;
@@ -217,6 +217,5 @@ way:
 
         (call-process "open" nil t t
                       (concat dpreso-url-base (buffer-name buf)))))))
-
 
 (provide 'dpreso)
