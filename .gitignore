@@ -14,5 +14,6 @@ replicate.sh
 
 # Can also ignore all directories and files in a directory.
 snippets/**/.yas-compiled-snippets.el
+yasnippets/**/.yas-compiled-snippets.el
 snippets/yasnippet-bundle-orig.el
 snippets/yasnippet-bundle.el
