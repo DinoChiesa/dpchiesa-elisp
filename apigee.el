@@ -11,7 +11,7 @@
 ;; Requires   : s.el, request.el, dino-netrc.el
 ;; License    : New BSD
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2015-September-09 15:34:51>
+;; Last-saved : <2015-September-09 19:29:17>
 ;;
 ;;; Commentary:
 ;;
@@ -731,7 +731,7 @@ apiproduct.developer.quota.timeunit*
   <IgnoreUnresolvedVariables>false</IgnoreUnresolvedVariables>
 </ExtractVariables>\n")
 
-     '("ServiceCallout"
+     '("ServiceCallout - json payload"
        "ServiceCallout"
        "<ServiceCallout name='##'>
   <DisplayName>##</DisplayName>
@@ -757,6 +757,33 @@ apiproduct.developer.quota.timeunit*
       <Property name='success.codes'>2xx, 4xx, 5xx</Property>
     </Properties>
     <URL>${1:https://api.usergrid.com/}</URL>
+  </HTTPTargetConnection>
+</ServiceCallout>\n")
+
+          '("ServiceCallout - form payload"
+       "ServiceCallout"
+       "<ServiceCallout name='##'>
+  <Request>
+    <Set>
+     <Headers>
+       <Header name='content-type'>application/x-www-form-urlencoded</Header>
+     </Headers>
+     <FormParams>
+       <FormParam name='code'>{request.queryparam.code}</FormParam>
+       <FormParam name='client_id'>{goog_client_id}</FormParam>
+       <FormParam name='client_secret'>{goog_client_secret}</FormParam>
+       <FormParam name='redirect_uri'>{goog_redirect_uri}</FormParam>
+       <FormParam name='grant_type'>authorization_code</FormParam>
+     </FormParams>
+     <Verb>POST</Verb>
+    </Set>
+  </Request>
+  <Response>tokenResponse</Response>
+  <HTTPTargetConnection>
+    <Properties>
+      <Property name='success.codes'>2xx, 3xx</Property>
+    </Properties>
+    <URL>https://www.googleapis.com/oauth2/v3/token</URL>
   </HTTPTargetConnection>
 </ServiceCallout>\n")
 
