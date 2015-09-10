@@ -11,7 +11,7 @@
 ;; Requires   : s.el, request.el, dino-netrc.el
 ;; License    : New BSD
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2015-August-31 18:12:54>
+;; Last-saved : <2015-September-09 15:34:51>
 ;;
 ;;; Commentary:
 ;;
@@ -733,7 +733,7 @@ apiproduct.developer.quota.timeunit*
 
      '("ServiceCallout"
        "ServiceCallout"
-       "<ServiceCallout continueOnError='false' async='false' name='##'>
+       "<ServiceCallout name='##'>
   <DisplayName>##</DisplayName>
   <FaultRules/>
   <Properties/>
@@ -1405,7 +1405,7 @@ Authorization.
 </ResponseCache>")
 
      '("Cache - PopulateCache"
-       "PopulateCache"
+       "CachePopulate"
        "<PopulateCache name='##'>
   <CacheResource>${1:ApigeeCache}</CacheResource>
   <Source>${2:variable.containing.value}</Source>
@@ -1422,7 +1422,7 @@ Authorization.
 </PopulateCache>\n")
 
           '("Cache - LookupCache"
-       "LookupCache"
+       "CacheLookup"
        "<LookupCache name='##'>
     <CacheResource>${1:ApigeeCache}</CacheResource>
     <AssignTo>${2:flowvariable}</AssignTo> <!-- name of flow variable -->
@@ -1434,7 +1434,7 @@ Authorization.
 </LookupCache>")
 
           '("Cache - InvalidateCache"
-       "InvalidateCache"
+       "CacheInvalidate"
           "<InvalidateCache name='##'>
     <CacheResource>${1:ApigeeCache}</CacheResource>
     <Scope>${2:$$(yas-choose-value '(\"Exclusive\" \"Global\" \"Application\" \"Proxy\" \"Target\"))}</Scope>
