@@ -11,7 +11,7 @@
 ;; Requires   : s.el, request.el, dino-netrc.el
 ;; License    : New BSD
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2015-September-09 19:29:17>
+;; Last-saved : <2015-September-17 14:34:57>
 ;;
 ;;; Commentary:
 ;;
@@ -680,6 +680,18 @@ apiproduct.developer.quota.timeunit*
 </ExtractVariables>")
 
 
+     '("ExtractVariables - URIPath"
+       "Extract"
+     "<ExtractVariables name='ExtractVariables-1'>
+   <DisplayName>Extract a portion of the url path</DisplayName>
+   <Source>request</Source>
+   <URIPath>
+      <Pattern ignoreCase='true'>/accounts/{id}</Pattern>
+   </URIPath>
+   <VariablePrefix>extracted</VariablePrefix>
+   <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+</ExtractVariables>")
+
      '("ExtractVariables - XML"
        "Extract"
        "<ExtractVariables name='##'>
@@ -728,6 +740,17 @@ apiproduct.developer.quota.timeunit*
   <QueryParam name='token'>
     <Pattern>{access_token}</Pattern>
   </QueryParam>
+  <IgnoreUnresolvedVariables>false</IgnoreUnresolvedVariables>
+</ExtractVariables>\n")
+
+          '("ExtractVariables - from header"
+       "Extract"
+       "<ExtractVariables name='##'>
+  <Source>request</Source>
+  <VariablePrefix>extracted</VariablePrefix>
+  <Header name='Authorization'>
+    <Pattern>Bearer {access_token}</Pattern>
+  </Header>
   <IgnoreUnresolvedVariables>false</IgnoreUnresolvedVariables>
 </ExtractVariables>\n")
 
@@ -2446,7 +2469,7 @@ file, such as a Javascript, Python, or XSL policy.
      "/api-services/reference/get-oauth-v2-info-policy")
    '("ExtractVariables"
      "/api-services/content/extract-message-content-using-extractvariables")
-   '("ExtractVariables"
+   '("ResponseCache"
      "/api-services/content/reduce-latency-using-responsecache")
    '("PopulateCache"
      "/api-services/content/optimize-performance-using-cache")
