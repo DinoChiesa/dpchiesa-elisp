@@ -11,7 +11,7 @@
 ;; Requires   : s.el, request.el, dino-netrc.el
 ;; License    : New BSD
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2015-September-17 14:34:57>
+;; Last-saved : <2015-September-30 21:42:13>
 ;;
 ;;; Commentary:
 ;;
@@ -305,6 +305,23 @@ the only possible value currently.")
   </Remove>
   <IgnoreUnresolvedVariables>${3:$$(yas-choose-value '(\"true\" \"false\" ))}</IgnoreUnresolvedVariables>
   <AssignTo createNew='false' transport='http' type='${4:$$(yas-choose-value '(\"request\" \"response\" ))}'></AssignTo>
+</AssignMessage>\n")
+
+     '("AssignMessage - clean response headers"
+       "AssignMessage"
+       "<AssignMessage name='##'>
+  <Remove>
+    <Headers>
+      <Header name='Accept'/>
+      <Header name='user-agent'/>
+      <Header name='X-Powered-By'/>
+      <Header name='X-Forwarded-For'/>
+      <Header name='X-Forwarded-Port'/>
+      <Header name='X-Forwarded-Proto'/>
+    </Headers>
+  </Remove>
+  <IgnoreUnresolvedVariables>false</IgnoreUnresolvedVariables>
+  <AssignTo createNew='false' transport='http' type='response'></AssignTo>
 </AssignMessage>\n")
 
      '("AssignMessage - set query param and/or headers"
@@ -1560,7 +1577,7 @@ $1
        "Python"
        "<Script name='##'>
     <DisplayName>${1:##}</DisplayName>
-  <ResourceURL>jsc://${2:$$(apigee--fixup-script-name \"##\" \"Python\")}.py</ResourceURL>
+  <ResourceURL>py://${2:$$(apigee--fixup-script-name \"##\" \"Python\")}.py</ResourceURL>
 </Script>")
 
 
@@ -1568,9 +1585,9 @@ $1
        "XSL"
        "<XSL name='##'>
   <DisplayName>${1:##}</DisplayName>
-  <Source>${3:$$(yas-choose-value '(\"request\" \"response\"))}</Source>
+  <Source>${2:$$(yas-choose-value '(\"request\" \"response\"))}</Source>
   <OutputVariable>request.content</OutputVariable>
-  <ResourceURL>xsl://${2:##}.xsl</ResourceURL>
+  <ResourceURL>xsl://${3:$$(apigee--fixup-script-name \"##\" \"XSL\")}.xsl</ResourceURL>
 
   <!--
   Parameters are optional. reference them in the XSL as:
@@ -2076,7 +2093,8 @@ value that was expanded for field (N-1). "
 
 
 (defun apigee--fixup-script-name (name &optional prefix)
-  "returns a stripped name suitable for use for a file in the resources/jsc directory."
+  "returns a stripped name suitable for use for a file in the resources/jsc directory,
+or resources/py, or resources/xsl."
 
   (let* ((default-prefix "Javascript")
          (real-prefix (concat (downcase (if (stringp prefix) prefix default-prefix)) "-"))
@@ -2426,6 +2444,7 @@ appropriate.
                                   (and (not (file-exists-p resource-dir))
                                        (make-directory resource-dir))
                                   (find-file-other-window (concat resource-dir resource-basename))
+                                  (apigee--maybe-insert-base-content resource-basename resource-type)
                                   (apigee-mode 1)))))))
 
                  (t nil))
@@ -2434,6 +2453,45 @@ appropriate.
                 (kill-new
                  (concat "<Step><Name>" policy-name "</Step></Name>"))
                 )))))))
+
+
+(defun apigee--maybe-insert-base-content (rsrc-basename rsrc-type)
+  "maybe inserts some base content if the resource is a special and known name."
+  (cond
+   ((string= (downcase rsrc-basename) "stripsoap.xsl")
+    (delete-region (point-min) (point-max))
+    (insert
+     "<xsl:stylesheet version='1.0'
+                xmlns:xsl='http://www.w3.org/1999/XSL/Transform'
+                xmlns:soapenv='http://schemas.xmlsoap.org/soap/envelope/'
+                exclude-result-prefixes='soapenv'>
+
+  <xsl:strip-space elements='*'/>
+  <xsl:output method='xml' version='1.0' encoding='UTF-8' indent='yes'/>
+
+  <!-- remove all elements in the soapenv namespace -->
+  <xsl:template match='soapenv:*'>
+    <xsl:apply-templates select='node()'/>
+  </xsl:template>
+
+  <!-- for the remaining elements (i.e. elements in the default namespace) ... -->
+  <xsl:template match='*'>
+    <!-- ... create a new element with similar name in no-namespace -->
+    <xsl:element name='{local-name()}'>
+      <xsl:apply-templates select='@*|node()'/>
+    </xsl:element>
+  </xsl:template>
+
+  <!-- also, convert all XML attributes to elements -->
+  <xsl:template match='@*'>
+    <xsl:element name='{local-name()}'>
+      <xsl:value-of select='.' />
+    </xsl:element>
+  </xsl:template>
+
+</xsl:stylesheet>"))
+   (t nil)))
+
 
 
 ;;;###autoload
