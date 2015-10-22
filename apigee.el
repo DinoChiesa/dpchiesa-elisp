@@ -11,7 +11,7 @@
 ;; Requires   : s.el, request.el, dino-netrc.el
 ;; License    : New BSD
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2015-September-30 21:42:13>
+;; Last-saved : <2015-October-21 16:55:01>
 ;;
 ;;; Commentary:
 ;;
@@ -1600,6 +1600,15 @@ $1
   </Parameters>
 </XSL>\n")
 
+     '("XSL - StripSoap"
+       "XSL"
+       "<XSL name='##'>
+  <DisplayName>${1:##}</DisplayName>
+  <Source>${2:$$(yas-choose-value '(\"request\" \"response\"))}</Source>
+  <OutputVariable>request.content</OutputVariable>
+  <ResourceURL>xsl://stripSoap.xsl</ResourceURL>
+</XSL>\n")
+
      '("AccessControl"
        "AccessControl"
        "<AccessControl name='ACL'>
@@ -2376,7 +2385,7 @@ information for the target.
                 (kill-new (concat "<RouteRule name='" target-name "-rule'>
   <TargetEndpoint>" target-name "</TargetEndpoint>
 </RouteRule>"))
-
+                (message "yank to add the routerule...")
                 )))))))
 
 
@@ -2451,7 +2460,8 @@ appropriate.
 
                 (kill-new policy-name)
                 (kill-new
-                 (concat "<Step><Name>" policy-name "</Step></Name>"))
+                 (concat "<Step><Name>" policy-name "</Name></Step>"))
+                (message "yank to add the step declaration...")
                 )))))))
 
 
@@ -2696,6 +2706,16 @@ value defaults to https://api.enterprise.apigee.com
            (message "No record in .netrc found for host %s" hostname)
            nil)
          )))
+
+;; to upload a modified jar file:
+;;
+;; curl -i -X PUT -n \
+;;   -H content-type:application/octet-stream \
+;;   -H accept:application/json \
+;;   https://api.enterprise.apigee.com/v1/o/iloveapis2015/apis/jwt_signed/revisions/7/resources/java/jwt-edge-callout.jar \
+;;   --upload-file ../apiproxy/apiproxy/resources/java/jwt-edge-callout.jar
+;;
+;; will also need to undeploy and redeploy after doing this....
 
 (defun apigee--get-mgmt-server (iactive)
   "prompts the user for the Edge management server."
