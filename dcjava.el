@@ -14,6 +14,9 @@
    '("BigInteger" "java.math")
    '("BufferedInputStream" "java.io")
    '("JcePBESecretKeyDecryptorBuilder" "java.security")
+   '("CertificateFactory" "java.security.cert")
+   '("X509Certificate" "java.security.cert")
+   '("CertificateException" "java.security.cert")
    '("ByteArrayInputStream" "java.io")
    '("Calendar" "java.util")
    '("Charset" "java.nio.charset")
@@ -73,6 +76,7 @@
    '("NoSuchProviderException" "java.security")
    '("XMLReader" "org.xml.sax")
    '("XPathExpressionException" "javax.xml.xpath")
+   '("UnsupportedEncodingException" "java.io")
    )
   )
 
