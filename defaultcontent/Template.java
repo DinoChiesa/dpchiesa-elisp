@@ -6,7 +6,7 @@
 // Author: @AUTHOR@
 // Created @DATE@
 //
-// Last saved: <2015-May-27 15:01:43>
+// Last saved: <2015-October-28 14:13:48>
 // ------------------------------------------------------------------
 //
 // Copyright (c) 2015 Dino Chiesa
@@ -22,17 +22,16 @@ import java.util.ArrayList;
 
 public class @BASEFILENAMELESSEXTENSION@ {
     private final String optString = "vu:p:s:"; // getopt style
+    private Hashtable<String, Object> options = new Hashtable<String, Object> ();
 
     // public @BASEFILENAMELESSEXTENSION@ () {} // uncomment if wanted
 
     public @BASEFILENAMELESSEXTENSION@ (String[] args)
         throws java.lang.Exception {
-        GetOpts(args, optString);
+        getOpts(args, optString);
     }
 
-    private Hashtable<String, Object> options = new Hashtable<String, Object> ();
-
-    private void GetOpts(String[] args, String optString)
+    private void getOpts(String[] args, String optString)
         throws java.lang.Exception {
         // Parse command line args for args in the following format:
         //   -a value -b value2 ... ...
@@ -67,7 +66,7 @@ public class @BASEFILENAMELESSEXTENSION@ {
                         this.options.put(m.group(1), args[i]);
                     }
                     else if (current instanceof ArrayList<?>) {
-                        // previously seen, and already a lsit
+                        // previously seen, and already a list
                         newList = (ArrayList<String>) current;
                         newList.add(args[i]);
                     }
@@ -90,7 +89,17 @@ public class @BASEFILENAMELESSEXTENSION@ {
         }
     }
 
-    private static ArrayList<String> asOptionsList(Object o) {
+    private static String optionAsString(Object o) {
+        if (o instanceof String) {
+            return (String) o;
+        }
+        if (o instanceof Boolean) {
+            return o.toString();
+        }
+        return null;
+    }
+
+    private static ArrayList<String> optionAsList(Object o) {
         if (o instanceof ArrayList<?>) {
             return (ArrayList<String>) o;
         }
@@ -123,22 +132,26 @@ public class @BASEFILENAMELESSEXTENSION@ {
     }
 
 
-    public void Run() {
+    public void run() {
 
         maybeShowOptions();
         Boolean verbose = (Boolean) this.options.get("v");
 
+        String xpathExpression = optionAsString(options.get("e"));
+        String inputFilename = optionAsString(options.get("i"));
+
         // for repeated options:
-        ArrayList<String> prefixes = asOptionsList(Options.get("n"));
-        if (prefixes != null) {
-            ...
+        ArrayList<String> prefixes = optionAsList(options.get("n"));
+        for (String t : prefixes) {
+            System.out.println(t);
         }
+        ...
 
         @DOT@
     }
 
 
-    public static void Usage() {
+    public static void usage() {
         System.out.println("@BASEFILENAMELESSEXTENSION@: <usage statement here>.\n");
         System.out.println("Usage:\n  java @BASEFILENAMELESSEXTENSION@ [-v]  -f <value>");
     }
@@ -147,7 +160,7 @@ public class @BASEFILENAMELESSEXTENSION@ {
     public static void main(String[] args) {
         try {
             @BASEFILENAMELESSEXTENSION@ me = new @BASEFILENAMELESSEXTENSION@(args);
-            me.Run();
+            me.run();
         }
         catch (java.lang.Exception exc1) {
             System.out.println("Exception:" + exc1.toString());
