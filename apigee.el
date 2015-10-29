@@ -11,7 +11,7 @@
 ;; Requires   : s.el, request.el, dino-netrc.el
 ;; License    : New BSD
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2015-October-21 16:55:01>
+;; Last-saved : <2015-October-27 17:58:51>
 ;;
 ;;; Commentary:
 ;;
@@ -685,18 +685,6 @@ apiproduct.developer.quota.timeunit*
 </ExtractVariables>")
 
 
-     '("ExtractVariables - from request header"
-       "Extract"
-       "<ExtractVariables name='##'>
-  <Source>request</Source>
-  <VariablePrefix>requestheader</VariablePrefix>
-  <Header name='Authorization'>
-    <Pattern ignoreCase='false'>Bearer {oauthtoken}</Pattern>
-  </Header>
-  <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
-</ExtractVariables>")
-
-
      '("ExtractVariables - URIPath"
        "Extract"
      "<ExtractVariables name='ExtractVariables-1'>
@@ -727,6 +715,22 @@ apiproduct.developer.quota.timeunit*
     </Variable>
     <Variable name='${4:varname3}' type='string'>
       <XPath>/Developer/Attributes/Attribute[Name='$4']/Value/text()</XPath>
+    </Variable>
+  </XMLPayload>
+</ExtractVariables>")
+
+     '("ExtractVariables - SOAP"
+       "Extract"
+       "<ExtractVariables name='##'>
+  <Source>{$1:request}</Source>
+  <VariablePrefix>soap</VariablePrefix>
+  <IgnoreUnresolvedVariables>false</IgnoreUnresolvedVariables>
+  <XMLPayload>
+    <Namespaces>
+      <Namespace prefix='soap'>http://schemas.xmlsoap.org/soap/envelope/</Namespace>
+    </Namespaces>
+    <Variable name='topLevelRequestElement' type='string'>
+      <XPath>local-name(/soap:Envelope/soap:Body/*[1])</XPath>
     </Variable>
   </XMLPayload>
 </ExtractVariables>")
@@ -1427,6 +1431,10 @@ Authorization.
         <Host>${1:hostname.domain.com}</Host>
         <Message>4G:{${2:$$(yas-choose-value apigee-common-variable-list)}}</Message>
         <Port>514</Port>
+        <Protocol>TCP</Protocol>
+        <SSLInfo>
+            <Enabled>true</Enabled> <!-- true / false -->
+        </SSLInfo>
     </Syslog>
     <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
     <logLevel>INFO</logLevel>
@@ -1449,6 +1457,41 @@ Authorization.
         </FileRotationOptions>
     </File>
 </MessageLogging>\n")
+
+     '("SAML - Validate"
+       "<ValidateSAMLAssertion name='SAML-Validate' ignoreContentType='false'>
+  <Source name='request'>
+    <Namespaces>
+      <Namespace prefix='soap'>http://schemas.xmlsoap.org/soap/envelope/</Namespace>
+      <Namespace prefix='wsse'>http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd</Namespace>
+      <Namespace prefix='saml'>urn:oasis:names:tc:SAML:2.0:assertion</Namespace>
+    </Namespaces>
+    <XPath>/Envelope/Header/Security/saml:Assertion</XPath>
+  </Source>
+  <TrustStore>TrustStoreName</TrustStore>
+  <RemoveAssertion>false</RemoveAssertion>
+</ValidateSAMLAssertion>\n")
+
+     '("SAML - Generate"
+       "<GenerateSAMLAssertion name="SAML" ignoreContentType="false">
+  <CanonicalizationAlgorithm />
+  <Issuer ref='reference'>Issuer name</Issuer>
+  <KeyStore>
+    <Name>keystorename</Name>
+    <Alias>alias</Alias>
+  </KeyStore>
+  <OutputVariable>
+    <FlowVariable>flow.variable.name</FlowVariable>
+    <Message name='request'>
+      <XPath>XPath to element that will contain the assertion</XPath>
+    </Message>
+  </OutputVariable>
+  <SignatureAlgorithm />
+  <Subject ref='reference'>Subject name</Subject>
+  <Template ignoreUnresolvedVariables='false'>
+    <!-- A lot of XML goes here, in CDATA, with {} around each variable -->
+  </Template>
+</GenerateSAMLAssertion>\n")
 
      '("Cache - ResponseCache"
      "ResponseCache"
@@ -1557,6 +1600,32 @@ $1
         </Set>
     </FaultResponse>
     <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+</RaiseFault>\n")
+
+     '("RaiseFault - SOAP Fault"
+       "RaiseFault"
+       "<RaiseFault name='##'>
+  <Description>$1</Description>
+  <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+  <FaultResponse>
+    <Set>
+      <Payload contentType='application/xml'
+               variablePrefix='%' variableSuffix='#'>
+        <soap:Envelope xmlns:soap='http://schemas.xmlsoap.org/soap/envelope/'>
+          <soap:Body>
+            <soap:Fault>
+              <faultcode>102</faultcode>
+              <faultstring>Invalid Request</faultstring>
+              <detail>
+              </detail>
+            </soap:Fault>
+          </soap:Body>
+        </soap:Envelope>
+      </Payload>
+      <StatusCode>400</StatusCode>
+      <ReasonPhrase>Bad Request</ReasonPhrase>
+    </Set>
+  </FaultResponse>
 </RaiseFault>\n")
 
 
