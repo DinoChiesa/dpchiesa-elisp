@@ -9,7 +9,8 @@
 ;; "svg" is also a permitted format, but this requires a premium account
 ;; and thus a api-key.
 (defvar wsd-format "png")
-(defvar wsd-style "modern-blue")
+;;(defvar wsd-style "modern-blue")
+(defvar wsd-style "rose")
 
 ;; actual code
 
@@ -18,23 +19,29 @@
 
 (require 'url)
 (require 'json)
+(require 'lzw)
 
 (defconst wsd-base-url "http://www.websequencediagrams.com/")
 
 (defun wsd-get-apikey-section ()
   "Returns a key-value pair for the API-key to be user in request data, delimiters included.
    If no api-key is used, returns nil."
-  (if wsd-api-key
+  (if (and wsd-api-key (not (string-equal wsd-api-key "")))
       (concat "&apikey=" wsd-api-key)
     ""))
 
 (defun wsd-encode (message)
-  "Encodes the provided message into something which can be transported over HTTP."
-  (let* ((encode1 (replace-regexp-in-string (regexp-quote "+")
-                                            (regexp-quote "%2B")
-                                            message))
-         (encode2 (url-encode-url encode1)))
-    encode2))
+  "url-encodes the WSD text, to allow inclusion in a x-www-form-urlencoded POST body"
+  (url-hexify-string message))
+
+
+;; (defun wsd-encode (message)
+;;   "Encodes the provided message into something which can be transported over HTTP."
+;;   (let* ((encode1 (replace-regexp-in-string (regexp-quote "+")
+;;                                             (regexp-quote "%2B")
+;;                                             message))
+;;          (encode2 (url-encode-url encode1)))
+;;     encode2))
 
 (defun wsd-get-request-data (message)
   "Gets the request-data for a HTTP post to the wsd.com API."
@@ -59,8 +66,7 @@
       ;; move to beginning of JSON response
       (search-forward "{")
       (backward-char)
-      ;; parse and return json at point
-
+      ;; parse the json appearing at point, and return the parsed object
       (let* ((json (json-read)))
         (kill-buffer wsd-response)
         json))))
@@ -132,7 +138,7 @@
 (defvar wsd-errors nil) ; for flycheck
 (defvar wsd-last-temp-file nil)
 
-(defun wsd-show-diagram-inline ()
+(defun wsd-show-diagram-image-inline ()
   "Attempts to show the diagram provided by the current buffer inside an Emacs-buffer.
    If emacs lacks format for the given graphics-format it will be delegated to the
    operating-system to open the local copy."
@@ -142,10 +148,10 @@
          (temp-name   (wsd-get-temp-filename))
          ;; only required for saved buffers.
          (file-name   (wsd-get-image-filename buffer-name))
-         (message (buffer-substring-no-properties (point-min) (point-max)))
-         (json    (wsd-get-json message))
-         (url     (wsd-get-image-url json))
-         (errors  (wsd-get-error-lines (wsd-get-errors json))))
+         (message     (buffer-substring-no-properties (point-min) (point-max)))
+         (json        (wsd-get-json message))
+         (url         (wsd-get-image-url json))
+         (errors      (wsd-get-error-lines (wsd-get-errors json))))
     (save-excursion
       (set (make-local-variable 'wsd-errors) errors)
       (url-copy-file url temp-name t)
@@ -174,12 +180,28 @@
       (message url))))
 
 
-(defun wsd-show-diagram-online ()
-  "Shows the current buffer on www.websequencediagrams.com"
+(defun wsd-open-diagram-image-in-browser ()
+  "Produce an image on www.websequencediagrams.com, then open it
+in the browser.
+This needs to be a POST and then parse the img URL. "
+  (interactive)
+  (let* ((message         (buffer-substring-no-properties (point-min) (point-max)))
+         (json            (wsd-get-json message))
+         (url             (wsd-get-image-url json)))
+    ;; put that url into the kill ring
+    (kill-new url)
+    (browse-url url)))
+
+
+(defun wsd-open-diagram-editor-in-browser ()
+  "Open a browser window with the current buffer on www.websequencediagrams.com.
+It amounts to a GET with query param m = base64-encode(lz-compress(buffer-substring))."
   (interactive)
   (let* ((message      (buffer-substring-no-properties (point-min) (point-max)))
-         (encoded      (wsd-encode message))
-         (url          (concat wsd-base-url "?m=" encoded)))
+         (encoded      (base64-encode-string
+                        (string-as-unibyte
+                         (lzw-compress-string message))))
+         (url          (concat wsd-base-url "?lz=" encoded)))
     (browse-url url)))
 
 (provide 'wsd-core)
