@@ -1,6 +1,6 @@
 ;;; emacs.el -- dino's em Dino's .emacs setup file.
 ;;
-;; Last saved: <2015-September-07 17:31:35>
+;; Last saved: <2015-October-30 14:56:48>
 ;;
 ;; Works with v24.3 of emacs.
 ;;
@@ -1753,17 +1753,30 @@ again, I haven't see that as a problem."
         hs-special-modes-alist))
 
 
+(defun dino-insert-paired-quotes (arg)
+  "Skip the char if it is a typeover for the ending quote, otherwise
+insert a pair, and backup one character."
+  (interactive "*p")
+  (let ((char last-command-event))
+    (if (and (or (eq char ?\") (eq char ?\'))
+             (eq char (following-char)))
+        (forward-char)
+      (self-insert-command (prefix-numeric-value arg))
+      (self-insert-command (prefix-numeric-value arg))
+      (forward-char -1)
+      )))
+
                                         ;    (?} . ?{)
 (defvar dino-skeleton-pair-alist
   '((?\) . ?\()
+    (?\> . ?\<)
     (?\] . ?\[)
     (?" . ?")))
-
 
 (defun dino-skeleton-pair-end (arg)
   "Skip the char if it is an ending, otherwise insert it."
   (interactive "*p")
-  (let ((char last-command-char))
+  (let ((char last-command-event))
     (if (and (assq char dino-skeleton-pair-alist)
              (eq char (following-char)))
         (forward-char)
@@ -1809,12 +1822,17 @@ again, I haven't see that as a problem."
          ;;(local-set-key "C-M-\>" 'csharp-move-fwd-to-end-of-class)
 
 
+         (local-set-key (kbd "<") 'skeleton-pair-insert-maybe)
          (local-set-key (kbd "(") 'skeleton-pair-insert-maybe)
          (local-set-key (kbd "[") 'skeleton-pair-insert-maybe)
-         ;;(local-set-key (kbd "\"") 'skeleton-pair-insert-maybe)
+
+         ;; insert a pair of quotes
+         (local-set-key (kbd "\"") 'dino-insert-paired-quotes)
+         (local-set-key (kbd "\'") 'dino-insert-paired-quotes)
 
          ;; these allow typeover of matching brackets
-         (local-set-key (kbd "\"") 'dino-skeleton-pair-end)
+         ;; (local-set-key (kbd "\"") 'dino-skeleton-pair-end)
+         (local-set-key (kbd ">") 'dino-skeleton-pair-end)
          (local-set-key (kbd ")") 'dino-skeleton-pair-end)
          (local-set-key (kbd "]") 'dino-skeleton-pair-end)
 
