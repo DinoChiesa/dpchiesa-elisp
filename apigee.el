@@ -11,7 +11,7 @@
 ;; Requires   : s.el, request.el, dino-netrc.el
 ;; License    : New BSD
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2015-October-27 17:58:51>
+;; Last-saved : <2015-November-05 10:40:44>
 ;;
 ;;; Commentary:
 ;;
@@ -1251,6 +1251,7 @@ apiproduct.developer.quota.timeunit*
     <AuthorizationCode>{flow.variable}</AuthorizationCode>
 </DeleteOAuthV2Info>\n")
 
+
      '("OAuthV2 - GetClientInfo"
        "OAuthV2-GetInfo"
 "<GetOAuthV2Info name='##'>
@@ -1295,6 +1296,22 @@ apiproduct.developer.quota.timeunit*
       oauthv2accesstoken.##.status
     -->
 </GetOAuthV2Info>\n")
+
+
+     '("OAuthV2 - SetAccessTokenInfo"
+       "OAuthV2-SetTokenInfo"
+     "<SetOAuthV2Info name='##'>
+    <!--
+      http://apigee.com/docs/api-services/reference/set-oauth-v2-info-policy
+    -->
+    <AccessToken ref='${1:request.queryparam.access_token}'/>
+    <Attributes>
+      <Attribute name='department.id' ref='request.queryparam.department_id'></Attribute>
+      <Attribute name='scope' ref=''>READ, WRITE</Attribute>
+    </Attributes>
+
+</SetOAuthV2Info>\n")
+
 
 
      '("OAuthV2 - GetRefreshTokenAttributes"
@@ -2604,6 +2621,8 @@ file, such as a Javascript, Python, or XSL policy.
      "/api-services/content/persist-data-using-keyvaluemap")
    '("GetOAuthV2Info"
      "/api-services/reference/get-oauth-v2-info-policy")
+   '("SetOAuthV2Info"
+     "/api-services/reference/set-oauth-v2-info-policy")
    '("ExtractVariables"
      "/api-services/content/extract-message-content-using-extractvariables")
    '("ResponseCache"
@@ -2783,6 +2802,13 @@ value defaults to https://api.enterprise.apigee.com
 ;;   -H accept:application/json \
 ;;   https://api.enterprise.apigee.com/v1/o/iloveapis2015/apis/jwt_signed/revisions/7/resources/java/jwt-edge-callout.jar \
 ;;   --upload-file ../apiproxy/apiproxy/resources/java/jwt-edge-callout.jar
+;;
+;; will also need to undeploy and redeploy after doing this....
+;;
+;; to download a jar file:
+;;
+;; curl -i -X GET -n \
+;;   https://api.enterprise.apigee.com/v1/o/iloveapis2015/apis/jwt_signed/revisions/7/resources/java/jwt-edge-callout.jar
 ;;
 ;; will also need to undeploy and redeploy after doing this....
 
