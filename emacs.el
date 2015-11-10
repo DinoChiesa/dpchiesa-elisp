@@ -1,6 +1,6 @@
 ;;; emacs.el -- dino's em Dino's .emacs setup file.
 ;;
-;; Last saved: <2015-October-30 14:56:48>
+;; Last saved: <2015-November-10 09:20:56>
 ;;
 ;; Works with v24.3 of emacs.
 ;;
@@ -565,6 +565,11 @@ With a prefix argument, makes a private paste."
 (eval-after-load "image-dired"
   '(progn
      (require 'image-dired-fixups)))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; yaml
+(require 'yaml-mode)
 
 
 
