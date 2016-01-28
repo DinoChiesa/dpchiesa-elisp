@@ -11,7 +11,7 @@
 ;; Requires   : s.el, request.el, dino-netrc.el
 ;; License    : New BSD
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2015-November-05 10:40:44>
+;; Last-saved : <2016-January-27 14:31:27>
 ;;
 ;;; Commentary:
 ;;
@@ -503,8 +503,6 @@ ratelimit.{policy_name}.class.total.exceed.count
        "Quota"
        "<Quota name='##'>
     <DisplayName>##</DisplayName>
-    <FaultRules/>
-    <Properties/>
     <!-- use the client_id that is set after OAuthV2/VerifyAPIKey -->
     <Identifier ref='client_id' />
     <!-- the count specified is used unless overridden by the variable referenced here -->
@@ -628,8 +626,8 @@ apiproduct.developer.quota.timeunit*
      '("JSONToXML"
        "JSONToXML"
        "<JSONToXML name='##'>
-  <Source>{${1:variable.name}</Source>
-  <OutputVariable>{${2:variable.name}</OutputVariable>
+  <Source>${1:$$(yas-choose-value '(\"request\" \"response\" ))}</Source>
+  <OutputVariable>${2:$$(yas-choose-value '(\"request\" \"response\" ))}</OutputVariable>
   <Options/>
 </JSONToXML>")
 
@@ -779,8 +777,6 @@ apiproduct.developer.quota.timeunit*
        "ServiceCallout"
        "<ServiceCallout name='##'>
   <DisplayName>##</DisplayName>
-  <FaultRules/>
-  <Properties/>
   <Request variable='authenticationRequest'>
         <Set>
           <!-- Shows how to request a token from usergrid. -->
@@ -1655,7 +1651,7 @@ $1
     <Property name='prop1'>value-here</Property>
   </Properties>
   <IncludeURL>jsc://URI.js</IncludeURL> <!-- optionally specify a shared resource here -->
-  <ResourceURL>jsc://${2:$$(apigee--fixup-script-name \"##\" \"Javascript\")}.js</ResourceURL>
+  <ResourceURL>jsc://${2:$$(apigee--fixup-script-name \"##\" \"JS\")}.js</ResourceURL>
 </Javascript>")
 
 
@@ -1663,7 +1659,7 @@ $1
        "Python"
        "<Script name='##'>
     <DisplayName>${1:##}</DisplayName>
-  <ResourceURL>py://${2:$$(apigee--fixup-script-name \"##\" \"Python\")}.py</ResourceURL>
+  <ResourceURL>py://${2:$$(apigee--fixup-script-name \"##\" \"PY\")}.py</ResourceURL>
 </Script>")
 
 
@@ -2082,13 +2078,21 @@ structure, in the `apigee-apiproxies-home' directory.
 
         (with-temp-file (concat apiproxy-dir "targets/default.xml")
           (insert "<TargetEndpoint name='default'>
-  <Description>Apigee auto generated target endpoint</Description>
-  <FaultRules/>
+  <Description>default target endpoint</Description>
+  <FaultRules>
+    <FaultRule name='other-fault'>
+      <!-- This FaultRule always catches all uncaught faults. -->
+      <Step>
+        <Name>JS-MaybeFormatFault</Name>
+      </Step>
+    </FaultRule>
+  </FaultRules>
+
   <Flows/>
   <PreFlow name='PreFlow'>
     <Request>
       <!-- remove this to allow requests -->
-      <Step><Name>RaiseFault-UnknownRequest</Name></Step>
+      <Step><Name>RF-UnknownRequest</Name></Step>
     </Request>
     <Response>
     </Response>
@@ -2099,10 +2103,17 @@ structure, in the `apigee-apiproxies-home' directory.
     <!-- modify this URL to point to something valid -->
     <URL>http://internal.example.com/v1/XYZ/something</URL>
   </HTTPTargetConnection>
+
+  <!--
+  <ScriptTarget>
+      <ResourceURL>node://yahoo-weather.js</ResourceURL>
+      <Properties/>
+  </ScriptTarget>
+  -->
 </TargetEndpoint>\n"))
 
-        (with-temp-file (concat apiproxy-dir "policies/RaiseFault-UnknownRequest.xml")
-          (insert "<RaiseFault name='RaiseFault-UnknownRequest'>
+        (with-temp-file (concat apiproxy-dir "policies/RF-UnknownRequest.xml")
+          (insert "<RaiseFault name='RF-UnknownRequest'>
   <DisplayName>RaiseFault-UnknownRequest</DisplayName>
   <Description>Unknown Request</Description>
   <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
@@ -2110,8 +2121,10 @@ structure, in the `apigee-apiproxies-home' directory.
     <Set>
       <Payload contentType='application/json'
                variablePrefix='%' variableSuffix='#'><![CDATA[{
-  \"error\" : \"that request was unknown\",
-  \"message\" : \"try a different request.\"
+  \"error\" : {
+    \"code\" : 400.01,
+    \"message\" : \"that request was unknown; try a different request.\"
+  }
 }
 ]]></Payload>
       <StatusCode>404</StatusCode>
@@ -2121,6 +2134,55 @@ structure, in the `apigee-apiproxies-home' directory.
 </RaiseFault>
 "))
 
+        (with-temp-file (concat apiproxy-dir "policies/JS-MaybeFormatFault.xml")
+          (insert "<Javascript name='JS-MaybeFormatFault' timeLimit='200' >
+  <ResourceURL>jsc://maybeFormatFault.js</ResourceURL>
+</Javascript>
+"))
+
+        (with-temp-file (concat apiproxy-dir "resources/jsc/maybeFormatFault.js")
+          (insert "// maybeFormatFault.js
+// ------------------------------------------------------------------
+//
+// maybe format a fault message if one is not present.
+//
+// created: Tue Jan 26 14:07:19 2016
+// last saved: <2016-January-26 14:17:11>
+
+var handled = context.getVariable('fault_handled');
+if ( ! handled ) {
+  var error = response.content.asXML.error;
+  var t = typeof error;
+  print('typeof error: ' + t);
+  if (t == 'undefined') {
+    response.content = '<error><code>1001</code><message>unknown error</message></error>';
+  }
+  context.setVariable('fault_handled', true);
+}
+"))
+
+        (with-temp-file (concat apiproxy-dir "policies/AM-CleanResponseHeaders.xml")
+          (insert "<AssignMessage name='AM-CleanResponseHeaders'>
+  <Remove>
+    <Headers>
+      <Header name='Accept'/>
+      <Header name='user-agent'/>
+      <Header name='Host'/>
+      <Header name='x-forwarded-for'/>
+      <Header name='X-Forwarded-Proto'/>
+      <Header name='X-Forwarded-Port'/>
+      <Header name='apikey'/>
+      <Header name='date'/>
+      <Header name='Authorization'/>
+      <Header name='Signature'/>
+      <Header name='X-Powered-By'/>
+    </Headers>
+  </Remove>
+  <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+  <AssignTo createNew='false' transport='http' type='response'/>
+</AssignMessage>
+"))
+
         (with-temp-file (concat apiproxy-dir "proxies/default.xml")
           (insert
            "<ProxyEndpoint name='default'>
@@ -2128,19 +2190,29 @@ structure, in the `apigee-apiproxies-home' directory.
   <HTTPProxyConnection>
     <BasePath>/" proxy-name "</BasePath>
     <Properties/>
-    <VirtualHost>default</VirtualHost>
-    <!-- <VirtualHost>secure</VirtualHost> -->
+    <!-- <VirtualHost>default</VirtualHost> -->
+    <VirtualHost>secure</VirtualHost>
   </HTTPProxyConnection>
 
   <FaultRules/>
+  <!--
+  <FaultRule name='ruleName'>
+    <Step>
+      <Name>{policy_name}</Name>
+    </Step>
+    <Condition>{(conditional statement)}</Condition>
+  </FaultRule>
+  -->
 
-  <PreFlow name=\"PreFlow\">
+  <PreFlow name='PreFlow'>
       <Request/>
       <Response/>
   </PreFlow>
-  <PostFlow name=\"PostFlow\">
+  <PostFlow name='PostFlow'>
       <Request/>
-      <Response/>
+      <Response>
+        <Step><Name>AM-CleanResponseHeaders</Name></Step>
+      </Response>
   </PostFlow>
 
   <Flows>
@@ -2158,7 +2230,7 @@ structure, in the `apigee-apiproxies-home' directory.
 
     <Flow name='unknown request'>
       <Request>
-        <Step><Name>RaiseFault-UnknownRequest</Name></Step>
+        <Step><Name>RF-UnknownRequest</Name></Step>
       </Request>
       <Response/>
     </Flow>
