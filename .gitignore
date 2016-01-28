@@ -13,6 +13,7 @@ not-used/*
 replicate.sh
 
 # Can also ignore all directories and files in a directory.
+**/.yas-compiled-snippets.el
 snippets/**/.yas-compiled-snippets.el
 yasnippets/**/.yas-compiled-snippets.el
 snippets/yasnippet-bundle-orig.el
