@@ -1,6 +1,6 @@
 ;;; emacs.el -- dino's em Dino's .emacs setup file.
 ;;
-;; Last saved: <2015-November-10 09:20:56>
+;; Last saved: <2016-January-21 19:51:47>
 ;;
 ;; Works with v24.3 of emacs.
 ;;
@@ -1007,6 +1007,7 @@ With a prefix argument, makes a private paste."
   ;; ;; (turn-on-auto-revert-mode)
   ;; Anyway, there is a revert-on-timer thing provided in dired-fixups.el
 
+  (local-set-key "\C-c\C-g"  'dino-dired-kill-new-file-contents)
   (local-set-key "\C-c\C-c"  'dino-dired-copy-file-to-dir-in-other-window)
   (local-set-key "\C-c\C-m"  'dino-dired-move-file-to-dir-in-other-window)
 
