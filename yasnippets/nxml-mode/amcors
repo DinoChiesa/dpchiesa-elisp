@@ -1,0 +1,15 @@
+#key : amcors
+#name : <AssignMessage name='AM-CORS'...>
+# --
+<AssignMessage name="AM-CORS">
+  <Set>
+    <Headers>
+      <Header name="Access-Control-Allow-Origin">*</Header>
+      <Header name="Access-Control-Allow-Headers">origin, x-requested-with, accept, content-type, authorization</Header>
+      <Header name="Access-Control-Max-Age">3628800</Header>
+      <Header name="Access-Control-Allow-Methods">GET</Header>
+    </Headers>
+  </Set>
+  <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+  <AssignTo createNew="false" transport="http" type="response"/>
+</AssignMessage>

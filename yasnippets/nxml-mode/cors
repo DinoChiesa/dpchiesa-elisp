@@ -1,0 +1,12 @@
+#key : cors
+#name : <Flow name='cors-preflight'...>
+# --
+<Flow name='CORS-Options-PreFlight'>
+  <Request/>
+  <Response>
+    <Step>
+      <Name>AM-CORS</Name>
+    </Step>
+  </Response>
+  <Condition>request.verb = 'OPTIONS'</Condition>
+</Flow>

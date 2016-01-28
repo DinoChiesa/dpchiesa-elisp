@@ -1,0 +1,9 @@
+#key : av
+#name : <AssignVariable...>
+# --
+<AssignVariable>
+  <Name>$1</Name>
+  <!-- use one or both of the following -->
+  <Ref>${2:name-of-existing-variable}</Ref>
+  <Value>${3:value-to-assign-when-no-variable-is-resolved}</Value>
+</AssignVariable>
