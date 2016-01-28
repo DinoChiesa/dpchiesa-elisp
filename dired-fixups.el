@@ -43,14 +43,17 @@ which is up to 10gb.  Some files are larger than that.
           ((< f-size 1024) (format " %10.0f%s"  f-size (car post-fixes)))))))
 
 ;; On MacOS, the builtin ls program does not do the -X option. (lame)
-;; The MacPorts version of GNU ls does. If it exists, use it.
+;; The MacPorts or brew versions of GNU ls does. If it exists, use it.
 ;; the -X is used by dired-fixups for sorting by extension.
 (if (eq system-type 'darwin)
-    (if (file-exists-p "/opt/local/bin/gls")
-        (progn
-          (setq ls-lisp-use-insert-directory-program t)
-          (setq insert-directory-program "/opt/local/bin/gls")
-          )))
+    (let ((candidate-dirs (list "/opt/local/bin" "/usr/local/opt/coreutils/bin")))
+      (while candidate-dirs
+        (let ((candidate (concat (file-name-as-directory (car candidate-dirs)) "gls")))
+          (if (file-exists-p candidate)
+                (setq ls-lisp-use-insert-directory-program t
+                      insert-directory-program candidate)))
+        (setq candidate-dirs (cdr candidate-dirs)))))
+
 
 
 (defun dired-sort-toggle ()
@@ -248,6 +251,19 @@ for a given file or set of files. This function makes an intelligent guess."
                           "] ")))
 
       (read-shell-command prompt))))
+
+
+
+(defun dino-dired-kill-new-file-contents (&optional arg)
+  "copies the contents of the marked file into the kill-ring"
+  (interactive "P")
+  (let ((filename-list (dired-get-marked-files nil arg)))
+      (mapc #'(lambda (f)
+               (with-temp-buffer
+                 (insert-file-contents f)
+                 (kill-new
+                  (buffer-substring-no-properties (point-min) (point-max)))))
+            filename-list)))
 
 
 
