@@ -463,7 +463,9 @@ Like `replace-string' but for non-interactive use. "
                 (dino-replace-s-non-interactively (cadr elt) (car elt)))
                 dino-html-escape-pairs))))
 
-(defun dino-encode-uri-component-in-region (start end)
+
+(defun dino-urlencode-region (start end)
+  "calls the Javascript function encodeURIComponent() (via nodejs) on the string in region."
   (interactive "r")
   (save-excursion
     (save-restriction
@@ -472,13 +474,21 @@ Like `replace-string' but for non-interactive use. "
             (len (- (point-max) (point-min))))
         (goto-char (point-min))
         (delete-char len)
-        (insert (shell-command-to-string
-                 (concat
-                  "/usr/local/bin/node -e \"console.log(encodeURIComponent('"
-                  str "'))\"" )))))))
+        (insert
+         (replace-regexp-in-string
+          "~~" "%27"
+          (shell-command-to-string
+           (concat
+            "/usr/local/bin/node -e \"console.log(encodeURIComponent('"
+            (replace-regexp-in-string
+             "'" "~~"
+             (replace-regexp-in-string "\n" "" str))
+            "'))\"" ))))))))
 
 
-(defun dino-unencode-uri-component-in-region (start end)
+
+(defun dino-urldecode-region (start end)
+  "calls the Javascript function unescape() (via nodejs) on the string in region."
   (interactive "r")
   (save-excursion
     (save-restriction
