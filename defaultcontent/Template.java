@@ -6,7 +6,7 @@
 // Author: @AUTHOR@
 // Created @DATE@
 //
-// Last saved: <2015-October-28 14:13:48>
+// Last saved: <2016-February-13 15:34:00>
 // ------------------------------------------------------------------
 //
 // Copyright (c) 2015 Dino Chiesa
@@ -21,17 +21,17 @@ import java.util.Enumeration;
 import java.util.ArrayList;
 
 public class @BASEFILENAMELESSEXTENSION@ {
-    private final String optString = "vu:p:s:"; // getopt style
+    private static final String optString = "vu:p:s:"; // getopt style
     private Hashtable<String, Object> options = new Hashtable<String, Object> ();
 
     // public @BASEFILENAMELESSEXTENSION@ () {} // uncomment if wanted
 
     public @BASEFILENAMELESSEXTENSION@ (String[] args)
         throws java.lang.Exception {
-        getOpts(args, optString);
+        getOpts(args);
     }
 
-    private void getOpts(String[] args, String optString)
+    private void getOpts(String[] args)
         throws java.lang.Exception {
         // Parse command line args for args in the following format:
         //   -a value -b value2 ... ...
