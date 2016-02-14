@@ -11,7 +11,7 @@
 ;; Requires   : s.el, request.el, dino-netrc.el
 ;; License    : New BSD
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2016-January-27 14:31:27>
+;; Last-saved : <2016-February-12 18:25:12>
 ;;
 ;;; Commentary:
 ;;
@@ -770,6 +770,17 @@ apiproduct.developer.quota.timeunit*
   <Header name='Authorization'>
     <Pattern>Bearer {access_token}</Pattern>
   </Header>
+  <IgnoreUnresolvedVariables>false</IgnoreUnresolvedVariables>
+</ExtractVariables>\n")
+
+          '("ExtractVariables - from queryparam"
+       "Extract"
+       "<ExtractVariables name='##'>
+  <Source>request</Source>
+  <VariablePrefix>extracted</VariablePrefix>
+  <QueryParam name='code'>
+      <Pattern ignoreCase='true'>DBN{dbncode}</Pattern>
+   </QueryParam>
   <IgnoreUnresolvedVariables>false</IgnoreUnresolvedVariables>
 </ExtractVariables>\n")
 
@@ -1580,7 +1591,7 @@ Authorization.
 
 
      '("RaiseFault"
-       "RaiseFault"
+       "RF"
        "<RaiseFault name='##'>
   <DisplayName>${1:##}</DisplayName>
   <Description>$2</Description>
@@ -1597,7 +1608,7 @@ Authorization.
 
 
      '("RaiseFault - 302 Redirect"
-       "RaiseFault-Redirect"
+       "RF-302"
        "<RaiseFault name='##'>
     <DisplayName>${1:##}</DisplayName>
     <FaultResponse>
@@ -1616,7 +1627,7 @@ $1
 </RaiseFault>\n")
 
      '("RaiseFault - SOAP Fault"
-       "RaiseFault"
+       "RF"
        "<RaiseFault name='##'>
   <Description>$1</Description>
   <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
@@ -1643,7 +1654,7 @@ $1
 
 
      '("Javascript"
-       "Javascript"
+       "JS"
        "<Javascript name='##' timeLimit='200' >
   <!-- <DisplayName>${1:##}</DisplayName> -->
   <Properties>
@@ -1656,7 +1667,7 @@ $1
 
 
      '("Python"
-       "Python"
+       "Py"
        "<Script name='##'>
     <DisplayName>${1:##}</DisplayName>
   <ResourceURL>py://${2:$$(apigee--fixup-script-name \"##\" \"PY\")}.py</ResourceURL>
@@ -2220,7 +2231,6 @@ if ( ! handled ) {
       <Description>insert description here</Description>
       <Request>
         <!-- insert flow-specific policies here -->
-        <Step><Name>InsertPolicyNameHere</Name></Step>
       </Request>
       <Response>
         <!-- and others here -->
