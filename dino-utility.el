@@ -734,10 +734,6 @@ Eg,
                  xpath))))))))
 
 
-
-
-
-
 (provide 'dino-utility)
 
 ;;; dino-utility.el ends here
