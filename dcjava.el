@@ -126,7 +126,7 @@
 ;;    (shell-command-to-string
 ;;     (concat "find " dir " -name " classname ".java"))))
 
-(defun dino-find-java-source-in-dir (dir classname)
+(defun dcjava-find-java-source-in-dir (dir classname)
   "find a java source file in a DIR tree, based on the CLASSNAME. This is
 a simple wrapper on the shell find command."
   (let ((argument (if (s-contains? "/" classname)
@@ -135,12 +135,11 @@ a simple wrapper on the shell find command."
      (shell-command-to-string
       (concat "find " dir argument classname ".java")))))
 
+(defvar dcjava-wacapps-root "~/dev/wacapps/new/api_platform")
 
-(defvar dino-wacapps-root "~/dev/wacapps/new/api_platform")
-
-(defun dino-find-wacapps-java-source-for-class-at-point ()
+(defun dcjava-find-wacapps-java-source-for-class-at-point ()
   "find a java source file that defines the class named at point,
-in the wacapps dir tree, referred to by `dino-wacapps-root' . This is
+in the wacapps dir tree, referred to by `dcjava-wacapps-root' . This is
 a wrapper on the shell find command."
   (interactive)
   (let ((filename
@@ -155,7 +154,7 @@ a wrapper on the shell find command."
     (if (not filename)
         (setq filename (substring-no-properties (thing-at-point 'word))))
     (if filename
-        (setq filename (dino-find-java-source-in-dir dino-wacapps-root filename)))
+        (setq filename (dcjava-find-java-source-in-dir dcjava-wacapps-root filename)))
     (if (and filename
              (file-exists-p filename))
         (find-file filename)

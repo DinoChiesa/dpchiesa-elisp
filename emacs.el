@@ -1,6 +1,6 @@
 ;;; emacs.el -- dino's em Dino's .emacs setup file.
 ;;
-;; Last saved: <2016-January-21 19:51:47>
+;; Last saved: <2016-February-13 18:02:35>
 ;;
 ;; Works with v24.3 of emacs.
 ;;
@@ -2490,9 +2490,12 @@ i.e M-x kmacro-set-counter."
   (set (make-local-variable 'skeleton-pair) t)
   (local-set-key (kbd "{") 'skeleton-pair-insert-maybe)
 
-  ;; for java fixups
+  ;; some of my own java-mode helpers
   (require 'dcjava)
-  (local-set-key "\C-ci"  'dcjava-auto-add-import)
+  (local-set-key "\C-ci"     'dcjava-auto-add-import)
+  (local-set-key "\C-c\C-i"  'dcjava-auto-add-import)
+  (local-set-key "\C-c\C-l"  'dcjava-learn-new-import)
+  (local-set-key "\C-c\C-f"  'dcjava-find-wacapps-java-source-for-class-at-point)
   )
 
 (add-hook 'java-mode-hook 'dino-java-mode-fn)
