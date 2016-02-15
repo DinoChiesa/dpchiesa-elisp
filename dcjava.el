@@ -66,32 +66,36 @@
   "adds an import statement for the class or interface at point, if possible."
   (interactive)
   (let* ((symbol-name (substring-no-properties (thing-at-point 'word))
-          ;; (save-excursion
-          ;;   (beginning-of-thing 'symbol)
-          ;;   (set-mark (point))
-          ;;   (forward-word)
-          ;;   (buffer-substring-no-properties (mark) (point)))
-          )
+                      ;; (save-excursion
+                      ;;   (beginning-of-thing 'symbol)
+                      ;;   (set-mark (point))
+                      ;;   (forward-word)
+                      ;;   (buffer-substring-no-properties (mark) (point)))
+                      )
          (matching-pair
           (assoc symbol-name (dcjava-get-helper-classname-alist))))
     (cond
      (matching-pair
-         (let* ((package-name (cadr matching-pair))
-                (import-statement
-                 (concat "import " package-name "." symbol-name ";")))
+      (let* ((package-name (cadr matching-pair))
+             (import-statement
+              (concat "import " package-name "." symbol-name ";")))
 
-           (save-excursion
-             (if (not (re-search-backward (concat "^" import-statement) nil t))
-                 (if (re-search-backward "^import" nil t)
-                     (progn
-                       (end-of-line)
-                       (newline)
-                       (insert import-statement)
-                       (message import-statement)
-                       ))))))
+        (save-excursion
+          (if (not (re-search-backward (concat "^" import-statement) nil t))
+              (let ((want-extra-newline nil))
+                (if (re-search-backward "^import" nil t)
+                    (end-of-line)
+                  (beginning-of-buffer)
+                  (while (looking-at "^//")
+                    (forward-line))
+                  (setq want-extra-newline t))
+                (newline)
+                (insert import-statement)
+                (if want-extra-newline (newline))
+                (message import-statement))))))
      (t
       (message "did not find class %s" symbol-name)))
-      ))
+    ))
 
 
 (defun dcjava-learn-new-import ()
@@ -130,7 +134,7 @@
   "find a java source file in a DIR tree, based on the CLASSNAME. This is
 a simple wrapper on the shell find command."
   (let ((argument (if (s-contains? "/" classname)
-                      " -path \*" " -name ")))
+                      " -path \\*" " -name ")))
     (s-trim-right
      (shell-command-to-string
       (concat "find " dir argument classname ".java")))))
@@ -156,6 +160,7 @@ a wrapper on the shell find command."
     (if filename
         (setq filename (dcjava-find-java-source-in-dir dcjava-wacapps-root filename)))
     (if (and filename
+             (not (equal "" filename))
              (file-exists-p filename))
         (find-file filename)
       (message "no file"))))
