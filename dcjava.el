@@ -11,7 +11,7 @@
 ;; Requires   : s.el
 ;; License    : New BSD
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2016-February-14 17:54:08>
+;; Last-saved : <2016-February-15 12:20:55>
 ;;
 ;;; Commentary:
 ;;
@@ -204,19 +204,20 @@ If the symbol is null, then the package-name is treated as a fully-qualified cla
                  ";"))
         (import-regex (dcjava--gen-import-regex package-name symbol-name)))
     (save-excursion
-      (if (not (re-search-backward import-regex nil t))
-          (let ((want-extra-newline nil))
-            (if (re-search-backward dcjava--import-stmt-regex nil t)
-                (end-of-line)
-              (beginning-of-buffer)
-              ;; naively skip-comments. this breaks if you use /*
-              (while (looking-at "^//")
-                (forward-line))
-              (setq want-extra-newline t))
-            (newline)
-            (insert import-statement)
-            (if want-extra-newline (newline))
-            (message import-statement))))))
+      (if (re-search-backward import-regex nil t)
+          (message (concat "already have " package-name "." symbol-name))
+        (let ((want-extra-newline nil))
+          (if (re-search-backward dcjava--import-stmt-regex nil t)
+              (end-of-line)
+            (beginning-of-buffer)
+            ;; naively skip-comments. this breaks if you use /*
+            (while (looking-at "^//")
+              (forward-line))
+            (setq want-extra-newline t))
+          (newline)
+          (insert import-statement)
+          (if want-extra-newline (newline))
+          (message import-statement))))))
 
 
 
@@ -316,18 +317,21 @@ will be something like (\"x.y.z.Class\") .
 (defun dcjava-find-java-source-in-dir (dir classname)
   "find a java source file in a DIR tree, based on the CLASSNAME. This is
 a simple wrapper on the shell find command."
-  (let ((argument (if (s-contains? "/" classname)
-                      " -path \\*" " -name ")))
-    (s-trim-right
-     (shell-command-to-string
-      (concat "find " dir argument classname ".java")))))
+  (let ((modified-classname (s-replace "." "/" classname)))
+    (let ((argument (if (s-contains? "/" modified-classname)
+                        " -path \\*" " -name ")))
+      (s-trim-right
+       (shell-command-to-string
+        (concat "find " dir argument modified-classname ".java"))))))
+
 
 (defvar dcjava-wacapps-root "~/dev/wacapps/new/api_platform")
 
 (defun dcjava-find-wacapps-java-source-for-class-at-point ()
   "find a java source file that defines the class named at point,
 in the wacapps dir tree, referred to by `dcjava-wacapps-root' . This is
-a wrapper on the shell find command."
+a wrapper on the shell find command. Bug: does not handle errors properly
+when not on a full java class or package name. "
   (interactive)
   (let ((filename
          (save-excursion
