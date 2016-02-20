@@ -11,7 +11,7 @@
 ;; Requires   : s.el
 ;; License    : New BSD
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2016-February-15 12:20:55>
+;; Last-saved : <2016-February-19 23:20:29>
 ;;
 ;;; Commentary:
 ;;
@@ -99,13 +99,16 @@
 (defvar dcjava-helper-classname-alist nil)
 (defvar dcjava-helper-classnames nil
   "list of classes to be able to import")
-(defconst dcjava--classname-regex "\\([a-zA-Z_$][a-zA-Z\\d_$]*\\.\\)*[a-zA-Z_$][a-zA-Z\\d_$]*"
-  "a regex that matches a Java classname")
+(defconst dcjava--classname-regex "\\([a-zA-Z_$][a-zA-Z0-9_$]*\\.\\)*[a-zA-Z_$][a-zA-Z0-9_$]*"
+  "a regex that matches a Java classname or package name")
 
 (defconst dcjava--import-stmt-regex (concat "import[\t ]+" dcjava--classname-regex
                                     "[\t ]*;")
   "a regex that matches a Java import statement")
 
+(defconst dcjava--package-stmt-regex (concat "package[\t ]+" dcjava--classname-regex
+                                    "[\t ]*;")
+  "a regex that matches a Java package statement")
 
 ;; (defconst dcjava-classname-regex "\\([a-zA-Z_$][a-zA-Z\\d_$]*\\.\\)*[a-zA-Z_$][a-zA-Z\\d_$]*"
 ;;   "a regex that matches a Java classname")
@@ -210,6 +213,8 @@ If the symbol is null, then the package-name is treated as a fully-qualified cla
           (if (re-search-backward dcjava--import-stmt-regex nil t)
               (end-of-line)
             (beginning-of-buffer)
+            (if (re-search-forward dcjava--package-stmt-regex nil t)
+                (progn (forward-line) (beginning-of-line)))
             ;; naively skip-comments. this breaks if you use /*
             (while (looking-at "^//")
               (forward-line))
@@ -335,8 +340,8 @@ when not on a full java class or package name. "
   (interactive)
   (let ((filename
          (save-excursion
-           (re-search-backward "[ \t]" nil t)
-           (forward-char)
+           (if (re-search-backward "[ \t]" (line-beginning-position) 1)
+               (forward-char))
            (if (looking-at dcjava--classname-regex)
                (replace-regexp-in-string
                 (regexp-quote ".") "/"
