@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: string-to-bais
+# key: bais
+# --
+InputStream ${1:is} = new ByteArrayInputStream(${s:myString}.getBytes(StandardCharsets.UTF_8));

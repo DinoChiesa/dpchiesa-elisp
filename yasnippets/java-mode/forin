@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: for-iterator
+# key: forin
+# --
+for (${1:Class} ${2:var} : ${3:Collection}) {
+    ${4:// body...}
+}
