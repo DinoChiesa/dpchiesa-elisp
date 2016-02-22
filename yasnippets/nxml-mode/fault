@@ -1,0 +1,11 @@
+#key : fault
+#name : <FaultRule...>
+# --
+<FaultRule name='${1:rule1}'>
+  <Step>
+    <Name>${2:policy_name}</Name>
+  </Step>
+  <Condition>${3:conditional_statement}</Condition>
+</FaultRule>
+
+

@@ -1,0 +1,8 @@
+# -*- mode: snippet -*-
+# name: <Step...><Name...><Condition...>
+# key: cstep
+# --
+<Step>
+  <Name>${1:VerifyApiKey-1}</Name>
+  <Condition>${2:request.header.authorization = null}</Condition>
+</Step>
