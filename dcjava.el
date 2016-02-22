@@ -11,7 +11,7 @@
 ;; Requires   : s.el
 ;; License    : New BSD
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2016-February-19 23:20:29>
+;; Last-saved : <2016-February-22 15:44:27>
 ;;
 ;;; Commentary:
 ;;
@@ -226,12 +226,26 @@ If the symbol is null, then the package-name is treated as a fully-qualified cla
 
 
 
-(defun dcjava--generate-menu (candidates)
+(defun dcjava--generate-menu (candidates &optional format heading)
   "Generate a menu suitable for use in `x-popup-menu' from the
-list of candidates. Each item in the list of candidates is a
-string, a fully-qualified class name.
+list of candidates. Each item in the list of CANDIDATES is a
+string. The FORMAT is a function that formats the displayable menu choice;
+it is called once for each candidate.  The HEADING is a string used in the
+result, which will appear as a menu heading.
 
-The output is a list like this:
+For example, calling it with candidates ('(\"one\" \"two\")) and no additional
+areguments will return a structure like this:
+
+  (\"Select a Choice...\"
+    (\"Ignored pane title\"
+      (\"one\" \"one\")
+      (\"two\" \"two\")))
+
+Calling it with ('(\"Class1\" \"Class2\")
+                 #'(lambda (x) (concat \"import \" x \";\"))
+                 \"Add import\")
+
+...will return output like this:
 
   (\"Add Import...\"
     (\"Ignored pane title\"
@@ -242,12 +256,12 @@ The result of the choice is the cdr of the selected item. In this case, it
 will be something like (\"x.y.z.Class\") .
 
 "
-  (let ((items (mapcar #'(lambda (elt)
-                           (list (concat "import " elt ";") elt))
+
+  (let ((items (mapcar #'(lambda (elt) (list (funcall (or format 'identity) elt) elt))
                        candidates)))
     ;; this works with x-popup-menu
     (setq items (cons "Ignored pane title" items))
-    (list "Add import..." items)))
+    (list (or heading "Select a Choice...") items)))
 
 
 (defun dcjava--get-menu-position ()
@@ -266,7 +280,9 @@ will be something like (\"x.y.z.Class\") .
                                 (concat elt "." symbol-name))
                             package-names))
          (chosen (x-popup-menu (dcjava--get-menu-position)
-                               (dcjava--generate-menu candidates))))
+                               (dcjava--generate-menu candidates
+                                                      #'(lambda (x) (concat "import " x ";"))
+                                                      "Add import..."))))
     (when chosen ;; actually a list containing a single string (classname)
       (dcjava-add-one-import-statement (car chosen)))))
 
@@ -318,44 +334,73 @@ will be something like (\"x.y.z.Class\") .
 
 ;; ==================================================================
 
-
 (defun dcjava-find-java-source-in-dir (dir classname)
   "find a java source file in a DIR tree, based on the CLASSNAME. This is
-a simple wrapper on the shell find command."
-  (let ((modified-classname (s-replace "." "/" classname)))
-    (let ((argument (if (s-contains? "/" modified-classname)
-                        " -path \\*" " -name ")))
-      (s-trim-right
-       (shell-command-to-string
-        (concat "find " dir argument modified-classname ".java"))))))
+a simple wrapper on the shell find command. The return value is a list of
+strings (filenames). "
+  (let* ((modified-classname (s-replace "." "/" classname))
+         (argument (if (s-contains? "/" modified-classname)
+                       " -path \\*" " -name "))
+         (result
+          (s-trim-right
+           (shell-command-to-string
+            (concat "find " dir argument modified-classname ".java")))))
+    (if (s-blank? result) nil
+      (s-split "\n" result))))
 
 
 (defvar dcjava-wacapps-root "~/dev/wacapps/new/api_platform")
 
-(defun dcjava-find-wacapps-java-source-for-class-at-point ()
-  "find a java source file that defines the class named at point,
+
+(defun dcjava-find-file-from-choice (flist)
+  "present a choice for an import statement to add, then add the chosen one."
+  (let ((chosen (x-popup-menu (dcjava--get-menu-position)
+                              (dcjava--generate-menu flist
+                                                     nil
+                                                     "Open a file..."))))
+    (when chosen ;; actually a list containing a single string (filename)
+      (progn (find-file (car chosen))
+             (message "open file %s" (car chosen))))))
+
+
+(defun dcjava-find-wacapps-java-source-for-class-at-point (&optional clazzname)
+  "find a java source file that defines the class named by CLAZZNAME,
 in the wacapps dir tree, referred to by `dcjava-wacapps-root' . This is
-a wrapper on the shell find command. Bug: does not handle errors properly
-when not on a full java class or package name. "
+a wrapper on the shell find command.
+
+When invoked interactively, uses the class name at point. When
+none is found, then prompts for a classname.
+
+When multiple source files are found, prompts user with a list to
+select from.
+"
   (interactive)
-  (let ((filename
-         (save-excursion
-           (if (re-search-backward "[ \t]" (line-beginning-position) 1)
-               (forward-char))
-           (if (looking-at dcjava--classname-regex)
-               (replace-regexp-in-string
-                (regexp-quote ".") "/"
-                (buffer-substring-no-properties (match-beginning 0) (match-end 0))
-                t t)))))
-    (if (not filename)
-        (setq filename (substring-no-properties (thing-at-point 'word))))
-    (if filename
-        (setq filename (dcjava-find-java-source-in-dir dcjava-wacapps-root filename)))
-    (if (and filename
-             (not (equal "" filename))
-             (file-exists-p filename))
-        (find-file filename)
-      (message "no file"))))
+  (let* ((classname
+          (or
+           clazzname
+           (save-excursion
+             (if (re-search-backward "[ \t]" (line-beginning-position) 1)
+                 (forward-char))
+             (if (looking-at dcjava--classname-regex)
+                 (replace-regexp-in-string
+                  (regexp-quote ".") "/"
+                  (buffer-substring-no-properties (match-beginning 0) (match-end 0))
+                  t t)))
+           (let ((thing (thing-at-point 'word)))
+             (if thing (substring-no-properties thing)))
+           (read-string "Class to find: " nil)))
+
+         (filenames (and classname
+                         (dcjava-find-java-source-in-dir dcjava-wacapps-root classname))))
+    (if filenames
+        (let ((numfiles (length filenames)))
+          (if (and (eq numfiles 1))
+              (if (file-exists-p (car filename))
+                  (progn (find-file (car filename))
+                         (message "open file %s" (car filename)))
+                (message "E_NOEXIST %s" classname))
+            (dcjava-find-file-from-choice filenames)))
+      (message "no file for %s" classname))))
 
 
 (provide 'dcjava)
