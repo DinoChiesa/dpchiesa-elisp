@@ -3,6 +3,6 @@
 # key: prop
 # --
 private ${1:T} ${2:value};
-public void set${2:$(s-upper-camel-case text)}($1 value) { this.$2 = value; }
-public $1 get${2:$(s-upper-camel-case text)}() { return $2; }
+public void set${2:$(s-upper-camel-case yas-text)}($1 value) { this.$2 = value; }
+public $1 get${2:$(s-upper-camel-case yas-text)}() { return $2; }
  $0
