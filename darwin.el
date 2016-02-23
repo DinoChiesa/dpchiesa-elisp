@@ -144,6 +144,26 @@ The PUSH argument is ignored."
 ;; It is necessary to perform an update!
 (jka-compr-update)
 
+
+(eval-after-load "flycheck"
+  '(if (file-exists-p "/usr/local/bin/proselint")
+       (progn
+         (flycheck-define-checker proselint
+           "A linter for prose. http://proselint.com/"
+           :command ("proselint" source-inplace)
+           :error-patterns
+           ((warning line-start (file-name) ":" line ":" column ": "
+                     ;;(id (one-or-more (not (any " "))))
+                     (message) line-end))
+           :modes (text-mode markdown-mode gfm-mode))
+
+         (add-to-list 'flycheck-checkers 'proselint))
+     (message "not loading proselint checker -- no proselint found.")))
+
+
+
+
+
 ;; not really true. This is my own personal darwin customization
 (provide 'darwin)
 ;;; darwin.el ends here
