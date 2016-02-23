@@ -1,6 +1,6 @@
 ;;; emacs.el -- dino's em Dino's .emacs setup file.
 ;;
-;; Last saved: <2016-February-14 16:45:41>
+;; Last saved: <2016-February-22 17:47:30>
 ;;
 ;; Works with v24.3 of emacs.
 ;;
@@ -2530,6 +2530,7 @@ i.e M-x kmacro-set-counter."
       (append
        '(
          ("\\.go\\'"      . "go build %f")
+         ("\\.txt\\'"      . "proselint %f")
          ("\\.wxs\\'"      . "%M %n.msi")
          ("\\.css\\'"      . "~/js/csslint.node.js %f")
          ("\\.js\\'"       . "~/js/jshint.node.js %f")
