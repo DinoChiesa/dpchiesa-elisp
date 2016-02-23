@@ -11,7 +11,7 @@
 ;; Requires   : s.el, request.el, dino-netrc.el
 ;; License    : New BSD
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2016-February-22 19:37:07>
+;; Last-saved : <2016-February-23 15:49:18>
 ;;
 ;;; Commentary:
 ;;
@@ -274,10 +274,10 @@ the only possible value currently.")
 
 (defconst apigee--policy-alist
     (list
-     ;; the "created at" comment works around a bug in yas--eval-lisp, which
-     ;; causes a weird error in the first field expansion, for large snippets,
-     ;; when yas-choose-value us the function. i think.  adding this extra
-     ;; "dummy" field avoids the problem.
+     ;; the "created at" comment in the following templates works around a bug in
+     ;; yas--eval-lisp, which causes a weird error in the first field expansion, for
+     ;; large snippets, when yas-choose-value us the function. i think.  adding this
+     ;; extra "dummy" field avoids the problem.
      '("AccessEntity"
      "AccessEntity"
      "<AccessEntity name='##'>
@@ -293,7 +293,7 @@ the only possible value currently.")
 </AccessEntity>\n")
 
      '("AssignMessage - remove query param or header"
-       "AssignMessage"
+       "AM"
        "<AssignMessage name='##'>
   <DisplayName>##</DisplayName>
   <Remove>
@@ -309,7 +309,7 @@ the only possible value currently.")
 </AssignMessage>\n")
 
      '("AssignMessage - clean response headers"
-       "AssignMessage"
+       "AM"
        "<AssignMessage name='##'>
   <Remove>
     <Headers>
@@ -326,7 +326,7 @@ the only possible value currently.")
 </AssignMessage>\n")
 
      '("AssignMessage - set query param and/or headers"
-       "AssignMessage"
+       "AM"
        "<AssignMessage name='##'>
   <AssignTo createNew='false' type='${1:$$(yas-choose-value '(\"request\" \"response\"))}'/>
   <Set>
@@ -348,7 +348,7 @@ the only possible value currently.")
 </AssignMessage>\n")
 
      '("AssignMessage - assign variable"
-     "AssignVariable"
+     "AV"
      "<AssignMessage name='##'>
   <DisplayName>##</DisplayName>
   <IgnoreUnresolvedVariables>false</IgnoreUnresolvedVariables>
@@ -360,7 +360,7 @@ the only possible value currently.")
 </AssignMessage>\n")
 
      '("AssignMessage - Store Original header"
-     "AssignMessage"
+     "AM"
      "<AssignMessage name='##'>
   <IgnoreUnresolvedVariables>false</IgnoreUnresolvedVariables>
   <AssignVariable>
@@ -382,7 +382,7 @@ the only possible value currently.")
 </AssignMessage>\n")
 
      '("AssignMessage - full response"
-       "AssignMessage"
+       "AM"
      "<AssignMessage name='##'>
   <DisplayName>##</DisplayName>
   <Description>$1</Description>
@@ -404,7 +404,7 @@ the only possible value currently.")
 </AssignMessage>\n")
 
      '("BasicAuthentication - Decode Inbound"
-       "BasicAuthentication"
+       "BasicAuth"
      "<BasicAuthentication name='##'>
    <DisplayName>Decode Basic Authentication Header</DisplayName>
    <Operation>Decode</Operation>
@@ -415,7 +415,7 @@ the only possible value currently.")
 </BasicAuthentication>\n")
 
      '("BasicAuthentication - Encode Outbound"
-       "BasicAuthentication"
+       "BasicAuth"
      "<BasicAuthentication name='##'>
    <DisplayName>Encode Basic Authentication Header</DisplayName>
    <Operation>Encode</Operation>
@@ -455,7 +455,7 @@ the only possible value currently.")
 ;    <Properties/>
 
      '("SpikeArrest"
-       "SpikeArrest"
+       "SA"
 "<SpikeArrest name='##'>
     <DisplayName>##</DisplayName>
     <!-- Identifier: optional -->
@@ -786,7 +786,7 @@ apiproduct.developer.quota.timeunit*
 </ExtractVariables>\n")
 
      '("ServiceCallout - json payload"
-       "ServiceCallout"
+       "SC"
        "<ServiceCallout name='##'>
   <DisplayName>##</DisplayName>
   <Request variable='authenticationRequest'>
@@ -813,7 +813,7 @@ apiproduct.developer.quota.timeunit*
 </ServiceCallout>\n")
 
           '("ServiceCallout - form payload"
-       "ServiceCallout"
+       "SC"
        "<ServiceCallout name='##'>
   <Request>
     <Set>
@@ -1340,7 +1340,7 @@ apiproduct.developer.quota.timeunit*
 
 
      '("OAuthV2 - GetAuthorizationCodeInfo"
-       "GetOAuthV2Info"
+       "OAuthV2-GetOAuthV2Info"
      "<GetOAuthV2Info name='##'>
     <!-- use one of the following: a referenced variable or -->
     <!-- an explicitly passed authorization_code -->
@@ -1448,7 +1448,7 @@ Authorization.
 
 
      '("MessageLogging - SysLog"
-       "MessageLogging-SysLog"
+       "ML-SysLog"
        "<MessageLogging enabled='true' continueOnError='true' name='##'>
     <DisplayName>##</DisplayName>
     <BufferMessage>false</BufferMessage>
@@ -1468,7 +1468,7 @@ Authorization.
 
 
      '("MessageLogging - Log file"
-       "MessageLogging-File"
+       "ML-File"
        "<MessageLogging name='##'>
     <DisplayName>##</DisplayName>
    <File>
@@ -1484,6 +1484,7 @@ Authorization.
 </MessageLogging>\n")
 
      '("SAML - Validate"
+       "SAML"
        "<ValidateSAMLAssertion name='SAML-Validate' ignoreContentType='false'>
   <Source name='request'>
     <Namespaces>
@@ -1498,7 +1499,8 @@ Authorization.
 </ValidateSAMLAssertion>\n")
 
      '("SAML - Generate"
-       "<GenerateSAMLAssertion name="SAML" ignoreContentType="false">
+       "SAML"
+       "<GenerateSAMLAssertion name=\"SAML\" ignoreContentType=\"false\">
   <CanonicalizationAlgorithm />
   <Issuer ref='reference'>Issuer name</Issuer>
   <KeyStore>
@@ -1653,7 +1655,6 @@ $1
   </FaultResponse>
 </RaiseFault>\n")
 
-
      '("Javascript"
        "JS"
        "<Javascript name='##' timeLimit='200' >
@@ -1716,7 +1717,7 @@ $1
 </AccessControl>\n")
 
      '("JavaCallout"
-       "JavaCallout"
+       "Java"
        "<JavaCallout name='##'>
   <DisplayName>${1:##}</DisplayName>
   <Properties>
@@ -1809,7 +1810,7 @@ It always ends in slash.
          (command (concat "find " proxydir " -name \\*.xml"))
          (result (s-trim-right (shell-command-to-string command))))
     (if (s-blank? result) nil
-      (s-split "\n" result))))
+      (reverse (s-split "\n" result)))))
 
 
 (defun apigee-metadata-file-name ()
@@ -3110,8 +3111,16 @@ given the resource path. For example, given \"node://model.json\", returns \"nod
 
 
 (defun apigee-maybe-sync-policy-filename ()
-  "maybe synchronizes the name of the file with the name specified in the
-name attribute in the root element"
+  "synchronizes the name of the file with the name specified in the name
+attribute in the root element, if the file is a policy file.
+
+This function is normally used as an after-save-hook, and normally only in an
+xml-mode (such as `nxml-mode'), since policy files are XML files.
+
+With this hook, the human can modify the name attribute inside the XML, and
+save the file; and then that change gets reflected in the filename for the buffer
+and also in every other file in the API-proxy bundle.
+"
   (interactive)
   (let ((orig-filename (buffer-file-name)))
     (if (apigee--is-policy-file orig-filename)
@@ -3125,20 +3134,29 @@ name attribute in the root element"
                      (new-filename
                       (concat (file-name-directory orig-filename) new-short-filename)))
                 (rename-file orig-filename new-filename 1)
-                (rename-buffer new-short-filename)
-                (set-visited-file-name new-filename)
+                (rename-buffer new-short-filename t) ;; get unique buffer name
+                (set-visited-file-name new-filename) ;; sets modified flag t
                 (set-buffer-modified-p nil)
                 ;; now, search/replace all files in the apiproxy to replace
-                ;; that old name with the new name
+                ;; that old policy name with the new policy name.
                 (let ((file-list (apigee-all-files-in-apiproxy))
                       (re1 (concat "\\<" (regexp-quote orig-policyname) "\\>")))
                   (while file-list
-                    (let ((one-file (car file-list)))
-                      (with-current-buffer (find-file-noselect one-file)
-                        (while (re-search-forward re1 nil t)
-                          (replace-match new-policyname))
-                        (save-buffer)))
-                    (setq file-list (cdr file-list))))))))))
+                    (let* ((one-file (car file-list))
+                           (base-filename (file-name-nondirectory one-file)))
+                      (if (not (or (s-starts-with? "#" base-filename)
+                                   (s-starts-with? ".#" base-filename)))
+                          (with-current-buffer (find-file-noselect one-file)
+                            (save-excursion
+                              (goto-char (point-min))
+                              (let ((need-save nil)
+                                    (original-modified (buffer-modified-p)))
+                                (while (re-search-forward re1 nil t)
+                                  (replace-match new-policyname)
+                                  (setq need-save t))
+                                (if (and need-save (not original-modified))
+                                    (save-buffer))))))
+                      (setq file-list (cdr file-list)))))))))))
 
 (add-hook
  'nxml-mode-hook
@@ -3146,8 +3164,6 @@ name attribute in the root element"
    (let ((BUFFER-LOCAL t) (APPEND t))
      (add-hook 'after-save-hook 'apigee-maybe-sync-policy-filename APPEND BUFFER-LOCAL))))
 
-
-;;(remove-hook 'after-save-hook 'apigee-maybe-sync-policy-filename t)
 
 (defun apigee-retrieve-resource ()
   "retrieve a particular resource in Edge via the API. See also
