@@ -1,17 +1,17 @@
 ;;; apigee.el --- utility functions for working with Apigee platform
 ;;
-;; Copyright (C) 2013,2014,2015 Dino Chiesa and Apigee Corporation
+;; Copyright (C) 2013-2016 Dino Chiesa and Apigee Corporation
 ;;
 ;; Author     : Dino Chiesa
 ;; Maintainer : Dino Chiesa <dpchiesa@hotmail.com>
 ;; Created    : May 2013
-;; Modified   : January 2015
-;; Version    : 1.4
+;; Modified   : February 2016
+;; Version    : 1.5
 ;; Keywords   : apigee
 ;; Requires   : s.el, request.el, dino-netrc.el
 ;; License    : New BSD
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2016-February-12 18:25:12>
+;; Last-saved : <2016-February-22 19:37:07>
 ;;
 ;;; Commentary:
 ;;
@@ -62,6 +62,7 @@
 (require 's) ;; magnars' long lost string library
 (require 'request)
 (require 'dino-netrc)
+(require 'xml)
 
 (defgroup apigee nil
   "Utility fns for use with the Apigee platform.")
@@ -1778,6 +1779,7 @@ If the apiproxy is defined in a structure like this:
 ~/dev/apiproxies/APINAME/apiproxy/proxies/..
 ..
 
+... and this function is invoked from anywhere in one of those directories,
 then the return value is: ~/dev/apiproxies/APINAME/
 
 It always ends in slash.
@@ -1800,6 +1802,14 @@ It always ends in slash.
                     (mapconcat 'identity r "/") )))))))
     (and path (file-truename path))))
 
+
+(defun apigee-all-files-in-apiproxy ()
+  "returns a list of all files in an apiproxy"
+  (let* ((proxydir (s-chop-suffix "/" (apigee-path-of-apiproxy)))
+         (command (concat "find " proxydir " -name \\*.xml"))
+         (result (s-trim-right (shell-command-to-string command))))
+    (if (s-blank? result) nil
+      (s-split "\n" result))))
 
 
 (defun apigee-metadata-file-name ()
@@ -1956,6 +1966,23 @@ that contains the file or directory currently being edited.
       (not (stringp (car attrs)))))))
 
 
+(defun apigee--is-policy-file (file-name)
+  "Tests to see whether a fully-qualified FILE-NAME refers to a file in the policies directory"
+  (and
+   (file-exists-p file-name)
+   (s-equals-p
+    (file-name-nondirectory
+     (s-chop-suffix "/"
+                    (file-name-directory file-name))) "policies")
+   (s-equals-p
+    (file-name-nondirectory
+     (s-chop-suffix "/"
+                    (file-name-directory
+                     (s-chop-suffix "/"
+                                    (file-name-directory file-name))))) "apiproxy")
+   (s-ends-with? ".xml" file-name)))
+
+
 (defun apigee--java-get-time-in-millis ()
   "Returns a string that contains a number equal in value to
 what is returned from the java snippet:
@@ -1978,9 +2005,8 @@ what is returned from the java snippet:
   "Return true if the passed policy name is unused, in other words
 if no file exists by that name in the given proxy.
 "
-  (let* ((proxy-dir (apigee-path-of-apiproxy))
-         (policy-dir (concat proxy-dir "/apiproxy/policies/"))
-         (filename-to-check (concat policy-dir pname ".xml")))
+  (let ((filename-to-check
+         (concat (apigee-path-of-apiproxy) "apiproxy/policies/" pname ".xml")))
     (not (file-exists-p filename-to-check))))
 
 
@@ -3081,6 +3107,47 @@ given the resource path. For example, given \"node://model.json\", returns \"nod
     (js-mode))
    (t nil)))
 
+
+
+(defun apigee-maybe-sync-policy-filename ()
+  "maybe synchronizes the name of the file with the name specified in the
+name attribute in the root element"
+  (interactive)
+  (let ((orig-filename (buffer-file-name)))
+    (if (apigee--is-policy-file orig-filename)
+        (let* ((orig-policyname (file-name-sans-extension (file-name-nondirectory orig-filename)))
+               (root (xml-parse-region))
+               (policy (car root))
+               (attrs (xml-node-attributes policy))
+               (new-policyname (cdr (assq 'name attrs))))
+          (if (not (s-equals-p orig-policyname new-policyname))
+              (let* ((new-short-filename (concat new-policyname ".xml"))
+                     (new-filename
+                      (concat (file-name-directory orig-filename) new-short-filename)))
+                (rename-file orig-filename new-filename 1)
+                (rename-buffer new-short-filename)
+                (set-visited-file-name new-filename)
+                (set-buffer-modified-p nil)
+                ;; now, search/replace all files in the apiproxy to replace
+                ;; that old name with the new name
+                (let ((file-list (apigee-all-files-in-apiproxy))
+                      (re1 (concat "\\<" (regexp-quote orig-policyname) "\\>")))
+                  (while file-list
+                    (let ((one-file (car file-list)))
+                      (with-current-buffer (find-file-noselect one-file)
+                        (while (re-search-forward re1 nil t)
+                          (replace-match new-policyname))
+                        (save-buffer)))
+                    (setq file-list (cdr file-list))))))))))
+
+(add-hook
+ 'nxml-mode-hook
+ (lambda ()
+   (let ((BUFFER-LOCAL t) (APPEND t))
+     (add-hook 'after-save-hook 'apigee-maybe-sync-policy-filename APPEND BUFFER-LOCAL))))
+
+
+;;(remove-hook 'after-save-hook 'apigee-maybe-sync-policy-filename t)
 
 (defun apigee-retrieve-resource ()
   "retrieve a particular resource in Edge via the API. See also
