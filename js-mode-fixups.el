@@ -3,7 +3,7 @@
 ;; Author: Dino Chiesa
 ;; Version: 0.1
 ;; Created: Sat, 31 Mar 2012  09:48
-;; Last Updated: <2015-February-16 11:51:35>
+;; Last Updated: <2016-March-06 21:28:35>
 
 
 
@@ -25,44 +25,46 @@
   (shell-command-on-region (point-min) (point-max) "~/js/jsBeautify.js" nil t))
 
 
+(defun js--fixup-imenu-sorting (orig-fun &rest args)
+  ;; This advice will run in all buffers.  Let's may sure we
+  ;; actually execute the important bits only when a JS buffer is active.
+  (if (and buffer-file-name
+           (string-match "\\.[Jj][Ss]$"  (file-relative-name buffer-file-name)))
+      (let ((menulist (copy-sequence (car args)))
+            (title (cadr args))
+            keep-at-top)
+        (if (memq imenu--rescan-item menulist)
+            (setq keep-at-top (list imenu--rescan-item)
+                  menulist (delq imenu--rescan-item menulist)))
+        ;; This is the part from the original imenu code
+        ;; that puts submenus at the top.  huh? why?
+        ;; --------------------------------------------
+        ;; (setq tail menulist)
+        ;; (dolist (item tail)
+        ;;   (when (imenu--subalist-p item)
+        ;;     (push item keep-at-top)
+        ;;     (setq menulist (delq item menulist))))
+        (if imenu-sort-function
+            (setq menulist (sort menulist imenu-sort-function)))
+        (if (> (length menulist) imenu-max-items)
+            (setq menulist
+                  (mapcar
+                   (lambda (menu)
+                     (cons (format "From: %s" (caar menu)) menu))
+                   (imenu--split menulist imenu-max-items))))
+        ;; return value
+        (cons title
+              (nconc (nreverse keep-at-top) menulist)))
+    ;; else
+    (apply orig-fun args)))
+
+
 (eval-after-load "js"
   '(progn
 
      ;; fix broken sorting of imenus
-     (defadvice imenu--split-menu (around
-                                   js--imenu-split-menu-patch
-                                   activate compile)
-       ;; This advice will run in all buffers.  Let's may sure we
-       ;; actually execute the important bits only when a C# buffer is active.
-       (if (string-match "\\.[Jj][Ss]$"  (file-relative-name buffer-file-name))
-           (let ((menulist (copy-sequence menulist))
-                 keep-at-top)
-             (if (memq imenu--rescan-item menulist)
-                 (setq keep-at-top (list imenu--rescan-item)
-                       menulist (delq imenu--rescan-item menulist)))
-             ;; This is the part from the original imenu code
-             ;; that puts submenus at the top.  huh? why?
-             ;; --------------------------------------------
-             ;; (setq tail menulist)
-             ;; (dolist (item tail)
-             ;;   (when (imenu--subalist-p item)
-             ;;     (push item keep-at-top)
-             ;;     (setq menulist (delq item menulist))))
-             (if imenu-sort-function
-                 (setq menulist (sort menulist imenu-sort-function)))
-             (if (> (length menulist) imenu-max-items)
-                 (setq menulist
-                       (mapcar
-                        (lambda (menu)
-                          (cons (format "From: %s" (caar menu)) menu))
-                        (imenu--split menulist imenu-max-items))))
-             (setq ad-return-value
-                   (cons title
-                         (nconc (nreverse keep-at-top) menulist))))
-         ;; else
-         ad-do-it))
-
-
+     (if (fboundp 'advice-add)
+         (advice-add 'imenu--split-menu :around #'js--fixup-imenu-sorting))
 
 
      ;; redefine this fn to recurse on nested function creation,
