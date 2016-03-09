@@ -126,3 +126,11 @@ javax.xml.transform.OutputKeys
 java.io.StringReader
 org.apache.commons.lang.text.StrSubstitutor
 org.xml.sax.EntityResolver
+org.apache.avro.io.DatumWriter
+org.apache.avro.generic.GenericRecord
+org.apache.avro.generic.GenericData
+org.apache.avro.generic.GenericDatumReader
+org.apache.avro.file.DataFileReader
+org.apache.avro.Schema
+org.apache.avro.generic.GenericArray
+org.apache.commons.io.IOUtils
