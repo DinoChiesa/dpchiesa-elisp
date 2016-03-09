@@ -1,6 +1,6 @@
 ;;; emacs.el -- dino's em Dino's .emacs setup file.
 ;;
-;; Last saved: <2016-February-22 17:47:30>
+;; Last saved: <2016-March-07 06:06:36>
 ;;
 ;; Works with v24.3 of emacs.
 ;;
@@ -466,6 +466,7 @@
          ;; ("\\.\\(js\\|jsi\\)$"                . espresso-mode)
          ;; ("\\.js$"                            . js2-mode)
          ("\\.\\(js\\|gs\\|jsi\\)$"           . js-mode)
+         ("\\.\\(avsc\\)$"                    . js-mode)            ;; avro schema
          ("\\.txt$"                           . text-mode)
          ("\\.asmx$"                          . csharp-mode)         ; likely, could be another language tho
          ("\\.\\(vb\\)$"                      . vbnet-mode)
@@ -2228,7 +2229,7 @@ This gets called by flymake itself."
           (lambda () (modify-syntax-entry ?\' ".")))
 
 
-(add-to-list 'hs-special-modes-alist
+(add-to-list 'hs-special-modes-alist ;; for hideshow.el?
              '(sgml-mode
                "<!--\\|<[^/>]*[^/]>" ;; regexp for start block
                "-->\\|</[^/>]*[^/]>" ;; regexp for end block
@@ -2403,7 +2404,8 @@ i.e M-x kmacro-set-counter."
   ;; ;;(setq flyjs-jslintwsh-location "c:\\users\\dino\\bin\\jslint-for-wsh.js")
   ;; (setq flyjs-jslintwsh-location "c:\\users\\dino\\bin\\jshint-for-wsh.js")
 
-  (and (file-name-directory buffer-file-name)
+  (and buffer-file-name
+       (file-name-directory buffer-file-name)
        (flymake-mode 1))
 
   ;; ya-snippet
@@ -2542,6 +2544,17 @@ i.e M-x kmacro-set-counter."
      (setq-default compile-command (concat nmake.exe " "))))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; restclient - invoke REST API calls from within Emacs
+
+(require 'restclient)
+(eval-after-load "restclient"
+  '(progn
+     (if (not (fboundp 'json-pretty-print-buffer))
+         (defun json-pretty-print-buffer ()
+           (json-prettify-buffer)))))
 
 
 
