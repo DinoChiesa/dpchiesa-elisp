@@ -1,4 +1,4 @@
-;;; apigee.el --- utility functions for working with Apigee platform
+;;; apigee.el --- utility functions for working with Apigee Edge platform
 ;;
 ;; Copyright (C) 2013-2016 Dino Chiesa and Apigee Corporation
 ;;
@@ -11,7 +11,7 @@
 ;; Requires   : s.el, request.el, dino-netrc.el
 ;; License    : New BSD
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2016-February-23 15:49:18>
+;; Last-saved : <2016-March-08 18:52:57>
 ;;
 ;;; Commentary:
 ;;
@@ -279,17 +279,31 @@ the only possible value currently.")
      ;; large snippets, when yas-choose-value us the function. i think.  adding this
      ;; extra "dummy" field avoids the problem.
      '("AccessEntity"
-     "AccessEntity"
+     "AE"
      "<AccessEntity name='##'>
     <!-- created at ${1:$$(format-time-string \"%Y-%m-%dT%T%z\" (current-time) t)} -->
   <EntityType value='${2:$$(yas-choose-value '(\"apiproduct\" \"app\" \"company\" \"companydeveloper\" \"consumerkey\" \"developer\"))}' />
-  <EntityIdentifier type='${3:$$(yas-choose-value (let ((field1 (apigee--snippet-field 1))) (apigee-entity-id-types (buffer-substring-no-properties (yas--field-start field1) (yas--field-end field1)))))}' ref='${3:varName}' />
+  <EntityIdentifier type='${3:$$(yas-choose-value (let ((field1 (apigee--snippet-field 1))) (apigee-entity-id-types (buffer-substring-no-properties (yas--field-start field1) (yas--field-end field1)))))}' ref='${4:varName}' />
   <!-- SecondaryIdentifier is not always required -->
-  <SecondaryIdentifier type='$4' ref='$5' />
+  <SecondaryIdentifier type='$5' ref='$6' />
 <!--
   The result is stored in a variable:  AccessEntity.##
   Next step is to use ExtractVariables to get a value from that entity.
 -->
+</AccessEntity>\n")
+
+     '("AccessEntity - App"
+     "AE"
+     "<AccessEntity name='##'>
+  <EntityType value='app' />
+  <EntityIdentifier type='consumerkey' ref='${1:client_id}' />
+</AccessEntity>\n")
+
+     '("AccessEntity - Developer"
+     "AE"
+     "<AccessEntity name='##'>
+  <EntityType value='developer' />
+  <EntityIdentifier type='consumerkey' ref='${1:client_id}' />
 </AccessEntity>\n")
 
      '("AssignMessage - remove query param or header"
@@ -841,10 +855,10 @@ apiproduct.developer.quota.timeunit*
 
 
      ;; Wednesday, 17 June 2015
-     ;; the "created at" comment works around a bug in yas--eval-lisp, which
-     ;; causes a weird error in the first field expansion, for large snippets,
-     ;; when yas-choose-value us the function. i think.  adding this extra
-     ;; "dummy" field avoids the problem.
+     ;; the "created at" comment in the below works around a bug in yas--eval-lisp,
+     ;; which causes a weird error in the first field expansion, for large snippets,
+     ;; when yas-choose-value us the function. i think.  adding this extra "dummy" field
+     ;; avoids the problem.
           '("OAuthV2 - GenerateAccessToken auth_code, client creds"
        "OAuthV2-GenerateAccessToken"
        "<OAuthV2 name='##'>
@@ -1229,7 +1243,6 @@ apiproduct.developer.quota.timeunit*
       oauthv2accesstoken.<PolicyName>.refresh_token_issued_at
       oauthv2accesstoken.<PolicyName>.refresh_token_status
     -->
-
 </OAuthV2>\n")
 
 
@@ -1320,8 +1333,6 @@ apiproduct.developer.quota.timeunit*
 
 </SetOAuthV2Info>\n")
 
-
-
      '("OAuthV2 - GetRefreshTokenAttributes"
        "OAuthV2-GetOAuthV2Info"
      "<GetOAuthV2Info name='##'>
@@ -1337,7 +1348,6 @@ apiproduct.developer.quota.timeunit*
       oauthv2accesstoken.##.refresh_token_status
     -->
 </GetOAuthV2Info>\n")
-
 
      '("OAuthV2 - GetAuthorizationCodeInfo"
        "OAuthV2-GetOAuthV2Info"
@@ -1466,7 +1476,6 @@ Authorization.
     <NotificationIntervalInSec>0</NotificationIntervalInSec>
 </MessageLogging>\n")
 
-
      '("MessageLogging - Log file"
        "ML-File"
        "<MessageLogging name='##'>
@@ -1521,7 +1530,7 @@ Authorization.
 </GenerateSAMLAssertion>\n")
 
      '("Cache - ResponseCache"
-     "ResponseCache"
+     "RC"
      "<ResponseCache name='##'>
   <DisplayName>${1:##}</DisplayName>
   <!-- composite item to use as cache key -->
@@ -1537,12 +1546,12 @@ Authorization.
     <TimeOfDay></TimeOfDay>
     <TimeoutInSec ref='insert.variable.here'>${5:6000}</TimeoutInSec>
   </ExpirySettings>
-  <SkipCacheLookup>request.header.x-bypass-cache = \"true\"</SkipCacheLookup>
-  <SkipCachePopulation>request.header.x-bypass-cache = \"true\"</SkipCachePopulation>
+  <SkipCacheLookup>NOT (request.verb ~~ \"(GET|HEAD)\")</SkipCacheLookup>
+  <SkipCachePopulation>NOT (request.verb ~~ \"(GET|HEAD)\")</SkipCachePopulation>
 </ResponseCache>")
 
      '("Cache - PopulateCache"
-       "CachePopulate"
+       "CP"
        "<PopulateCache name='##'>
   <CacheResource>${1:ApigeeCache}</CacheResource>
   <Source>${2:variable.containing.value}</Source>
@@ -1559,7 +1568,7 @@ Authorization.
 </PopulateCache>\n")
 
           '("Cache - LookupCache"
-       "CacheLookup"
+       "CL"
        "<LookupCache name='##'>
     <CacheResource>${1:ApigeeCache}</CacheResource>
     <AssignTo>${2:flowvariable}</AssignTo> <!-- name of flow variable -->
@@ -1571,7 +1580,7 @@ Authorization.
 </LookupCache>")
 
           '("Cache - InvalidateCache"
-       "CacheInvalidate"
+       "CI"
           "<InvalidateCache name='##'>
     <CacheResource>${1:ApigeeCache}</CacheResource>
     <Scope>${2:$$(yas-choose-value '(\"Exclusive\" \"Global\" \"Application\" \"Proxy\" \"Target\"))}</Scope>
@@ -3129,7 +3138,8 @@ and also in every other file in the API-proxy bundle.
                (policy (car root))
                (attrs (xml-node-attributes policy))
                (new-policyname (cdr (assq 'name attrs))))
-          (if (not (s-equals-p orig-policyname new-policyname))
+          (if (and new-policyname
+                   (not (s-equals-p orig-policyname new-policyname)))
               (let* ((new-short-filename (concat new-policyname ".xml"))
                      (new-filename
                       (concat (file-name-directory orig-filename) new-short-filename)))
@@ -3139,7 +3149,8 @@ and also in every other file in the API-proxy bundle.
                 (set-buffer-modified-p nil)
                 ;; now, search/replace all files in the apiproxy to replace
                 ;; that old policy name with the new policy name.
-                (let ((file-list (apigee-all-files-in-apiproxy))
+                (let ((policy-buffer-name (buffer-name))
+                      (file-list (apigee-all-files-in-apiproxy))
                       (re1 (concat "\\<" (regexp-quote orig-policyname) "\\>")))
                   (while file-list
                     (let* ((one-file (car file-list))
@@ -3154,7 +3165,9 @@ and also in every other file in the API-proxy bundle.
                                 (while (re-search-forward re1 nil t)
                                   (replace-match new-policyname)
                                   (setq need-save t))
-                                (if (and need-save (not original-modified))
+                                (if (and need-save
+                                         (not original-modified)
+                                         (not (s-equals-p policy-buffer-name (buffer-name))))
                                     (save-buffer))))))
                       (setq file-list (cdr file-list)))))))))))
 
