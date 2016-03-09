@@ -11,7 +11,7 @@
 ;; Requires   : s.el
 ;; License    : New BSD
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2016-February-22 15:44:27>
+;; Last-saved : <2016-March-08 15:15:33>
 ;;
 ;;; Commentary:
 ;;
@@ -395,9 +395,9 @@ select from.
     (if filenames
         (let ((numfiles (length filenames)))
           (if (and (eq numfiles 1))
-              (if (file-exists-p (car filename))
-                  (progn (find-file (car filename))
-                         (message "open file %s" (car filename)))
+              (if (file-exists-p (car filenames))
+                  (progn (find-file (car filenames))
+                         (message "open file %s" (car filenames)))
                 (message "E_NOEXIST %s" classname))
             (dcjava-find-file-from-choice filenames)))
       (message "no file for %s" classname))))
