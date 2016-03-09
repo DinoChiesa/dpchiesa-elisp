@@ -88,13 +88,22 @@
 (defun dino-netrc-basic-auth-header (username &optional password)
   "produce an HTTP Basic Auth header value for a given USERNAME and PASSWORD.
 Optionally, pass a list of (username password) as the first argument.
+Or, pass in a string machine-name as the first argument , and it will look up the
+pair in .netrc.
 
 A typical use might be:
-  (dino-netrc-basic-auth-header (cdr (dino-netrc-find (machine))))
+  (dino-netrc-basic-auth-header (cdr (dino-netrc-find machine-name)))
+
+or
+  (dino-netrc-basic-auth-header machine-name)
 "
-  (if (and (not password) (listp username))
-      (setq password (cadr username)
-            username (car username)))
+  (if (not password)
+      (if (listp username)
+          (setq password (cadr username)
+                username (car username))
+        (let ((result (cdr (dino-netrc-find username))))
+          (setq username (car result)
+                password (cadr result)))))
 
   (concat "Basic "
           (base64-encode-string
