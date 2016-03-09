@@ -1,3 +1,4 @@
+# -*- mode: snippet -*-
 # key : fori
 # name : for (var foo in bar) { ... }
 # --

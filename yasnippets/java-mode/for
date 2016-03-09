@@ -1,5 +1,6 @@
-#key : for
-#name : for (...) { ... }
+# -*- mode: snippet -*-
+# name: for (...) { ... }
+# key: for
 # --
 for (int ${1:index}=0; $1 < ${2:Limit}; $1++) {
     ${3:// body...}

@@ -1,3 +1,4 @@
+# -*- mode: snippet -*-
 # key : fn
 # name : function fnName (...) { ... }
 # --
