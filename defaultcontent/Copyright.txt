@@ -1,2 +1,2 @@
-// Copyright © 2014 Dino Chiesa
+// Copyright © 2016 Dino Chiesa
 // All rights reserved.

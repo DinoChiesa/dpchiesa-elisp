@@ -4,10 +4,9 @@
 // Description goes here....
 //
 // Author: @AUTHOR@
-// created on host: @ENV(COMPUTERNAME)@
 // initialized on: @DATE@
 //
-// last saved: <2012-November-19 16:31:49>
+// last saved: <2016-February-26 17:23:39>
 // ------------------------------------------------------------------
 //
 @INSERTFILE(/Users/Dino/elisp/defaultcontent/Copyright.txt)@//
@@ -23,7 +22,7 @@ using System.Reflection;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Dino Chiesa")]
 [assembly: AssemblyProduct("Tools")]
-[assembly: AssemblyCopyright("Copyright (c) Dino Chiesa 2010")]
+[assembly: AssemblyCopyright("Copyright (c) Dino Chiesa 2016")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 [assembly: AssemblyVersion("1.1.1.1")]
