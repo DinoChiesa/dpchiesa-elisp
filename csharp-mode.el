@@ -7,7 +7,7 @@
 ;; Version    : 0.8.6
 ;; Keywords   : c# languages oop mode
 ;; X-URL      : http://code.google.com/p/csharpmode/
-;; Last-saved : <2012-April-05 16:10:11>
+;; Last-saved : <2016-March-06 21:31:08>
 
 ;;
 ;; This program is free software; you can redistribute it and/or modify
@@ -3225,13 +3225,14 @@ to the beginning of the prior namespace.
 ;; been set to nil, imenu still sorts the menu, according to the rule
 ;; that all submenus must appear at the top of any menu. Why?  I don't
 ;; know. This advice disables that weirdness in C# buffers.
-
 (defadvice imenu--split-menu (around
                               csharp--imenu-split-menu-patch
                               activate compile)
+
   ;; This advice will run in all buffers.  Let's may sure we
   ;; actually execute the important bits only when a C# buffer is active.
-  (if (and (string-match "\\.[Cc][Ss]$"  (file-relative-name buffer-file-name))
+  (if (and buffer-file-name
+           (string-match "\\.[Cc][Ss]$"  (file-relative-name buffer-file-name))
            (boundp 'csharp-want-imenu)
            csharp-want-imenu)
       (let ((menulist (copy-sequence menulist))
@@ -5909,5 +5910,3 @@ $0" "XML Documentation" nil)
 (provide 'csharp-mode)
 
 ;;; csharp-mode.el ends here
-
-
