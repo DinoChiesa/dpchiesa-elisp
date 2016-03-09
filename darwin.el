@@ -28,7 +28,7 @@ flycheck.  Use it like this:
 
 Then, in your csharp file, specify this in the comments near the top of the file.
 
-    // flycheck: gmcs -t:module /debug+ -pkg:dotnet %f
+    // flycheck: mcs -t:module /debug+ -pkg:dotnet %f
 
 This will cause flycheck to run the given command, replacing the %f with
 the source file name."
@@ -56,7 +56,7 @@ the source file name."
        "A C# syntax checker for dotnet. By default, it uses the Mono
 compiler. If you would like to use a different compiler, see
 `csharp-set-flycheck-command'."
-       :command ("gmcs" "-target:module" source)
+       :command ("mcs" "-target:module" source)
        :error-patterns
        ;; WinFormsHello.cs(17,9): error CS0246: The type or namespace name `derp' could not be found. Are you missing an assembly reference?
        ((error line-start (file-name) "(" line "," column "): error " (message) line-end)
@@ -73,9 +73,9 @@ compiler. If you would like to use a different compiler, see
      (and (boundp 'smart-compile-alist)
           (let ((csharp-entry (assoc "\\.cs\\'" smart-compile-alist)))
             (if csharp-entry
-                (setcdr csharp-entry "gmcs /t:exe /debug+ %f")
+                (setcdr csharp-entry "mcs /t:exe /debug+ %f")
               (add-to-list 'smart-compile-alist
-                           '("\\.cs\\'"         . "gmcs /t:exe /debug+ %f")))))))
+                           '("\\.cs\\'"         . "mcs /t:exe /debug+ %f")))))))
 
 
 
