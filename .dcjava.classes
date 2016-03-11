@@ -134,3 +134,10 @@ org.apache.avro.file.DataFileReader
 org.apache.avro.Schema
 org.apache.avro.generic.GenericArray
 org.apache.commons.io.IOUtils
+com.fasterxml.jackson.databind.DeserializationFeature
+org.testng.annotations.DataProvider
+org.testng.annotations.BeforeMethod
+org.testng.annotations.BeforeTest
+org.testng.annotations.BeforeSuite
+org.testng.annotations.Test
+org.testng.Assert
