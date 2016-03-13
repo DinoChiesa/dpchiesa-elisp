@@ -121,7 +121,7 @@ function.  Eg
   "Return an association-list representation of the hashtable HASH."
    (let ((alist nil))
      (maphash
-      (lambda (key value)
+      #'(lambda (key value)
         (setq alist (cons (cons key value) alist)))
       hash)
      alist))
@@ -131,7 +131,7 @@ function.  Eg
   "Build a hashtable from the values in the association list ALIST."
   (let ((ht (apply 'make-hash-table options)))
     (mapc
-     (lambda (kv-pair) (puthash (car kv-pair) (cdr kv-pair) ht))
+     #'(lambda (kv-pair) (puthash (car kv-pair) (cdr kv-pair) ht))
      alist)
      ht))
 
@@ -209,7 +209,7 @@ the user that he needs to register for an API key.
             ;; powershell allows running script passed as -Command. So.
             (concat "[void][System.Reflection.Assembly]::LoadWithPartialName('System.Windows.Forms');"
                     "[Windows.Forms.MessageBox]::Show("
-                    (mapconcat '(lambda (elt)
+                    (mapconcat #'(lambda (elt)
                                   (rris (char-to-string 34)
                                         (char-to-string 39)
                                         (pp-to-string
@@ -303,7 +303,7 @@ list of candidates. Each item in the list of candidates is a
 string.
 
 "
-  (let ((items (mapcar '(lambda (elt) (cons elt elt)) candidates)))
+  (let ((items (mapcar #'(lambda (elt) (cons elt elt)) candidates)))
 
     ;; this works with x-popup-menu
     (setq items (cons "Ignored pane title" items))
@@ -324,7 +324,7 @@ See `spelchek-prompt-mechanism'.
     nil)
    ((and (eq spelchek-prompt-mechanism 'dropdown-list)
          (featurep 'dropdown-list))
-    (let ((choice-n (dropdown-list (mapcar '(lambda (elt) elt) candidates))))
+    (let ((choice-n (dropdown-list (mapcar #'(lambda (elt) elt) candidates))))
       (if choice-n
           (nth choice-n candidates)
         (keyboard-quit))))

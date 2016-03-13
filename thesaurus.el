@@ -187,7 +187,7 @@ function.  Eg
   "Return an association-list representation of the hashtable HASH."
    (let ((alist nil))
      (maphash
-      (lambda (key value)
+      #'(lambda (key value)
         (setq alist (cons (cons key value) alist)))
       hash)
      alist))
@@ -197,7 +197,7 @@ function.  Eg
   "Build a hashtable from the values in the association list ALIST."
   (let ((ht (apply 'make-hash-table options)))
     (mapc
-     (lambda (kv-pair) (puthash (car kv-pair) (cdr kv-pair) ht))
+     #'(lambda (kv-pair) (puthash (car kv-pair) (cdr kv-pair) ht))
      alist)
      ht))
 
@@ -274,7 +274,7 @@ the user that he needs to register for an API key.
             ;; powershell allows running script passed as -Command. So.
             (concat "[void][System.Reflection.Assembly]::LoadWithPartialName('System.Windows.Forms');"
                     "[Windows.Forms.MessageBox]::Show("
-                    (mapconcat '(lambda (elt)
+                    (mapconcat #'(lambda (elt)
                                   (rris (char-to-string 34)
                                         (char-to-string 39)
                                         (pp-to-string
@@ -417,10 +417,10 @@ The output is a list like this:
       (\"thing 2 to display\" \"value if thing 2 is selected\")))
 
 "
-  (let ((items (mapcar '(lambda (elt)
-                          (cons
-                           (concat (nth 2 elt) " (" (nth 0 elt) ")")
-                           (nth 2 elt)))
+  (let ((items (mapcar #'(lambda (elt)
+                         (cons
+                          (concat (nth 2 elt) " (" (nth 0 elt) ")")
+                          (nth 2 elt)))
                        candidates)))
 
     ;; this works with x-popup-menu
@@ -441,7 +441,7 @@ See `thesaurus-prompt-mechanism'.
     nil)
    ((and (eq thesaurus-prompt-mechanism 'dropdown-list)
          (featurep 'dropdown-list))
-    (let ((choice-n (dropdown-list (mapcar '(lambda (elt) (nth 2 elt)) candidates))))
+    (let ((choice-n (dropdown-list (mapcar #'(lambda (elt) (nth 2 elt)) candidates))))
       (if choice-n
           (nth choice-n candidates)
         (keyboard-quit))))

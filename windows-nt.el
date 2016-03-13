@@ -48,6 +48,27 @@ selection to the kill ring"
 
 
 
+(defun dino-javascript-mode--win-specific-fn ()
+  (if (eq system-type 'windows-nt)
+      (progn
+        (require 'jscomp)
+        (local-set-key "\M-."     'jscomp-complete))))
+
+
+  ;; The following needs to be in jslint-for-wsh.el or whatever
+  ;; ;; jslint-for-wsh.js, produces errors like this:
+  ;; ;; file.cs(6,18): JSLINT: The body of a for in should be wrapped in an if statement ...
+  ;; (if (and (eq system-type 'windows-nt)
+  ;;          (boundp 'compilation-error-regexp-alist-alist))
+  ;;     (progn
+  ;;       (add-to-list
+  ;;        'compilation-error-regexp-alist-alist
+  ;;        '(jslint-for-wsh
+  ;;          "^[ \t]*\\([A-Za-z.0-9_: \\-]+\\)(\\([0-9]+\\)[,]\\( *[0-9]+\\)) \\(Microsoft JScript runtime error\\|JSLINT\\|JSHINT\\): \\(.+\\)$" 1 2 3))
+  ;;       (add-to-list
+  ;;        'compilation-error-regexp-alist
+  ;;        'jslint-for-wsh))))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TFS commands

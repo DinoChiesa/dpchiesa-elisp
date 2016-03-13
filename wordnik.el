@@ -159,7 +159,7 @@ invocations of emacs.
   "Return an association-list representation of the hashtable HASH."
    (let ((alist nil))
      (maphash
-      (lambda (key value)
+      #'(lambda (key value)
         (setq alist (cons (cons key value) alist)))
       hash)
      alist))
@@ -168,7 +168,7 @@ invocations of emacs.
   "Build a hashtable from the values in the association list ALIST."
   (let ((ht (apply 'make-hash-table options)))
     (mapc
-     (lambda (kv-pair) (puthash (car kv-pair) (cdr kv-pair) ht))
+     #'(lambda (kv-pair) (puthash (car kv-pair) (cdr kv-pair) ht))
      alist)
      ht))
 
@@ -252,7 +252,7 @@ This can be used in place of `message-box' on Windows.
             ;; powershell allows running script passed as -Command. So.
             (concat "[void][System.Reflection.Assembly]::LoadWithPartialName('System.Windows.Forms');"
                     "[Windows.Forms.MessageBox]::Show("
-                    (mapconcat '(lambda (elt)
+                    (mapconcat #'(lambda (elt)
                                   (rris (char-to-string 34)
                                         (char-to-string 39)
                                         (pp-to-string
@@ -280,7 +280,7 @@ This can be used in place of `message-box' on Windows.
   "convert a vector of definitions to a simple string separated by
 newlines.
 "
-  (mapconcat '(lambda (elt)
+  (mapconcat #'(lambda (elt)
                 (concat msg
                         (cdr (assoc 'word elt))
                         ": "
@@ -320,7 +320,7 @@ The output is a list like this:
       (\"thing 2 to display\" \"value if thing 2 is selected\")))
 
 "
-  (let ((items (mapcar '(lambda (elt)
+  (let ((items (mapcar #'(lambda (elt)
                           (cons
                            (concat
                             (cdr (assoc 'word elt))
@@ -343,7 +343,7 @@ number of lines of input. Also, it cannot handle wide lines.
 This function works around the display problems.
 Derived from http://stackoverflow.com/a/9966422/48082
 "
-  (let ((get-item-text (lambda (elt c)
+  (let ((get-item-text #'(lambda (elt c)
                          (concat (format "%d" (1+ c)) ": "
                                  (wordnik--justify
                                   (cdr (assoc 'text elt)))

@@ -164,7 +164,7 @@ prefix arg, the next N files "
   (unless (eq major-mode 'dired-mode)
     (error "works only when current-buffer is in dired-mode"))
   (let ((other-visible-dired-buffers
-         (delq nil (mapcar '(lambda (w)
+         (delq nil (mapcar #'(lambda (w)
                               (let* ((b (window-buffer w))
                                      (m (mode-for-buffer b)))
                                 (and (eq m 'dired-mode)
@@ -177,9 +177,8 @@ prefix arg, the next N files "
 
     (let ((dst-dir (expand-file-name (with-current-buffer (car other-visible-dired-buffers)
                                        default-directory))))
-
-      (mapc '(lambda (f) (funcall fn f dst-dir 1))
-              (dired-get-marked-files nil arg))
+      (mapc #'(lambda (f) (funcall fn f dst-dir 1))
+              (dired-get-marked-files nil))
        (with-current-buffer (car other-visible-dired-buffers)
          (revert-buffer))
        (revert-buffer))))

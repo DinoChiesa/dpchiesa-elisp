@@ -577,6 +577,18 @@ the .el files is something like \"~/.emacs.d/elpa/org-20140414/\".
 
 But when that package gets updated the directory changes. This
 function finds the latest directory for the named package.
+
+FYI: this is unnecessary if there is only one version
+of each package in the ~/.emacs.d/elpa directory. In that case, you can
+just do
+
+  (let ((default-directory \"~/.emacs.d/elpa\"))
+    (normal-top-level-add-subdirs-to-load-path))
+
+
+Also FYI: `string-prefix-p' is  built-in, but is not present in the 
+version of emacs that is installed by default on MacOS. 
+
 "
   (let ((pkg-dir "~/.emacs.d/elpa/")
         ;; in lieu of flet

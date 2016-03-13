@@ -1,8 +1,8 @@
 ;;; emacs.el -- dino's em Dino's .emacs setup file.
 ;;
-;; Last saved: <2016-March-07 06:06:36>
+;; Last saved: <2016-March-13 16:33:45>
 ;;
-;; Works with v24.3 of emacs.
+;; Works with v24.5 of emacs.
 ;;
 
 ;;; Commentary:
@@ -17,7 +17,7 @@
                             (set-face-background 'default "black")))
 
 (setq inhibit-splash-screen t)
-(tool-bar-mode -1) ;; we don't need no steenking icons
+(if (fboundp 'tool-bar-mode) (tool-bar-mode -1)) ;; we don't need no steenking icons
 (setq user-mail-address "dpchiesa@hotmail.com")
 
 (setq comment-style 'indent) ;; see doc for variable comment-styles
@@ -34,14 +34,11 @@
 ;;
 ;; Try  M-x list-coding-systems   ... to see a list
 ;;
-(prefer-coding-system 'utf-8-auto) ;; unicode
+(if (boundp 'utf-8-auto)
+    (prefer-coding-system 'utf-8-auto)) ;; unicode
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; directory to load additional libraries from :
-;; This dir contains:
-;;  yasnippet.el defaultcontent.el, csharp-mode.el,
-;;  powershell-mode.el, powershell.el, htmlize.el
-;;  javascript.el, espresso, etc
 
 (add-to-list 'load-path "~/elisp")
 
@@ -51,13 +48,12 @@
 (require 'dino-utility)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; set load-path for elpa things to take precedence over builtin
-;; packages.  Eg org mode, which gets updated more frequently than
-;; emacs.
+;; set load-path for elpa things. Some of these may take precedence
+;; over builtin packages.  Eg org mode, which gets updated more
+;; frequently than emacs.
 ;;
-
-(dino-add-load-path-for-package "org")  ;; eg, "~/.emacs.d/elpa/org-20140414/"
-(dino-add-load-path-for-package "s")
+(let ((default-directory "~/.emacs.d/elpa"))
+  (normal-top-level-add-subdirs-to-load-path))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -76,14 +72,12 @@
 (require 'apigee)
 (setq apigee-apiproxies-home "~/dev/apiproxies/")
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; the go language
 ;;
 (add-to-list 'load-path "/usr/local/go/misc/emacs")
 (require 'go-mode-load) ;; editing mode
-
-;; for flycheck/flymake or compile support, you need go on the path
+;; for flycheck or compile support, I need the go binary on the path
 (setenv "GOPATH" "/Users/dino/dev/go/libs")
 
 (defun dino-go-mode-fn ()
@@ -91,6 +85,9 @@
   (setq tab-width 2
         standard-indent 2
         indent-tabs-mode nil)
+
+  ;;Go auto-complete
+  (require 'go-autocomplete)
 
   (eval-after-load "smarter-compile"
     '(progn
@@ -121,6 +118,7 @@
 ;;        (progn
 ;;          ;;(flymake-mode 1)
 ;;        (setq goflymake-path "/Users/dino/dev/go/libs/bin/goflymake"))))
+
 
 
 
@@ -197,57 +195,49 @@
 (set-variable 'backup-by-copying t)
 
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; yasnippet
+;;
+
+;; claim: this must be added before auto-complete-config
+(require 'yasnippet)
+(setq yas-snippet-dirs (list "~/elisp/yasnippets"))
+(yas-global-mode 1)
+;;(yas-load-directory (car yas-snippet-dirs))
+;; ------------------------------------------------
+;;;; Expand snippet synchronously
+(defvar yas--recursive-edit-flag nil)
+
+(defun yas-expand-sync ()
+  "Execute `yas-expand'. This function exits after expanding snippet."
+  (interactive)
+  (let ((yas--recursive-edit-flag t))
+    (call-interactively 'yas-expand)
+    (recursive-edit)))
+
+(defun yas-expand-snippet-sync (content &optional start end expand-env)
+  "Execute `yas-expand-snippet'. This function exits after expanding snippet."
+  (let ((yas--recursive-edit-flag t))
+    ;;(sit-for 0.6) ;; timing issue?
+    (yas-expand-snippet content start end expand-env)
+    ;;(sit-for 0.2) ;; timing issue?
+    (recursive-edit)))
+(defun my-yas-after-exit-snippet-hook--recursive-edit ()
+  (when yas--recursive-edit-flag
+    (throw 'exit nil)))
+(add-hook 'yas-after-exit-snippet-hook 'my-yas-after-exit-snippet-hook--recursive-edit)
+
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; autocomplete
 
 ;; (add-to-list 'load-path "/Users/Dino/elisp/autocomplete")
-;; (require 'auto-complete-config)
+(require 'auto-complete-config)
 ;; (add-to-list 'ac-dictionary-directories "/Users/Dino/elisp/autocomplete/ac-dict")
-;; (ac-config-default)
+(ac-config-default)
 
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; basic, default colors
-
-;; see this for an example of color theming:
-;;    http://hi.baidu.com/masterray/blog/item/9caa181fb9177cc2a68669a8.html
-
-
-(set-background-color "black")  ;; need this if I also do set-face-background?
-(set-face-foreground 'default "white")
-(set-face-background 'default "black")
-
-
-;; I couldn't get eval-after-load to work with hl-line, so
-;; I made this an after advice??
-(defadvice hl-line-mode (after
-                         dino-advise-hl-line-mode
-                         activate compile)
-  (set-face-background hl-line-face "gray13"))
-
-(global-hl-line-mode)
-
-;;(set-face-background 'font-lock-comment-face "black")
-(set-face-foreground 'font-lock-comment-face       "VioletRed1")
-(set-face-foreground 'font-lock-constant-face      "DodgerBlue")
-(set-face-foreground 'font-lock-string-face        "MediumOrchid1")
-(set-face-foreground 'font-lock-keyword-face       "Cyan1")
-(set-face-foreground 'font-lock-function-name-face "RoyalBlue1")
-(set-face-foreground 'font-lock-variable-name-face "LightGoldenrod")
-(set-face-foreground 'font-lock-type-face          "PaleGreen")
-
-;;(make-face 'font-lock-reference-face)
-;;(set-face-foreground 'font-lock-reference-face "Navy")
-
-(set-face-foreground 'tooltip "Navy")
-(set-face-background 'tooltip "khaki1")
-
-(set-face-background 'font-lock-string-face "gray11")
-
-
-;;(setq read-buffer-completion-ignore-case t)
-(setq read-file-name-completion-ignore-case t)
 
 
 
@@ -256,13 +246,10 @@
 (require 'httpget)
 
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Word-count minor mode
 (autoload 'word-count-mode "word-count"
           "Minor mode to count words." t nil)
-
-
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -355,6 +342,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Frames preferences: initial and default frames
 ;; see http://www.gnu.org/software/emacs/windows/big.html#windows-frames
+(setq dino-name-of-preferred-font "-*-Consolas-normal-normal-normal-*-11-*-*-*-m-0-iso10646-1")
+
 (setq default-frame-alist
       '((top . 10) (left . 860)
         (width . 100) (height . 25)
@@ -363,14 +352,11 @@
         ;;(foreground-color . "White")
         ;;(background-color . "Black")
         (mouse-color . "sienna3")
-        (font . "-*-Lucida Console-normal-r-*-*-11-82-96-96-c-*-iso8859-1")
+        (font . "-*-Consolas-normal-normal-normal-*-11-*-*-*-m-0-iso10646-1")
         )
       )
 
-;;(set-face-font 'tooltip "-*-Lucida Console-normal-r-*-*-11-82-96-96-c-*-iso8859-1")
-;;(set-face-font 'tooltip "-outline-Lucida Sans Typewriter-normal-r-normal-normal-15-112-96-96-c-*-iso8859-1")
-;;(set-face-font 'tooltip "-outline-Lucida Sans Typewriter-normal-r-normal-normal-13-97-96-96-c-*-iso8859-1")
-
+(set-face-attribute 'default t :font "Consolas-11")
 
 ;; (message (face-font 'tooltip))
 ;; (message (face-font 'default))
@@ -411,25 +397,22 @@
 (autoload 'php-mode "php-mode" "Major mode for editing php code." t)
 
 
-(require 'web-mode)
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; web
+
+(require 'web-mode)
 (defun dino-web-mode-fn ()
   "My hook for web mode"
-  ;;(interactive)
   (turn-on-font-lock)
-
   ;;;xxxxx minor-mode
   ;;(hs-minor-mode 1)
-
   (linum-on)
-
   ;; why I have to re-set this key is baffling to me.
   ;; and this does not seem to work...
   (local-set-key "\M-\C-R"  'indent-region)
-
   ;; Make sure autofill is OFF.
-  (auto-fill-mode -1)
-  )
+  (auto-fill-mode -1))
 
 (add-hook 'web-mode-hook 'dino-web-mode-fn)
 
@@ -556,7 +539,6 @@ With a prefix argument, makes a private paste."
                                     :content (buffer-substring begin end)))))
     ;; finally we use our new arg to specify the description in the internal call
     (gist-internal-new files private description callback)))
-
      ))
 
 
@@ -571,7 +553,6 @@ With a prefix argument, makes a private paste."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; yaml
 (require 'yaml-mode)
-
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -622,12 +603,16 @@ With a prefix argument, makes a private paste."
 
 
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Auto-complete
+;; (add-to-list 'load-path (file-name-as-directory "~/elisp/auto-complete-1.3.1"))
+
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CSharp Code Completion
 
 (add-to-list 'load-path (file-name-as-directory "~/elisp/cscomp"))
-(add-to-list 'load-path (file-name-as-directory "~/elisp/auto-complete-1.3.1"))
 
 
 ;;(require 'csharp-completion)
@@ -654,153 +639,6 @@ With a prefix argument, makes a private paste."
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; yasnippet
-;;
-;; grabbed 2008 april 11
-;; see http://capitaomorte.github.com/yasnippet/snippet-organization.html
-;;
-
-(require 'yasnippet)
-
-;; ;; approach for 0.7.0:
-;; ;; If I don't set both yas/snippet-dirs and yas/root-directory, I
-;; ;; get complaints in *Messages*.
-;; (setq yas/snippet-dirs (list "~/elisp/snippets"))
-;; (yas/initialize)
-;; (setq yas/root-directory "~/elisp/snippets")
-;; (yas/load-directory yas/root-directory)
-
-;; Wednesday, 17 June 2015, 12:45
-;; approach for 0.8.1:
-(setq yas-snippet-dirs (list "~/elisp/yasnippets"))
-(yas-global-mode 1)
-;;(yas-load-directory (car yas-snippet-dirs))
-
-
-;; I think the following is not needed for v0.8.1 of yasnippet.el.
-;; To recompile all snippers you can just... `yas-recompile-all'
-;;
-;; (defun dino-recompile-then-reload-all-snippets (&optional dir)
-;;   "Recompile and reload all snippets in a toplevel snippets
-;; directory specified by DIR, or in `yas/root-directory' if DIR is
-;; not specified.
-;;
-;; A simple reload-all does not re-compile snippets; instead it
-;; reloads the 'precompiled' snippets. And, that's not really a good
-;; idea, because precompiling snippets manually does not compile
-;; them correctly: they lack the correct mode specification. Huh?
-;; Obviously nobody tested this. Open-sores software.
-;;
-;; It is unbelievable to me that it takes a custom-written function
-;; to accomplish this. I'm certain I must be doing something wrong,
-;; but I was unable to fall into a pit of success after much
-;; searching.
-;;
-;; So I wrote this function which does what I think it should do,
-;; which is to recompile and then reload all the snippets in my
-;; snippets directory.
-;;
-;; "
-;;   (interactive)
-;;   (let ((top-dir (or dir yas/root-directory)))
-;;     ;; delete all pre-compiled
-;;     (dolist (subdir (yas/subdirs top-dir))
-;;       (let ((fq-elfile (concat subdir "/.yas-compiled-snippets.el")))
-;;         (message (concat "checking " fq-elfile))
-;;         (if (file-exists-p fq-elfile)
-;;             (delete-file fq-elfile))))
-;;     (yas/compile-top-level-dir top-dir)
-;;     (yas/load-directory top-dir)))
-
-
-;; ;; REDEFINE
-;; ;; This fixes up a defun in yasnippet.
-;; ;; The original does not specify the mode in the yas/define-snippet
-;; ;; call in the generated .el file.
-;; (defun yas/compile-snippets (input-dir &optional output-file)
-;;   "Compile snippets files in INPUT-DIR to OUTPUT-FILE file.
-;;
-;; Prompts for INPUT-DIR and OUTPUT-FILE if called-interactively"
-;;   (interactive (let* ((input-dir (read-directory-name "Snippet dir "))
-;;                       (output-file (let ((ido-everywhere nil))
-;;                                      (read-file-name "Output file "
-;;                                                      input-dir nil nil
-;;                                                      ".yas-compiled-snippets.el"
-;;                                                      nil))))
-;;                  (list input-dir output-file)))
-;;   (let ((default-directory input-dir)
-;;         (major-mode-and-parents (yas/compute-major-mode-and-parents
-;;                                  (concat input-dir "/dummy"))))
-;;     (with-temp-file (setq output-file (or output-file ".yas-compiled-snippets.el"))
-;;       (flet ((yas/define-snippets
-;;               (mode snippets &optional parent-or-parents)
-;;               (insert (format ";;; %s - automatically compiled snippets for `%s' , do not edit!\n"
-;;                               (file-name-nondirectory output-file) mode))
-;;               (insert ";;;\n")
-;;               (let ((literal-snippets (list)))
-;;                 (dolist (snippet snippets)
-;;                   (let ((key                    (first   snippet))
-;;                         (template-content       (second  snippet))
-;;                         (name                   (third   snippet))
-;;                         (condition              (fourth  snippet))
-;;                         (group                  (fifth   snippet))
-;;                         (expand-env             (sixth   snippet))
-;;                         (file                   nil) ;; (seventh snippet)) ;; omit on purpose
-;;                         (binding                (eighth  snippet))
-;;                         (uuid                    (ninth   snippet)))
-;;                     (push `(,key
-;;                             ,template-content
-;;                             ,name
-;;                             ,condition
-;;                             ,group
-;;                             ,expand-env
-;;                             ,file
-;;                             ,binding
-;;                             ,uuid)
-;;                           literal-snippets)))
-;;                 (insert (pp-to-string `(yas/define-snippets ',mode ',literal-snippets ',parent-or-parents)))
-;;                 (insert "\n\n")
-;;                 (insert (format ";;; %s - automatically compiled snippets for `%s' end here\n"
-;;                                 (file-name-nondirectory output-file) mode))
-;;                 (insert ";;;"))))
-;;         (yas/load-directory-1 input-dir (car major-mode-and-parents)
-;;                               nil 'no-compiled-snippets))))
-;;
-;;   (if (and (called-interactively-p)
-;;            (yes-or-no-p (format "Open the resulting file (%s)? "
-;;                                 (expand-file-name output-file))))
-;;       (find-file-other-window output-file)))
-
-
-
-
-;; ------------------------------------------------
-
-;;;; Expand snippet synchronously
-(defvar yas--recursive-edit-flag nil)
-
-(defun yas-expand-sync ()
-  "Execute `yas-expand'. This function exits after expanding snippet."
-  (interactive)
-  (let ((yas--recursive-edit-flag t))
-    (call-interactively 'yas-expand)
-    (recursive-edit)))
-
-(defun yas-expand-snippet-sync (content &optional start end expand-env)
-  "Execute `yas-expand-snippet'. This function exits after expanding snippet."
-  (let ((yas--recursive-edit-flag t))
-    ;;(sit-for 0.6) ;; timing issue?
-    (yas-expand-snippet content start end expand-env)
-    ;;(sit-for 0.2) ;; timing issue?
-    (recursive-edit)))
-(defun my-yas-after-exit-snippet-hook--recursive-edit ()
-  (when yas--recursive-edit-flag
-    (throw 'exit nil)))
-(add-hook 'yas-after-exit-snippet-hook 'my-yas-after-exit-snippet-hook--recursive-edit)
 
 
 
@@ -832,11 +670,16 @@ With a prefix argument, makes a private paste."
   (require 'yasnippet)
   (yas-minor-mode-on)
 
-  (local-set-key "\C-c\C-n"  'flymake-goto-next-error)
-  (local-set-key "\C-c\C-m"  'flymake-display-err-menu-for-current-line)
+  ;; (local-set-key "\C-c\C-n"  'flymake-goto-next-error)
+  ;; (local-set-key "\C-c\C-m"  'flymake-display-err-menu-for-current-line)
 
-  (require 'autopair)
-  (autopair-mode 1)
+
+  ;; use autopair for curlies, parens, square brackets.
+  ;; electric-pair-mode works better than autopair.el in 24.4,
+  ;; and is important for use with popup / auto-complete.
+  (if (or (not (fboundp 'version<)) (version< emacs-version "24.4"))
+    (progn (require 'autopair) (autopair-mode))
+    (electric-pair-mode))
 
   ;;(require 'myfixme)
   ;;(myfixme-mode 1)
@@ -869,8 +712,12 @@ With a prefix argument, makes a private paste."
 
   (turn-on-auto-revert-mode)
 
-  (require 'autopair)
-  (autopair-mode)
+  ;; use autopair for curlies, parens, square brackets.
+  ;; electric-pair-mode works better than autopair.el in 24.4,
+  ;; and is important for use with popup / auto-complete.
+  (if (or (not (fboundp 'version<)) (version< emacs-version "24.4"))
+    (progn (require 'autopair) (autopair-mode))
+    (electric-pair-mode))
 
   (setq css-indent-offset 2)
 
@@ -881,17 +728,20 @@ With a prefix argument, makes a private paste."
   ;; make auto-complete start only after 2 chars
   (setq ac-auto-start 2)  ;;or 3?
 
-  (require 'flymake)
-  (and (file-name-directory buffer-file-name)
-       (flymake-mode 1))
+  (require 'csslint)
+  (require 'flycheck)
+  (flycheck-mode)
+  (flycheck-select-checker 'css-csslint)
+
+  ;; (require 'flymake)
+  ;; (and (file-name-directory buffer-file-name)
+  ;;      (flymake-mode 1))
 
   ;; "no tabs" -- use only spaces
   ;;(make-local-variable 'indent-tabs-mode)
   (setq indent-tabs-mode nil))
 
 (add-hook 'css-mode-hook 'dino-css-mode-fn)
-
-(require 'csslint)
 
 
 
@@ -1104,54 +954,6 @@ just auto-corrects on common mis-spellings by me. "
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; flymake
-;
-; for a potential source of additional fixes/changes/updates, see
-; https://github.com/illusori/emacs-flymake . The problem with that
-; update is that the changes are not incremental - need to adopt
-; everything all at once.  It includes fixes to, for example, run the
-; flymake check only on the current buffer.  If you have 10 open PHP
-; modules, instead of flymake checking 10 buffers, it checks only the
-; current one for changes. This can save busy work, save cpu stress.
-;
-
-
-(setq nmake.exe "\\vs2010\\VC\\bin\\amd64\\nmake.exe")
-
-(defun dino-flymake-create-temp-intemp (file-name prefix)
-  "Return file name in temporary directory for checking FILE-NAME.
-This is a replacement for `flymake-create-temp-inplace'. The
-difference is that it gives a file name in
-`temporary-file-directory' instead of the same directory as
-FILE-NAME.
-
-For the use of PREFIX see that function.
-
-This won't always work; it will fail if the source module
-refers to relative paths.
-"
-  (unless (stringp file-name)
-    (error "Invalid file-name"))
-  (or prefix
-      (setq prefix "flymake"))
-  (let* ((name (concat
-                prefix "-"
-                (file-name-nondirectory
-                 (file-name-sans-extension file-name))
-                "-"))
-         (ext  (concat "." (file-name-extension file-name)))
-         (temp-name (make-temp-file name nil ext))
-         )
-    (flymake-log 3 "create-temp-intemp: file=%s temp=%s" file-name temp-name)
-    temp-name))
-
-;; configuration for flymake.el
-(require 'flymake-fixups)
-
-;; enhancements for displaying flymake errors
-(require 'flymake-cursor)
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun dino-enable-delete-trailing-whitespace ()
   "remove trailing whitespace"
@@ -1243,8 +1045,8 @@ refers to relative paths.
 
          (setq c-auto-newline nil)
 
-         (require 'flymake)
-         (flymake-mode 1)
+         ;; (require 'flymake)
+         ;; (flymake-mode 1)
 
          (set (make-local-variable 'comment-start) "// ")
          (set (make-local-variable 'comment-end) "")
@@ -1803,7 +1605,7 @@ insert a pair, and backup one character."
 
          (local-set-key "\C-c\C-y"  'csharp-show-syntax-table-prop)
          (local-set-key "\C-c\C-h"  'csharp-show-parse-state)
-         (local-set-key "\C-c\C-v" 'my-flymake-show-next-error)
+         ;;(local-set-key "\C-c\C-v" 'my-flymake-show-next-error)
 
          (local-set-key (kbd "C-<") 'csharp-move-back-to-beginning-of-defun)
          (local-set-key (kbd "C->") 'csharp-move-fwd-to-end-of-defun)
@@ -2067,9 +1869,13 @@ Does not consider word syntax tables.
 
 (defun dino-php-mode-fn ()
   "Function to run when php-mode is initialized for a buffer."
-  (require 'flymake)
-  (and (file-name-directory buffer-file-name)
-       (flymake-mode 1))
+  ;; (require 'flymake)
+  ;; (and (file-name-directory buffer-file-name)
+  ;;      (flymake-mode 1))
+
+  (require 'flycheck)
+  (flycheck-mode)
+  (flycheck-select-checker 'php-phpcs)
 
   (setq c-default-style "bsd"
         c-basic-offset 2)
@@ -2093,58 +1899,59 @@ Does not consider word syntax tables.
 (eval-after-load "php-mode"
   '(progn
      (require 'compile)
-     (require 'flymake)
+     ;;(require 'flymake)
      (add-hook 'php-mode-hook 'dino-php-mode-fn t)))
 
 
 (defvar dc-php-program "/usr/bin/php" "PHP interpreter")
 
-(defun dino-php-flymake-get-cmdline  (source base-dir)
-  "Gets the cmd line for running a flymake session in a PHP buffer.
-This gets called by flymake itself."
+;; (defun dino-php-flymake-get-cmdline  (source base-dir)
+;;   "Gets the cmd line for running a flymake session in a PHP buffer.
+;; This gets called by flymake itself."
+;;
+;;   (dino-log "PHP" "flymake cmdline for %s" source)
+;;
+;;   (list dc-php-program
+;;         (list "-f" (expand-file-name source)  "-l")))
+;;
+;;
+;; (defun dino-php-flymake-init ()
+;;   "initialize flymake for php"
+;;   (let ((create-temp-f 'dino-flymake-create-temp-intemp)
+;;         ;;(create-temp-f 'flymake-create-temp-inplace)
+;;         (use-relative-base-dir t)
+;;         (use-relative-source t)
+;;         (get-cmdline-f 'dino-php-flymake-get-cmdline)
+;;         args
+;;         temp-source-file-name)
+;;
+;;     (dino-log "PHP" "flymake-for-php invoke...")
+;;
+;;     (setq temp-source-file-name (flymake-init-create-temp-buffer-copy create-temp-f)
+;;
+;;           args (flymake-get-syntax-check-program-args
+;;                 temp-source-file-name "."
+;;                 use-relative-base-dir use-relative-source
+;;                 get-cmdline-f))
+;;     args))
+;;
+;;
+;; (defun dino-php-flymake-cleanup ()
+;;   (dino-log "PHP" "flymake-for-php cleanup...")
+;;   (flymake-simple-cleanup) )
+;;
+;; (eval-after-load "flymake"
+;;   '(progn
+;;      (if (file-exists-p dc-php-program)
+;;          ;; 1. add a PHP entry to the flymake-allowed-file-name-masks
+;;          (let* ((key "\\.php\\'")
+;;                 (phpentry (assoc key flymake-allowed-file-name-masks)))
+;;            (if phpentry
+;;                (setcdr phpentry '(dino-php-flymake-init dino-php-flymake-cleanup))
+;;              (add-to-list
+;;               'flymake-allowed-file-name-masks
+;;               (list key 'dino-php-flymake-init 'dino-php-flymake-cleanup)))))))
 
-  (dino-log "PHP" "flymake cmdline for %s" source)
-
-  (list dc-php-program
-        (list "-f" (expand-file-name source)  "-l")))
-
-
-(defun dino-php-flymake-init ()
-  "initialize flymake for php"
-  (let ((create-temp-f 'dino-flymake-create-temp-intemp)
-        ;;(create-temp-f 'flymake-create-temp-inplace)
-        (use-relative-base-dir t)
-        (use-relative-source t)
-        (get-cmdline-f 'dino-php-flymake-get-cmdline)
-        args
-        temp-source-file-name)
-
-    (dino-log "PHP" "flymake-for-php invoke...")
-
-    (setq temp-source-file-name (flymake-init-create-temp-buffer-copy create-temp-f)
-
-          args (flymake-get-syntax-check-program-args
-                temp-source-file-name "."
-                use-relative-base-dir use-relative-source
-                get-cmdline-f))
-    args))
-
-
-(defun dino-php-flymake-cleanup ()
-  (dino-log "PHP" "flymake-for-php cleanup...")
-  (flymake-simple-cleanup) )
-
-(eval-after-load "flymake"
-  '(progn
-     (if (file-exists-p dc-php-program)
-         ;; 1. add a PHP entry to the flymake-allowed-file-name-masks
-         (let* ((key "\\.php\\'")
-                (phpentry (assoc key flymake-allowed-file-name-masks)))
-           (if phpentry
-               (setcdr phpentry '(dino-php-flymake-init dino-php-flymake-cleanup))
-             (add-to-list
-              'flymake-allowed-file-name-masks
-              (list key 'dino-php-flymake-init 'dino-php-flymake-cleanup)))))))
 
 
 ;; ;; use PHP CodeSniffer instead of just regular PHP.exe
@@ -2297,42 +2104,48 @@ This gets called by flymake itself."
 
   (set (make-local-variable 'indent-tabs-mode) nil)
 
-  (require 'autopair)
-  (autopair-mode)
+  ;; use autopair for curlies, parens, square brackets.
+  ;; electric-pair-mode works better than autopair.el in 24.4,
+  ;; and is important for use with popup / auto-complete.
+  (if (or (not (fboundp 'version<)) (version< emacs-version "24.4"))
+    (progn (require 'autopair) (autopair-mode))
+    (electric-pair-mode))
 
   ;; ya-snippet
   (yas-minor-mode-on)
 
-  ;; use flymake with pyflakes
-  (require 'flymake)
-  (and (file-name-directory buffer-file-name)
-       (flymake-mode 1))
-  (local-set-key "\C-c\C-n"  'flymake-goto-next-error)
-  (local-set-key "\C-c\C-m"  'flymake-display-err-menu-for-current-line)
+  ;; ;; use flymake with pyflakes
+  ;; (require 'flymake)
+  ;; (and (file-name-directory buffer-file-name)
+  ;;      (flymake-mode 1))
+
+  ;; (local-set-key "\C-c\C-n"  'flymake-goto-next-error)
+  ;; (local-set-key "\C-c\C-m"  'flymake-display-err-menu-for-current-line)
 
   (show-paren-mode 1))
 
 (add-hook 'python-mode-hook 'dino-python-mode-fn)
 
 
-(eval-after-load "flymake"
-  '(progn
-     (defun dino-flymake-pyflakes-init ()
-       (let* ((temp-file (flymake-init-create-temp-buffer-copy
-                          'flymake-create-temp-inplace))
-              (local-file (file-relative-name
-                           temp-file
-                           (file-name-directory buffer-file-name))))
+;; (eval-after-load "flymake"
+;;   '(progn
+;;      (defun dino-flymake-pyflakes-init ()
+;;        (let* ((temp-file (flymake-init-create-temp-buffer-copy
+;;                           'flymake-create-temp-inplace))
+;;               (local-file (file-relative-name
+;;                            temp-file
+;;                            (file-name-directory buffer-file-name))))
+;;
+;;          (list "c:\\Python27\\pyflakes.cmd" (list local-file))))
+;;
+;;      (let* ((key "\\.py\\'")
+;;             (pyentry (assoc key flymake-allowed-file-name-masks)))
+;;        (if pyentry
+;;            (setcdr pyentry '(dino-flymake-pyflakes-init))
+;;          (add-to-list
+;;           'flymake-allowed-file-name-masks
+;;           (list key 'dino-flymake-pyflakes-init))))))
 
-         (list "c:\\Python27\\pyflakes.cmd" (list local-file))))
-
-     (let* ((key "\\.py\\'")
-            (pyentry (assoc key flymake-allowed-file-name-masks)))
-       (if pyentry
-           (setcdr pyentry '(dino-flymake-pyflakes-init))
-         (add-to-list
-          'flymake-allowed-file-name-masks
-          (list key 'dino-flymake-pyflakes-init))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -2354,6 +2167,19 @@ i.e M-x kmacro-set-counter."
 
 
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; tern
+;;
+
+(add-to-list 'load-path (file-name-as-directory "~/elisp/tern/emacs/"))
+(autoload 'tern-mode "tern.el" nil t)
+
+(eval-after-load 'tern
+  '(progn
+     (require 'tern-auto-complete)
+     (tern-ac-setup)))
+
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; JavaScript
@@ -2362,14 +2188,26 @@ i.e M-x kmacro-set-counter."
 
 (defun dino-javascript-mode-fn ()
   (turn-on-font-lock)
-  (local-set-key "\M-\C-R" 'indent-region)
+  (local-set-key "\M-\C-R"  'indent-region)
   (local-set-key "\M-#"     'dino-indent-buffer)
-  (local-set-key "\C-c\C-c"  'comment-region)
+  (local-set-key "\C-c\C-c" 'comment-region)
+  (local-set-key "\C-c."    'tern-ac-complete)
+  ;;(local-set-key "\C-\."     'tern-ac-complete)
+  (local-set-key (kbd "C-.")  'tern-ac-complete)
+  ;; (local-set-key "\M-tab" 'tern-ac-complete)
+  ;; (local-set-key "<TAB>" 'tern-ac-complete)
+  ;;(define-key yas-minor-mode-map (kbd "<tab>") nil)
+  (local-set-key (kbd "TAB") 'tern-ac-complete)
+  (local-set-key (kbd "<C-tab>") 'yas-expand)
 
   (set (make-local-variable 'indent-tabs-mode) nil)
 
   ;; indent increment
   (setq js-indent-level 2)
+
+  ;; for syntax-checking, auto-complete, etc
+  (require 'tern)
+  (tern-mode t)
 
   ;; interactive javascript shell
   ;;(local-set-key "\C-x\C-e" 'jsshell-send-last-sexp)
@@ -2382,9 +2220,17 @@ i.e M-x kmacro-set-counter."
   (linum-on)
 
   ;; use autopair for curlies, parens, square brackets.
-  ;; electric mode doesn't provide auto-typeover of the ending char
-  (require 'autopair)
-  (autopair-mode)
+  ;; electric-pair-mode works better than autopair.el in 24.4,
+  ;; and is important for use with popup / auto-complete.
+  (if (or (not (fboundp 'version<)) (version< emacs-version "24.4"))
+    (progn (require 'autopair) (autopair-mode))
+    (electric-pair-mode))
+
+  (require 'flycheck)
+  (and buffer-file-name
+       (file-name-directory buffer-file-name)
+       (flycheck-mode))
+  (flycheck-select-checker 'javascript-jshint)
 
   ;; turn on flymake
   ;; (require 'flymake)
@@ -2395,18 +2241,18 @@ i.e M-x kmacro-set-counter."
   ;; ;;(setq flyjs-jslintwsh-location "c:\\users\\dino\\bin\\jslint-for-wsh.js")
   ;; (setq flyjs-jslintwsh-location "c:\\users\\dino\\bin\\jshint-for-wsh.js")
 
-  (require
-   (if (eq system-type 'windows-nt)
-       'fly-jshint-wsh 'fly-jshint-npm))
+  ;; (require
+  ;;  (if (eq system-type 'windows-nt)
+  ;;      'fly-jshint-wsh 'fly-jshint-npm))
 
   ;;(setq fly/jshint/npm-jshint-exe "/usr/local/bin/jshint")
 
   ;; ;;(setq flyjs-jslintwsh-location "c:\\users\\dino\\bin\\jslint-for-wsh.js")
   ;; (setq flyjs-jslintwsh-location "c:\\users\\dino\\bin\\jshint-for-wsh.js")
 
-  (and buffer-file-name
-       (file-name-directory buffer-file-name)
-       (flymake-mode 1))
+  ;; (and buffer-file-name
+  ;;      (file-name-directory buffer-file-name)
+  ;;      (flymake-mode 1))
 
   ;; ya-snippet
   ;;(add-to-list 'yas/known-modes 'espresso-mode) ;; need this?
@@ -2430,32 +2276,13 @@ i.e M-x kmacro-set-counter."
 
   (require 'smart-op) ;; for smart insertion of ++ and == and += etc
   (smart-op-mode)
-
-  (if (eq system-type 'windows-nt)
-      (progn
-        (require 'jscomp)
-        (local-set-key "\M-."     'jscomp-complete))))
-
-  ;; The following needs to be in jslint-for-wsh.el or whatever
-  ;; ;; jslint-for-wsh.js, produces errors like this:
-  ;; ;; file.cs(6,18): JSLINT: The body of a for in should be wrapped in an if statement ...
-  ;; (if (and (eq system-type 'windows-nt)
-  ;;          (boundp 'compilation-error-regexp-alist-alist))
-  ;;     (progn
-  ;;       (add-to-list
-  ;;        'compilation-error-regexp-alist-alist
-  ;;        '(jslint-for-wsh
-  ;;          "^[ \t]*\\([A-Za-z.0-9_: \\-]+\\)(\\([0-9]+\\)[,]\\( *[0-9]+\\)) \\(Microsoft JScript runtime error\\|JSLINT\\|JSHINT\\): \\(.+\\)$" 1 2 3))
-  ;;       (add-to-list
-  ;;        'compilation-error-regexp-alist
-  ;;        'jslint-for-wsh))))
+)
+(add-hook 'js-mode-hook   'dino-javascript-mode-fn)
 
 ;; ;; to allow jshint to work?
 ;;(setenv "PATH" (concat "/usr/local/bin:" (getenv "PATH")))
 (add-to-list 'exec-path "/usr/local/bin")
 ;;     "/usr/bin"
-
-(add-hook 'js-mode-hook   'dino-javascript-mode-fn)
 
 (require 'js-mode-fixups)
 (require 'json-reformat)
@@ -2469,9 +2296,7 @@ i.e M-x kmacro-set-counter."
   (save-excursion
     (json-prettify-region (point-min) (point-max))))
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 
 
 ;;(require 'aspx-mode)
@@ -2541,7 +2366,9 @@ i.e M-x kmacro-set-counter."
 (eval-after-load "compile"
   '(progn
      (setq compilation-scroll-output "first-error")
-     (setq-default compile-command (concat nmake.exe " "))))
+     ;;(setq-default compile-command (concat nmake.exe " "))
+     (setq-default compile-command "make ")
+     ))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
@@ -2554,7 +2381,15 @@ i.e M-x kmacro-set-counter."
   '(progn
      (if (not (fboundp 'json-pretty-print-buffer))
          (defun json-pretty-print-buffer ()
-           (json-prettify-buffer)))))
+           (json-prettify-buffer)))
+
+     ;; There ought to be a way to do this in restclient.
+     ;; (defun dino-suppress-giant-useless-header ()
+     ;;   (let* ((url-mime-charset-string nil) ; Suppress huge, useless header
+     ;;          )))
+
+     ))
+
 
 
 
@@ -2878,9 +2713,22 @@ i.e M-x kmacro-set-counter."
 ;; package manager
 ;;
 (require 'package)
-(add-to-list 'package-archives
-             '("marmalade" . "http://marmalade-repo.org/packages/") t)
-(add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/") t)
+(dolist (item (list
+              ;;'("marmalade" . "http://marmalade-repo.org/packages/")
+              '("melpa"     . "https://stable.melpa.org/packages/")
+              '("org"       . "http://orgmode.org/elpa/")))
+  (add-to-list 'package-archives item))
+
+;; (setq package-archives
+;;       (list '("melpa" . "https://melpa.org/packages/")
+;;             '("gnu" . "http://elpa.gnu.org/packages/")
+;;             '("org" . "http://orgmode.org/elpa/")))
+
+
+(when (< emacs-major-version 24)
+  ;; For important compatibility libraries like cl-lib
+  (add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/")))
+
 (package-initialize)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -2974,6 +2822,48 @@ i.e M-x kmacro-set-counter."
 ;; auto-revert for all files.
 (add-hook 'find-file-hook
               (lambda () (turn-on-auto-revert-mode)))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; basic, default colors
+
+;; see this for an example of color theming:
+;;    http://hi.baidu.com/masterray/blog/item/9caa181fb9177cc2a68669a8.html
+
+(set-background-color "black")  ;; need this if I also do set-face-background?
+(set-face-foreground 'default "white")
+(set-face-background 'default "black")
+
+
+;; I couldn't get eval-after-load to work with hl-line, so
+;; I made this an after advice??
+(defadvice hl-line-mode (after
+                         dino-advise-hl-line-mode
+                         activate compile)
+  (set-face-background hl-line-face "gray13"))
+
+(global-hl-line-mode)
+
+;;(set-face-background 'font-lock-comment-face "black")
+(set-face-foreground 'font-lock-comment-face       "VioletRed1")
+(set-face-foreground 'font-lock-constant-face      "DodgerBlue")
+(set-face-foreground 'font-lock-string-face        "MediumOrchid1")
+(set-face-foreground 'font-lock-keyword-face       "Cyan1")
+(set-face-foreground 'font-lock-function-name-face "RoyalBlue1")
+(set-face-foreground 'font-lock-variable-name-face "LightGoldenrod")
+(set-face-foreground 'font-lock-type-face          "PaleGreen")
+
+;;(make-face 'font-lock-reference-face)
+;;(set-face-foreground 'font-lock-reference-face "Navy")
+
+(set-face-foreground 'tooltip "Navy")
+(set-face-background 'tooltip "khaki1")
+
+(set-face-background 'font-lock-string-face "gray11")
+
+
+;;(setq read-buffer-completion-ignore-case t)
+(setq read-file-name-completion-ignore-case t)
 
 (setq default-directory "~/")
 (message "Done with emacs.el...")

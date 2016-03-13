@@ -7,7 +7,7 @@
 ;; Version    : 0.8.6
 ;; Keywords   : c# languages oop mode
 ;; X-URL      : http://code.google.com/p/csharpmode/
-;; Last-saved : <2016-March-06 21:31:08>
+;; Last-saved : <2016-March-13 15:58:55>
 
 ;;
 ;; This program is free software; you can redistribute it and/or modify
@@ -381,6 +381,7 @@
 ;;
 
 (require 'cc-mode)
+(require 'cl-lib)
 
 (message  (concat "Loading " load-file-name))
 
@@ -3853,7 +3854,7 @@ this fn will be something like this:
      (\"(bottom)\"     . 1))
 
 "
-  (flet ((helper (list new)
+  (cl-flet ((helper (list new)
                  (if (null list) new
                    (let* ((elt (car list))
                           (topic (csharp--make-plural (csharp--first-word (car elt))))
@@ -4033,7 +4034,7 @@ Returns a new list, containing sublists.
 possibly break a submenu into smaller sublists, based on size.
 
 "
-  (mapcar (lambda (elt)
+  (mapcar #'(lambda (elt)
             (if (imenu--subalist-p elt)
                 (cons (car elt)
                       (csharp--imenu-break-one-menu-into-submenus (cdr elt)))
@@ -4120,7 +4121,7 @@ out into multiple submenus.
 
 "
   (let ((counts (csharp--imenu-counts menu-alist)))
-    (flet ((helper
+    (cl-flet ((helper
             (list new)
             (if (null list)
                 new
@@ -5879,7 +5880,7 @@ $0" "XML Documentation" nil)
             ;; Insert the snippets from above into the table if they
             ;; are not already defined.
             (mapcar
-             '(lambda (item)
+             #'(lambda (item)
                 (let* ((full-key (car item))
                        (existing-snip
                         (yas/snippet-table-fetch snippet-table full-key)))
