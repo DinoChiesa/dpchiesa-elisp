@@ -1,0 +1,11 @@
+# -*- mode: snippet -*-
+# name: fn copyHash (...) { ... }
+# key: copyHash
+# --
+function copyHash(obj) {
+  var copy = {};
+  if (null !== obj && typeof obj == "object") {
+    Object.keys(obj).forEach(function(attr){copy[attr] = obj[attr];});
+  }
+  return copy;
+}

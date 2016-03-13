@@ -1,0 +1,8 @@
+# -*- mode: snippet -*-
+# name: print current working dir
+# key: cwd
+# --
+java.nio.file.Path currentRelativePath = java.nio.file.Paths.get("");
+String s = currentRelativePath.toAbsolutePath().toString();
+System.out.println("Current relative path is: " + s);
+
