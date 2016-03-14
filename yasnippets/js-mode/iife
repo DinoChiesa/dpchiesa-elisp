@@ -1,0 +1,8 @@
+# -*- mode: snippet -*-
+# key : iife
+# name : (function (foo){}());
+# --
+(function (${1:globalScope}){
+  $0
+}(${2:this}));
+

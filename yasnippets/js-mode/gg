@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# key : gg
+# name : function getGlobal() {...}
+# --
+var getGlobal = getGlobal || function(){ return (function(){ return this; }).call(null); };
