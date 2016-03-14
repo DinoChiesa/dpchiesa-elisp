@@ -1,6 +1,6 @@
 ;;; emacs.el -- dino's em Dino's .emacs setup file.
 ;;
-;; Last saved: <2016-March-13 16:33:45>
+;; Last saved: <2016-March-14 09:20:38>
 ;;
 ;; Works with v24.5 of emacs.
 ;;
@@ -298,8 +298,8 @@
 (global-set-key "\C-c\C-t"  'dino-toggle-frame-split)
 (global-set-key "\C-cw"     'where-is)
 (global-set-key "\C-c\C-w"  'compare-windows)
-(global-set-key "\C-c!"     'revert-buffer-unconditionally)
-(global-set-key "\C-x!"     'dino-toggle-buffer-modified)
+(global-set-key "\C-c~"     'revert-buffer-unconditionally)
+(global-set-key "\C-x~"     'dino-toggle-buffer-modified)
 (global-set-key (kbd "C-<") 'beginning-of-defun)
 (global-set-key (kbd "C->") 'end-of-defun)
 
@@ -445,7 +445,7 @@
          ("\\.htm$"                           . web-mode)
          ("\\.md$"                            . fundamental-mode)  ;; markdown
          ("\\.el$"                            . emacs-lisp-mode)
-         ;; ("\\.\\(js\\|jsi\\)$"                . javascript-mode)
+         ;; ("\\.\\(js\\|jsi\\)$"                . mode)
          ;; ("\\.\\(js\\|jsi\\)$"                . espresso-mode)
          ;; ("\\.js$"                            . js2-mode)
          ("\\.\\(js\\|gs\\|jsi\\)$"           . js-mode)
@@ -2197,7 +2197,8 @@ i.e M-x kmacro-set-counter."
   ;; (local-set-key "\M-tab" 'tern-ac-complete)
   ;; (local-set-key "<TAB>" 'tern-ac-complete)
   ;;(define-key yas-minor-mode-map (kbd "<tab>") nil)
-  (local-set-key (kbd "TAB") 'tern-ac-complete)
+  (local-set-key (kbd "<M-tab>") 'tern-ac-complete)
+  (local-set-key (kbd "TAB") 'js-indent-line)
   (local-set-key (kbd "<C-tab>") 'yas-expand)
 
   (set (make-local-variable 'indent-tabs-mode) nil)
@@ -2836,7 +2837,7 @@ i.e M-x kmacro-set-counter."
 
 
 ;; I couldn't get eval-after-load to work with hl-line, so
-;; I made this an after advice??
+;; I made this an after advice.
 (defadvice hl-line-mode (after
                          dino-advise-hl-line-mode
                          activate compile)
@@ -2844,23 +2845,22 @@ i.e M-x kmacro-set-counter."
 
 (global-hl-line-mode)
 
-;;(set-face-background 'font-lock-comment-face "black")
-(set-face-foreground 'font-lock-comment-face       "VioletRed1")
-(set-face-foreground 'font-lock-constant-face      "DodgerBlue")
-(set-face-foreground 'font-lock-string-face        "MediumOrchid1")
-(set-face-foreground 'font-lock-keyword-face       "Cyan1")
-(set-face-foreground 'font-lock-function-name-face "RoyalBlue1")
-(set-face-foreground 'font-lock-variable-name-face "LightGoldenrod")
-(set-face-foreground 'font-lock-type-face          "PaleGreen")
-
-;;(make-face 'font-lock-reference-face)
-;;(set-face-foreground 'font-lock-reference-face "Navy")
+(custom-set-faces
+ '(flymake-errline              ((t (:inherit error :background "firebrick4"))))
+ '(flycheck-error               ((t (:background "firebrick4"))))
+ '(font-lock-comment-face       ((t (:foreground "PaleVioletRed3"))))
+ '(font-lock-keyword-face       ((t (:foreground "CadetBlue2"))))
+ ;;'(font-lock-keyword-face       ((t (:foreground "Cyan1"))))
+ '(font-lock-type-face          ((t (:foreground "PaleGreen"))))
+ '(font-lock-constant-face      ((t (:foreground "DodgerBlue"))))
+ '(font-lock-function-name-face ((t (:foreground "RoyalBlue1"))))
+ '(font-lock-variable-name-face ((t (:foreground "LightGoldenrod"))))
+ '(font-lock-string-face        ((t (:background "gray11" :foreground "MediumOrchid1")))))
 
 (set-face-foreground 'tooltip "Navy")
 (set-face-background 'tooltip "khaki1")
 
 (set-face-background 'font-lock-string-face "gray11")
-
 
 ;;(setq read-buffer-completion-ignore-case t)
 (setq read-file-name-completion-ignore-case t)
