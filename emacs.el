@@ -1,6 +1,6 @@
 ;;; emacs.el -- dino's em Dino's .emacs setup file.
 ;;
-;; Last saved: <2016-March-14 09:20:38>
+;; Last saved: <2016-March-16 19:55:58>
 ;;
 ;; Works with v24.5 of emacs.
 ;;
@@ -2380,17 +2380,17 @@ i.e M-x kmacro-set-counter."
 (require 'restclient)
 (eval-after-load "restclient"
   '(progn
+
+     (defadvice url-retrieve (around dino-eliminate-giant-useless-header activate)
+       "make emacs be less chatty when sending requests"
+       (let (url-mime-charset-string url-user-agent url-extensions-header)
+         ad-do-it))
+
      (if (not (fboundp 'json-pretty-print-buffer))
          (defun json-pretty-print-buffer ()
            (json-prettify-buffer)))
 
-     ;; There ought to be a way to do this in restclient.
-     ;; (defun dino-suppress-giant-useless-header ()
-     ;;   (let* ((url-mime-charset-string nil) ; Suppress huge, useless header
-     ;;          )))
-
      ))
-
 
 
 
