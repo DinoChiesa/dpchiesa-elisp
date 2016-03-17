@@ -20,6 +20,7 @@
 ;;
 (require 'url)
 (require 'json)
+(require 's)
 
 (defgroup restclient nil
   "An interactive HTTP client for Emacs."
@@ -90,6 +91,7 @@
   (if restclient-log-request
       (message "HTTP %s %s Headers:[%s] Body:[%s]" method url headers entity))
   (let ((url-request-method method)
+        (url (s-trim url))
         (url-request-extra-headers '())
         (url-request-data (encode-coding-string entity 'utf-8)))
 
