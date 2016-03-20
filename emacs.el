@@ -1,6 +1,6 @@
 ;;; emacs.el -- dino's em Dino's .emacs setup file.
 ;;
-;; Last saved: <2016-March-19 19:34:58>
+;; Last saved: <2016-March-19 20:11:18>
 ;;
 ;; Works with v24.5 of emacs.
 ;;
@@ -1606,32 +1606,15 @@ insert a pair, and backup one character."
 
          (local-set-key "\C-c\C-y"  'csharp-show-syntax-table-prop)
          (local-set-key "\C-c\C-h"  'csharp-show-parse-state)
-         ;;(local-set-key "\C-c\C-v" 'my-flymake-show-next-error)
 
          (local-set-key (kbd "C-<") 'csharp-move-back-to-beginning-of-defun)
          (local-set-key (kbd "C->") 'csharp-move-fwd-to-end-of-defun)
 
-         ;; this works??
+         ;; this works
          (local-set-key (kbd "C-M-\<") 'csharp-move-back-to-beginning-of-class)
          (local-set-key (kbd "C-M-\>") 'csharp-move-fwd-to-end-of-class)
 
-         ;; this is illegal, causes emacs to fail to start
-         ;;(local-set-key "\M-\C-<" 'csharp-move-back-to-beginning-of-class)
-         ;;(local-set-key "\M-\C->" 'csharp-move-fwd-to-end-of-class)
-
-         ;; this messes up all the other M-?? bindings , like M-:
-         ;;(local-set-key (kbd "<escape> C-<") 'csharp-move-back-to-beginning-of-class)
-         ;;(local-set-key (kbd "<escape> C->") 'csharp-move-fwd-to-end-of-class)
-
-         ;; this does nothing
-         ;;(local-set-key (kbd "<meta> C-<") 'csharp-move-back-to-beginning-of-class)
-         ;;(local-set-key (kbd "<meta> C->") 'csharp-move-fwd-to-end-of-class)
-
-         ;; this also has no discernable effect
-         ;;(local-set-key "C-M-\<" 'csharp-move-back-to-beginning-of-class)
-         ;;(local-set-key "C-M-\>" 'csharp-move-fwd-to-end-of-class)
-
-
+         ;; TODO: consider relying on electric-pair
          (local-set-key (kbd "<") 'skeleton-pair-insert-maybe)
          (local-set-key (kbd "(") 'skeleton-pair-insert-maybe)
          (local-set-key (kbd "[") 'skeleton-pair-insert-maybe)
