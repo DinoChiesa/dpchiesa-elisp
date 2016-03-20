@@ -311,6 +311,12 @@ The buffer contains the raw HTTP response sent by the server."
 (defun restclient-eval-var (string)
   (with-output-to-string (princ (eval (read string)))))
 
+(defun restclient--trim-right (s)
+  "Remove whitespace at the end of S."
+  (if (string-match "[ \t\n\r]+\\'" s)
+      (replace-match "" t t s)
+    s))
+
 (defun restclient-http-parse-current-and-do (func &rest args)
   (save-excursion
     (goto-char (restclient-current-min))
@@ -327,7 +333,7 @@ The buffer contains the raw HTTP response sent by the server."
         (when (looking-at "^\\s-*$")
           (forward-line))
         (let* ((cmax (restclient-current-max))
-               (entity (buffer-substring (min (point) cmax) cmax))
+               (entity (restclient--trim-right (buffer-substring-no-properties (min (point) cmax) cmax)))
                (vars (restclient-find-vars-before-point))
                (url (restclient-replace-all-in-string vars url))
                (headers (restclient-replace-all-in-headers vars headers))
@@ -339,8 +345,8 @@ The buffer contains the raw HTTP response sent by the server."
   (interactive)
   (restclient-http-parse-current-and-do
    '(lambda (method url headers entity)
-      (kill-new (format "curl -i %s -X%s '%s' %s"
-                        (mapconcat (lambda (header) (format "-H '%s: %s'" (car header) (cdr header))) headers " ")
+      (kill-new (format "curl -i %s -X %s \\\n '%s' \\\n %s"
+                        (mapconcat (lambda (header) (format "-H '%s: %s' \\\n" (car header) (cdr header))) headers " ")
                         method url
                         (if (> (string-width entity) 0)
                             (format "-d '%s'" entity) "")))
