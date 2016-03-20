@@ -1,6 +1,6 @@
 ;;; emacs.el -- dino's em Dino's .emacs setup file.
 ;;
-;; Last saved: <2016-March-16 19:55:58>
+;; Last saved: <2016-March-19 19:34:58>
 ;;
 ;; Works with v24.5 of emacs.
 ;;
@@ -1597,6 +1597,7 @@ insert a pair, and backup one character."
   (cond (window-system
          (turn-on-font-lock)
          (c-set-style "myC#Style")
+         (setq c-basic-offset 2) ;; width of one indent level
          (message "setting local key bindings....")
 
          (local-set-key "\M-\C-R"  'indent-region)

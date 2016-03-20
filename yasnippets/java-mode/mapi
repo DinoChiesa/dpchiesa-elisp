@@ -1,6 +1,6 @@
 # -*- mode: snippet -*-
 # name: map-iterator
-# key: map
+# key: mapi
 # --
 for (Map.Entry<${1:String}, ${2:String}> entry : ${3:map}.entrySet()) {
   $1 key = entry.getKey();

@@ -586,8 +586,8 @@ just do
     (normal-top-level-add-subdirs-to-load-path))
 
 
-Also FYI: `string-prefix-p' is  built-in, but is not present in the 
-version of emacs that is installed by default on MacOS. 
+Also FYI: `string-prefix-p' is  built-in, but is not present in the
+version of emacs that is installed by default on MacOS.
 
 "
   (let ((pkg-dir "~/.emacs.d/elpa/")
@@ -759,7 +759,6 @@ Eg,
                      (kill-new xpath)
                      (message "%s" xpath))
                  xpath))))))))
-
 
 (provide 'dino-utility)
 

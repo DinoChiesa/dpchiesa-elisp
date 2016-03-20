@@ -11,7 +11,7 @@
 ;; Requires   : s.el, request.el, dino-netrc.el
 ;; License    : New BSD
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2016-March-08 18:52:57>
+;; Last-saved : <2016-March-17 14:50:47>
 ;;
 ;;; Commentary:
 ;;
@@ -697,10 +697,20 @@ apiproduct.developer.quota.timeunit*
   </XMLPayload>
 </ExtractVariables>")
 
+     '("ExtractVariables - errorMessage after fault"
+       "Extract"
+     "<ExtractVariables name='##'>
+    <Source>error</Source>
+    <JSONPayload>
+        <Variable name='errorMessage' type='string'>
+            <JSONPath>$.fault.faultstring</JSONPath>
+        </Variable>
+    </JSONPayload>
+</ExtractVariables>")
 
      '("ExtractVariables - URIPath"
        "Extract"
-     "<ExtractVariables name='ExtractVariables-1'>
+     "<ExtractVariables name='##'>
    <DisplayName>Extract a portion of the url path</DisplayName>
    <Source>request</Source>
    <URIPath>
@@ -714,7 +724,7 @@ apiproduct.developer.quota.timeunit*
        "Extract"
        "<ExtractVariables name='##'>
   <Source>$1</Source>
-  <VariablePrefix>entity</VariablePrefix>
+  <!-- <VariablePrefix>entity</VariablePrefix> -->
   <IgnoreUnresolvedVariables>false</IgnoreUnresolvedVariables>
   <XMLPayload>
     <Namespaces>

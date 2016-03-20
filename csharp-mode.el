@@ -7,7 +7,7 @@
 ;; Version    : 0.8.6
 ;; Keywords   : c# languages oop mode
 ;; X-URL      : http://code.google.com/p/csharpmode/
-;; Last-saved : <2016-March-13 15:58:55>
+;; Last-saved : <2016-March-19 20:05:50>
 
 ;;
 ;; This program is free software; you can redistribute it and/or modify
@@ -734,8 +734,7 @@ wrote this alternative.
      ;; between them.  The most common case is a format string for
      ;; String.Format() or Console.WriteLine().
      (in-string
-      (self-insert-command 1)
-      (insert "}")
+      (insert "{}")
       (backward-char))
 
      ;; Case 2: the open brace starts an array initializer.
@@ -745,8 +744,7 @@ wrote this alternative.
      ((save-excursion
         (and (c-safe (backward-sexp) t)
              (looking-at "\\(\\w+\\b *=\\|[[]]+\\)")))
-      (self-insert-command 1)
-      (insert "  };")
+      (insert "{  };")
       (backward-char 3))
 
      ;; Case 3: the open brace starts an instance initializer
@@ -765,14 +763,15 @@ wrote this alternative.
           (progn
             ;; within an array - emit no newlines
             (goto-char tpoint)
-            (self-insert-command 1)
-            (insert "  },")
+            ;;(self-insert-command 1)
+            (insert "{  },")
             (backward-char 3))
 
         (progn
           (goto-char tpoint)
           (newline)
-          (self-insert-command 1)
+          (insert "{")
+          ;;(self-insert-command 1)
           (newline-and-indent)
           (newline)
           (insert "};")
@@ -787,8 +786,7 @@ wrote this alternative.
      ;; If the open curly follows =>, then it's a lambda initializer.
      ((string= (substring preceding3 -2) "=>")
       (csharp-log 2 "lambda init")
-      (self-insert-command 1)
-      (insert "  }")
+      (insert "{  }")
       (backward-char 2))
 
      ;; else, it's a new scope. (if, while, class, etc)
@@ -805,7 +803,9 @@ wrote this alternative.
                                  -1))))
                 (= curline aftline)))
             (newline-and-indent))
-        (self-insert-command 1)
+
+        ;; (self-insert-command 1)
+        (insert "{")
         (c-indent-line-or-region)
         (end-of-line)
         (newline)
