@@ -143,3 +143,4 @@ org.testng.annotations.Test
 org.testng.Assert
 org.apache.commons.lang3.time.FastDateParser
 org.apache.commons.lang3.time.FastDateFormat
+org.apache.commons.lang3.time.DateParser
