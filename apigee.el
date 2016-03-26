@@ -11,7 +11,7 @@
 ;; Requires   : s.el, request.el, dino-netrc.el
 ;; License    : New BSD
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2016-March-17 14:50:47>
+;; Last-saved : <2016-March-22 06:05:49>
 ;;
 ;;; Commentary:
 ;;
@@ -833,6 +833,31 @@ apiproduct.developer.quota.timeunit*
       <Property name='success.codes'>2xx, 4xx, 5xx</Property>
     </Properties>
     <URL>${1:https://api.usergrid.com/}</URL>
+  </HTTPTargetConnection>
+</ServiceCallout>\n")
+
+     '("ServiceCallout - usergrid user auth"
+       "SC"
+       "<ServiceCallout name='##'>
+  <DisplayName>##</DisplayName>
+  <Request variable='authenticationRequest'>
+        <Set>
+          <!-- Shows how to request a token from usergrid. -->
+          <!-- FIXME: should retrieve secrets from vault -->
+           <Payload contentType='application/json' variablePrefix='%'
+                    variableSuffix='#'><![CDATA[{
+  { \"grant_type\":\"password\", \"username\":\"%authn.uid#\", \"password\":\"%authn.pwd#\" }
+]]></Payload>
+         <Verb>POST</Verb>
+         <Path>/${1:BAAS_ORG}/${2:BAAS_APP}/token</Path>
+      </Set>
+  </Request>
+  <Response>tokenResponse</Response>
+  <HTTPTargetConnection>
+    <Properties>
+      <Property name='success.codes'>2xx, 4xx</Property>
+    </Properties>
+    <URL>${3:https://api.usergrid.com/}</URL>
   </HTTPTargetConnection>
 </ServiceCallout>\n")
 
