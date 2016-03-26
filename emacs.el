@@ -1,6 +1,6 @@
 ;;; emacs.el -- dino's em Dino's .emacs setup file.
 ;;
-;; Last saved: <2016-March-19 20:11:18>
+;; Last saved: <2016-March-24 07:39:01>
 ;;
 ;; Works with v24.5 of emacs.
 ;;
@@ -2365,7 +2365,7 @@ i.e M-x kmacro-set-counter."
 (eval-after-load "restclient"
   '(progn
 
-     (defadvice url-retrieve (around dino-eliminate-giant-useless-header activate)
+     (defadvice restclient-http-do (around dino-restclient-eliminate-giant-useless-header activate)
        "make emacs be less chatty when sending requests"
        (let (url-mime-charset-string url-user-agent url-extensions-header)
          ad-do-it))
@@ -2373,9 +2373,15 @@ i.e M-x kmacro-set-counter."
      (if (not (fboundp 'json-pretty-print-buffer))
          (defun json-pretty-print-buffer ()
            (json-prettify-buffer)))
-
      ))
 
+
+(eval-after-load "url"
+  '(progn
+     (defadvice url-http-create-request (around dino-url-eliminate-giant-useless-header activate)
+       "make emacs be less chatty when sending requests"
+       (let (url-mime-charset-string url-user-agent url-extensions-header)
+         ad-do-it))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -2683,7 +2689,7 @@ i.e M-x kmacro-set-counter."
     (eval-after-load "url"
       '(progn
          (require 'w32-registry)
-         (defadvice url-retrieve (before
+         (defadvice url-http-create-request (before
                                   dino-set-proxy-dynamically
                                   activate)
            "Before retrieving a URL, query the IE Proxy settings, and use them."
