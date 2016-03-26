@@ -91,7 +91,7 @@
   (if restclient-log-request
       (message "HTTP %s %s Headers:[%s] Body:[%s]" method url headers entity))
   (let ((url-request-method method)
-        (url (s-trim url))
+        (url (replace-regexp-in-string "#" "%23" (s-trim url)))
         (url-request-extra-headers '())
         (url-request-data (encode-coding-string entity 'utf-8)))
 
@@ -307,6 +307,11 @@ The buffer contains the raw HTTP response sent by the server."
               (value (buffer-substring-no-properties (match-beginning 3) (match-end 3))))
           (setq vars (cons (cons name (if should-eval (restclient-eval-var value) value)) vars))))
       vars)))
+
+;; this function can be used to refer to a var, in an eval var decl,
+;; eg, :basicauth := (base64-encode-string (concat (restclient-var ":username") ":" (restclient-var ":pwd"))
+(defun restclient-var (name)
+  (cdr (assoc name vars)))
 
 (defun restclient-eval-var (string)
   (with-output-to-string (princ (eval (read string)))))
