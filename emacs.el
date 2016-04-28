@@ -1,6 +1,6 @@
 ;;; emacs.el -- dino's em Dino's .emacs setup file.
 ;;
-;; Last saved: <2016-March-24 07:39:01>
+;; Last saved: <2016-April-27 20:22:08>
 ;;
 ;; Works with v24.5 of emacs.
 ;;
@@ -63,7 +63,36 @@
 
 (eval-after-load "flycheck"
   '(progn
-     (setq-default flycheck-disabled-checkers '(emacs-lisp-checkdoc))))
+     (setq-default flycheck-disabled-checkers '(emacs-lisp-checkdoc))
+     (setq flycheck-phpcs-standard "DinoChiesa")))
+;; place the following content in: /usr/lib/php/pear/PHP/CodeSniffer/Standards/DinoChiesa/ruleset.xml
+;;
+;; <ruleset name="Custom Standard">
+;;   <description>My custom coding standard</description>
+;;   <rule ref="PEAR">
+;;     <exclude name="PEAR.WhiteSpace.ScopeClosingBrace.BreakIndent"/>
+;;     <exclude name="PEAR.WhiteSpace.ScopeIndent"/>
+;;     <exclude name="Generic.PHP.LowerCaseConstant.Found"/>
+;;     <exclude name="PEAR.NamingConventions.ValidFunctionName.FunctionNoCapital"/>
+;;     <exclude name="Generic.Commenting.DocComment.MissingShort"/>
+;;     <exclude name="PEAR.Commenting.ClassComment"/>
+;;     <exclude name="PEAR.Commenting.FileComment"/>
+;;     <exclude name="PEAR.Commenting.FunctionComment"/>
+;;     <exclude name="PEAR.Commenting.InlineComment"/>
+;;     <exclude name="PEAR.Classes.ClassDeclaration"/>
+;;     <exclude name="PEAR.Functions.FunctionDeclaration.BraceOnSameLine"/>
+;;     <exclude name="Generic.Files.LineEndings"/>
+;;     <exclude name="Generic.Files.LineLength.TooLong"/>
+;;     <exclude name="PEAR.ControlStructures.ControlSignature"/>
+;;   </rule>
+;;   <rule ref="PEAR.WhiteSpace.ScopeIndent">
+;;     <properties>
+;;       <property name="indent" value="2"/>
+;;     </properties>
+;;   </rule>
+;; </ruleset>
+
+
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -204,6 +233,10 @@
 (require 'yasnippet)
 (setq yas-snippet-dirs (list "~/elisp/yasnippets"))
 (yas-global-mode 1)
+;; (setq yas-prompt-functions '(yas-dropdown-prompt yas-completing-prompt yas-maybe-ido-prompt yas-no-prompt))
+;; prettier popup choices when running in a windowed environment:
+(setq yas-prompt-functions '(yas-x-prompt yas-dropdown-prompt))
+
 ;;(yas-load-directory (car yas-snippet-dirs))
 ;; ------------------------------------------------
 ;;;; Expand snippet synchronously
