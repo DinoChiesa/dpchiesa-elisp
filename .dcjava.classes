@@ -144,3 +144,8 @@ org.testng.Assert
 org.apache.commons.lang3.time.FastDateParser
 org.apache.commons.lang3.time.FastDateFormat
 org.apache.commons.lang3.time.DateParser
+org.apache.commons.codec.binary.Base64InputStream
+java.nio.file.Path
+java.nio.file.Paths
+com.apigee.flow.evaluation.FlowContext
+com.apigee.flow.message.FlowContext
