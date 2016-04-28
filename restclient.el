@@ -135,11 +135,12 @@
                                                    '(("text/xml" . xml-mode)
                                                      ("application/xml" . xml-mode)
                                                      ("application/json" . js-mode)
+                                                     ("application/x-yaml" . yaml-mode)
                                                      ("image/png" . image-mode)
                                                      ("image/jpeg" . image-mode)
                                                      ("image/jpg" . image-mode)
                                                      ("image/gif" . image-mode)
-                        ("text/html" . html-mode))))))
+                                                     ("text/html" . html-mode))))))
                         (forward-line)) 0)))
       (setq end-of-headers (point))
       (while (and (looking-at "^\\s-*$")
@@ -350,11 +351,12 @@ The buffer contains the raw HTTP response sent by the server."
   (interactive)
   (restclient-http-parse-current-and-do
    '(lambda (method url headers entity)
-      (kill-new (format "curl -i %s -X %s \\\n '%s' \\\n %s"
+      (kill-new (format "curl -i %s -X %s \\\n '%s'%s"
                         (mapconcat (lambda (header) (format "-H '%s: %s' \\\n" (car header) (cdr header))) headers " ")
-                        method url
+                        method
+                        url
                         (if (> (string-width entity) 0)
-                            (format "-d '%s'" entity) "")))
+                            (format "\\\n -d '%s'" entity) "")))
       (message "curl command copied to clipboard."))))
 
 ;;;###autoload
