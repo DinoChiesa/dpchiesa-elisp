@@ -11,7 +11,7 @@
 ;; Requires   : s.el
 ;; License    : New BSD
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2016-March-08 15:15:33>
+;; Last-saved : <2016-March-27 10:01:07>
 ;;
 ;;; Commentary:
 ;;
@@ -96,7 +96,8 @@
 
 (defvar dcjava-cache-dir (file-name-directory dcjava--load-path))
 (defvar dcjava-cache-basefilename ".dcjava.classes")
-(defvar dcjava-helper-classname-alist nil)
+(defvar dcjava-helper-classname-alist nil
+  "the alist of short classnames related to fully-qualified type names")
 (defvar dcjava-helper-classnames nil
   "list of classes to be able to import")
 (defconst dcjava--classname-regex "\\([a-zA-Z_$][a-zA-Z0-9_$]*\\.\\)*[a-zA-Z_$][a-zA-Z0-9_$]*"
@@ -168,7 +169,7 @@
             (dcjava--xform-alist
              (mapcar
               'dcjava--list-from-fully-qualified-classname
-              dcjava-helper-classnames)))))
+              (or dcjava-helper-classnames (dcjava-reload-classlist)))))))
 
 
 (defun dcjava-sort-import-statements ()
