@@ -7,6 +7,9 @@
 
 ;;; Code:
 
+(require 'csharp-mode)
+(require 'osx-trash)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; fixup path for MacOSX
 ;;
@@ -16,7 +19,6 @@
    "/Users/dino/dev/go/libs/bin"
    "/Library/Frameworks/Mono.framework/Versions/Current/bin"))
 
-(require 'csharp-mode)
 
 (defun csharp-set-flycheck-command ()
   "Set the flycheck command for a C# module, dynamically, as a side effect.
@@ -95,6 +97,10 @@ compiler. If you would like to use a different compiler, see
       (setq insert-directory-program gls)))
 
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; handle copy/paste intelligently
+(osx-trash-setup)
+(setq delete-by-moving-to-trash t)
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -159,8 +165,6 @@ The PUSH argument is ignored."
 
          (add-to-list 'flycheck-checkers 'proselint))
      (message "not loading proselint checker -- no proselint found.")))
-
-
 
 
 

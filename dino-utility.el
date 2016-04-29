@@ -5,7 +5,7 @@
 ;; Package-Requires: ()
 ;; URL:
 ;; X-URL:
-;; Version: 2013.07.17
+;; Version: 2016.04.28
 ;; Keywords: utility
 ;; License: New BSD
 
@@ -143,14 +143,16 @@ provides a set of modes for which no untabify is desired.")
 in the list `dino-no-untabify-modes'
 "
   (interactive)
-  (when (or (not dino-no-untabify-modes)
-            (every '(lambda (m) (not (derived-mode-p m)))
-                   dino-no-untabify-modes))
+  (when (and (not indent-tabs-mode)
+             (or (not dino-no-untabify-modes)
+                 (every '(lambda (m) (not (derived-mode-p m)))
+                        dino-no-untabify-modes)))
 
     (untabify 0 (point-max))))
 
 (defun dino-untabify-unconditionally ()
   "Untabify the current buffer completely and unconditionally."
+  (interactive)
   (untabify (point-min) (point-max)))
 
 (add-hook 'before-save-hook 'dino-untabify-maybe)

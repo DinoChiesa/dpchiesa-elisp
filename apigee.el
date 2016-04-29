@@ -5,13 +5,13 @@
 ;; Author     : Dino Chiesa
 ;; Maintainer : Dino Chiesa <dpchiesa@hotmail.com>
 ;; Created    : May 2013
-;; Modified   : February 2016
+;; Modified   : April 2016
 ;; Version    : 1.5
-;; Keywords   : apigee
-;; Requires   : s.el, request.el, dino-netrc.el
+;; Keywords   : apigee edge
+;; Requires   : s.el, request.el, dino-netrc.el, xml.el
 ;; License    : New BSD
-;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2016-March-22 06:05:49>
+;; X-URL      : https://github.com/DinoChiesa/dpchiesa-elisp
+;; Last-saved : <2016-April-28 12:51:16>
 ;;
 ;;; Commentary:
 ;;
@@ -657,11 +657,11 @@ apiproduct.developer.quota.timeunit*
    <StringValueLength>500</StringValueLength>
 </JSONThreatProtection>")
 
-     '("XMLToJSON"
+     '("XMLToJSON - full options"
        "XMLToJSON"
        "<XMLToJSON name='##'>
-  <Source>response</Source>
-  <OutputVariable>response</OutputVariable>
+  <Source>${1:$$(yas-choose-value '(\"request\" \"response\" ))}</Source>
+  <OutputVariable>${1:$(yas-text)}.content</OutputVariable>
   <Format>yahoo</Format>
   <!--
   <Options>
@@ -680,12 +680,35 @@ apiproduct.developer.quota.timeunit*
   -->
 </XMLToJSON>\n")
 
+     '("XMLToJSON - strip levels"
+       "XMLToJSON"
+       "<XMLToJSON name='##'>
+  <Source>${1:$$(yas-choose-value '(\"request\" \"response\" ))}</Source>
+  <OutputVariable>${1:$(yas-text)}.content</OutputVariable>
+  <Options>
+    <StripLevels>3</StripLevels>
+  </Options>
+</XMLToJSON>\n")
 
+     '("XMLToJSON - always treat as array"
+       "XMLToJSON"
+       "<XMLToJSON name='##'>
+  <Source>${1:$$(yas-choose-value '(\"request\" \"response\" ))}</Source>
+  <OutputVariable>${1:$(yas-text)}.content</OutputVariable>
+  <!--
+  <Options>
+    <TreatAsArray>
+      <Path unwrap='true'>${1:school/teachers}</Path>
+      <Path unwrap='false'>${2:school/teachers/students}</Path>
+    </TreatAsArray>
+  </Options>
+  -->
+</XMLToJSON>\n")
 
      '("ExtractVariables - from AccessEntity"
        "Extract"
        "<ExtractVariables name='##'>
-  <Source>AccessEntity.AccessEntity-$1</Source>
+  <Source>AccessEntity.AccessEntity-${1:1}</Source>
   <VariablePrefix>entity</VariablePrefix>
   <XMLPayload>
     <Variable name='${2:varname1}' type='string'>
@@ -746,7 +769,7 @@ apiproduct.developer.quota.timeunit*
        "Extract"
        "<ExtractVariables name='##'>
   <Source>{$1:request}</Source>
-  <VariablePrefix>soap</VariablePrefix>
+  <!-- <VariablePrefix>soap</VariablePrefix> -->
   <IgnoreUnresolvedVariables>false</IgnoreUnresolvedVariables>
   <XMLPayload>
     <Namespaces>
@@ -757,7 +780,6 @@ apiproduct.developer.quota.timeunit*
     </Variable>
   </XMLPayload>
 </ExtractVariables>")
-
 
      '("ExtractVariables - from JSON response"
        "Extract"
@@ -774,15 +796,15 @@ apiproduct.developer.quota.timeunit*
      '("ExtractVariables - OpenID Connect"
        "Extract"
        "<ExtractVariables name='##'>
-  <VariablePrefix>openidconnect</VariablePrefix>
+  <!-- <VariablePrefix>openidconnect</VariablePrefix> -->
   <Header name='Authorization'>
-    <Pattern>Bearer {access_token}</Pattern>
+    <Pattern>Bearer {oidc_access_token}</Pattern>
   </Header>
   <QueryParam name='access_token'>
-    <Pattern>{access_token}</Pattern>
+    <Pattern>{oidc_access_token}</Pattern>
   </QueryParam>
   <QueryParam name='token'>
-    <Pattern>{access_token}</Pattern>
+    <Pattern>{oidc_access_token}</Pattern>
   </QueryParam>
   <IgnoreUnresolvedVariables>false</IgnoreUnresolvedVariables>
 </ExtractVariables>\n")
@@ -2103,17 +2125,17 @@ applying as the CreatedBy element in an API Proxy.
 
 
 
-(defun apigee--random-string (&optional len)
-  "produce a string of length LEN containing random characters,
-or of length 8 if the len is not specified.
-"
-  (let (s '())
-    (if (not len) (setq len 8))
-    (if (> len 144) (setq len 8)) ;; sanity
-    (while (> len 0)
-      (setq s (cons (+ (random 26) 97) s)
-            len (- len 1)))
-    (mapconcat 'string s "")))
+;; (defun apigee--random-string (&optional len)
+;;   "produce a string of length LEN containing random characters,
+;; or of length 8 if the len is not specified.
+;; "
+;;   (let (s '())
+;;     (if (not len) (setq len 8))
+;;     (if (> len 144) (setq len 8)) ;; sanity
+;;     (while (> len 0)
+;;       (setq s (cons (+ (random 26) 97) s)
+;;             len (- len 1)))
+;;     (mapconcat 'string s "")))
 
 
 (defun apigee-new-proxy (proxy-name)
@@ -2298,7 +2320,7 @@ if ( ! handled ) {
   </PostFlow>
 
   <Flows>
-    <Flow name='test " (apigee--random-string) " " (apigee--random-string) "'>
+    <Flow name='test 1'>
       <Description>insert description here</Description>
       <Request>
         <!-- insert flow-specific policies here -->
@@ -2330,6 +2352,7 @@ if ( ! handled ) {
 
         (find-file-existing apiproxy-dir)
         ))))
+
 
 
 (defun apigee--snippet-field (field-num)
