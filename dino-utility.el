@@ -694,10 +694,24 @@ Eg,
 
 
 
-(defun dino-copy-value-from-key-into-killring (key)
-  "Extract a value based on the given KEY into the killring."
-  ;; eg, (dino-copy-value-from-key-into-killring "box-personal")
-  (interactive "skey: ")
+
+(defun dino-gtm-url (mtgid)
+  "Produce and put in killring a URL for a GoToMeeting"
+  (interactive "smtg id: ")
+  (if mtgid ;; eg 979-984-805 or 979984805
+      (let ((mtgid (replace-regexp-in-string "-" "" mtgid)))
+        (if (eq (length mtgid) 9)  ;; eg, 979984805
+            (let ((link (concat "https://global.gotomeeting.com/join/" mtgid)))
+              (kill-new link)
+              (message link))
+          (message "invalid meeting ID")))
+    (message "empty meeting ID")))
+
+
+  (defun dino-copy-value-from-key-into-killring (key)
+    "Extract a value from the secure keystore into the killring, using the given KEY to do the lookup."
+    ;; eg, (dino-copy-value-from-key-into-killring "box-personal")
+    (interactive "skey: ")
   (let ((buf (get-buffer "pwds.txt.gpg"))
         (regexp (concat "^[ \t]*\\b" key "\\b.+ \\([^ \r\n]+\\)$")))
     (if buf

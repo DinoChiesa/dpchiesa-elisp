@@ -100,7 +100,7 @@ compiler. If you would like to use a different compiler, see
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; handle copy/paste intelligently
 (osx-trash-setup)
-(setq delete-by-moving-to-trash t)
+(setq delete-by-moving-to-trash nil)
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

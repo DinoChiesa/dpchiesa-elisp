@@ -1,0 +1,11 @@
+# -*- mode: snippet -*-
+# key : join
+# name : function joinPathElements() {...}
+# --
+function joinPathElements() {
+  var re1 = new RegExp('^\\/|\\/$', 'g'),
+      elts = Array.prototype.slice.call(arguments);
+  return elts.map(function(element){
+    if ( ! element) {return '';}
+    return element.replace(re1,""); }).join('/');
+}

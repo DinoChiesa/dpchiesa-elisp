@@ -1,6 +1,6 @@
 ;;; emacs.el -- dino's em Dino's .emacs setup file.
 ;;
-;; Last saved: <2016-April-27 20:22:08>
+;; Last saved: <2016-July-20 19:39:58>
 ;;
 ;; Works with v24.5 of emacs.
 ;;
@@ -64,8 +64,23 @@
 (eval-after-load "flycheck"
   '(progn
      (setq-default flycheck-disabled-checkers '(emacs-lisp-checkdoc))
-     (setq flycheck-phpcs-standard "DinoChiesa")))
-;; place the following content in: /usr/lib/php/pear/PHP/CodeSniffer/Standards/DinoChiesa/ruleset.xml
+     ;; (setq flycheck-phpcs-standard "Drupal") ;; DinoChiesa
+     (setq flycheck-phpcs-standard "/Users/dino/.composer/vendor/squizlabs/php_codesniffer/CodeSniffer/Standards/DinoChiesa")
+     )) ;; DinoChiesa
+;; $ pear config-get php_dir
+;; will show the pear PHP config directory.  Eg /usr/local/share/pear
+;; .. which means the phpcs dir is /usr/local/share/pear/PHP/CodeSniffer
+;;
+;; ?? or this?
+;; $ php composer.phar global show -P
+;; which shows
+;; ~/.composer/vendor/squizlabs/php_codesniffer/CodeSniffer/Standards/
+;;
+;; regardless, wherever the Standards live, you can add a new one.
+;;   cd   ${phpcs_dir}/Standards
+;;   mkdir DinoChiesa
+;;
+;; place the following content in DinoChiesa/ruleset.xml
 ;;
 ;; <ruleset name="Custom Standard">
 ;;   <description>My custom coding standard</description>
@@ -323,6 +338,7 @@
 (global-set-key "\C-cs"     'search-forward-regexp)
 (global-set-key "\C-cy"     'linum-mode)
 (global-set-key "\C-c\C-p"  'dino-copy-value-from-key-into-killring)
+(global-set-key "\C-cm"     'dino-gtm-url)
 (global-set-key "\C-cq"     'query-replace)
 (global-set-key "\C-cc"     'goto-char)
 (global-set-key "\C-cr"     'replace-regexp)
@@ -2221,7 +2237,7 @@ i.e M-x kmacro-set-counter."
   (set (make-local-variable 'indent-tabs-mode) nil)
 
   ;; indent increment
-  (setq js-indent-level 2)
+  (set (make-local-variable 'js-indent-level) 2)
 
   ;; for syntax-checking, auto-complete, etc
   (require 'tern)
@@ -2362,6 +2378,23 @@ i.e M-x kmacro-set-counter."
                ))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; proselint
+
+(eval-after-load "flycheck"
+  '(progn
+     (flycheck-define-checker proselint
+       "A linter for prose."
+       :command ("proselint" source-inplace)
+       :error-patterns
+       ((warning line-start (file-name) ":" line ":" column ": "
+                 (id (one-or-more (not (any " "))))
+                 (message (one-or-more not-newline)
+                          (zero-or-more "\n" (any " ") (one-or-more not-newline)))
+                 line-end))
+       :modes (text-mode markdown-mode gfm-mode))
+     (add-to-list 'flycheck-checkers 'proselint)
+     ))
 
 
 

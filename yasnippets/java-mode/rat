@@ -1,0 +1,8 @@
+# -*- mode: snippet -*-
+# name: read-all-text
+# key: rat
+# --
+Path path = Paths.get(${1:filename});
+byte[] data = Files.readAllBytes(path);
+String text = new String(data, StandardCharsets.UTF_8);
+

@@ -1,0 +1,10 @@
+# key : prom
+# name : series of promises on an array
+# --
+function doAsyncSeries(arr) {
+    return arr.reduce(function (promise, item) {
+      return promise.then(function(result) {
+        return doSomethingAsync(result, item);
+      });
+    }, $q.when(initialValue));
+}

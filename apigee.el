@@ -11,7 +11,7 @@
 ;; Requires   : s.el, request.el, dino-netrc.el, xml.el
 ;; License    : New BSD
 ;; X-URL      : https://github.com/DinoChiesa/dpchiesa-elisp
-;; Last-saved : <2016-April-28 12:51:16>
+;; Last-saved : <2016-July-15 09:21:27>
 ;;
 ;;; Commentary:
 ;;
@@ -378,7 +378,7 @@ the only possible value currently.")
      "<AssignMessage name='##'>
   <IgnoreUnresolvedVariables>false</IgnoreUnresolvedVariables>
   <AssignVariable>
-    <Name>${1:originalRequestHeaders}.${2:$$(yas-choose-value '(\"Content-Type\" \"Accept\"))}</Name>
+    <Name>${1:originalRequestHeaders}_${2:$$(yas-choose-value '(\"Content-Type\" \"Accept\"))}</Name>
     <Ref>request.header.$2</Ref>
   </AssignVariable>
 </AssignMessage>\n")
@@ -1813,7 +1813,7 @@ $1
 
 
 (defun apigee-insure-trailing-slash (path)
-  "Insure the given path ends with a slash. This is usedful with
+  "Insure the given path ends with a slash. This is useful with
 `default-directory'. Setting `default-directory' to a value that
 does not end with a slash causes it to use the parent directory.
 "
@@ -2137,6 +2137,87 @@ applying as the CreatedBy element in an API Proxy.
 ;;             len (- len 1)))
 ;;     (mapconcat 'string s "")))
 
+(defun apigee--insert-policy-clean-response-headers (apiproxy-dir)
+  "inserts a policy for clean response headers"
+  (with-temp-file (concat apiproxy-dir "policies/AM-CleanResponseHeaders.xml")
+    (insert "<AssignMessage name='AM-CleanResponseHeaders'>
+  <Remove>
+    <Headers>
+      <Header name='Accept'/>
+      <Header name='user-agent'/>
+      <Header name='Host'/>
+      <Header name='x-forwarded-for'/>
+      <Header name='X-Forwarded-Proto'/>
+      <Header name='X-Forwarded-Port'/>
+      <Header name='apikey'/>
+      <Header name='date'/>
+      <Header name='Authorization'/>
+      <Header name='Signature'/>
+      <Header name='X-Powered-By'/>
+    </Headers>
+  </Remove>
+  <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+  <AssignTo createNew='false' transport='http' type='response'/>
+</AssignMessage>
+")))
+
+(defun apigee--insert-policy-invalid-api-key-fault-response (apiproxy-dir)
+  "inserts a policy for assigning a message for invalid api key"
+  (with-temp-file (concat apiproxy-dir "policies/AM-InvalidApiKey.xml")
+    (insert "<AssignMessage name='AM-InvalidApiKey'>
+    <Remove>
+        <Headers>
+            <Header name='Accept'/>
+            <Header name='user-agent'/>
+            <Header name='Authorization'/>
+            <Header name='Signature'/>
+            <Header name='Date'/>
+            <Header name='Host'/>
+            <Header name='X-Powered-By'/>
+            <Header name='X-Forwarded-Port'/>
+            <Header name='X-Forwarded-Proto'/>
+        </Headers>
+    </Remove>
+    <Set>
+        <Payload contentType='application/json' variablePrefix='{' variableSuffix='}'>
+{ \"error\" : { \"code\":152000, \"message\":\"Invalid client.\" } }
+</Payload>
+        <StatusCode>401</StatusCode>
+        <ReasonPhrase>Unauthorized</ReasonPhrase>
+    </Set>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+    <AssignTo createNew='false' transport='http' type='response'/>
+</AssignMessage>
+")))
+
+(defun apigee--insert-policy-expired-api-key-fault-response (apiproxy-dir)
+  "inserts a policy for assigning a message for invalid api key"
+  (with-temp-file (concat apiproxy-dir "policies/AM-InvalidApiKey.xml")
+    (insert "<AssignMessage name='AM-InvalidApiKey'>
+    <Remove>
+        <Headers>
+            <Header name='Accept'/>
+            <Header name='user-agent'/>
+            <Header name='Authorization'/>
+            <Header name='Signature'/>
+            <Header name='Date'/>
+            <Header name='Host'/>
+            <Header name='X-Powered-By'/>
+            <Header name='X-Forwarded-Port'/>
+            <Header name='X-Forwarded-Proto'/>
+        </Headers>
+    </Remove>
+    <Set>
+        <Payload contentType='application/json' variablePrefix='{' variableSuffix='}'>
+{ \"error\" : { \"code\":152001, \"message\":\"The API Key is expired.\" } }
+</Payload>
+        <StatusCode>401</StatusCode>
+        <ReasonPhrase>Unauthorized</ReasonPhrase>
+    </Set>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+    <AssignTo createNew='false' transport='http' type='response'/>
+</AssignMessage>
+")))
 
 (defun apigee-new-proxy (proxy-name)
   "Interactive fn that creates a new exploded proxy bundle directory
@@ -2265,27 +2346,9 @@ if ( ! handled ) {
 }
 "))
 
-        (with-temp-file (concat apiproxy-dir "policies/AM-CleanResponseHeaders.xml")
-          (insert "<AssignMessage name='AM-CleanResponseHeaders'>
-  <Remove>
-    <Headers>
-      <Header name='Accept'/>
-      <Header name='user-agent'/>
-      <Header name='Host'/>
-      <Header name='x-forwarded-for'/>
-      <Header name='X-Forwarded-Proto'/>
-      <Header name='X-Forwarded-Port'/>
-      <Header name='apikey'/>
-      <Header name='date'/>
-      <Header name='Authorization'/>
-      <Header name='Signature'/>
-      <Header name='X-Powered-By'/>
-    </Headers>
-  </Remove>
-  <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
-  <AssignTo createNew='false' transport='http' type='response'/>
-</AssignMessage>
-"))
+        (apigee--insert-policy-clean-response-headers apiproxy-dir)
+        (apigee--insert-policy-invalid-api-key-fault-response apiproxy-dir)
+        (apigee--insert-policy-expired-api-key-fault-response apiproxy-dir)
 
         (with-temp-file (concat apiproxy-dir "proxies/default.xml")
           (insert
@@ -2298,15 +2361,20 @@ if ( ! handled ) {
     <VirtualHost>secure</VirtualHost>
   </HTTPProxyConnection>
 
-  <FaultRules/>
-  <!--
-  <FaultRule name='ruleName'>
-    <Step>
-      <Name>{policy_name}</Name>
-    </Step>
-    <Condition>{(conditional statement)}</Condition>
-  </FaultRule>
-  -->
+    <FaultRule name='invalid-key'>
+      <Step>
+        <Name>AM-InvalidApiKey</Name>
+      </Step>
+      <Condition>fault.name = \"InvalidApiKeyForGivenResource\" OR fault.name = \"InvalidApiKey\" OR fault.name = \"DeveloperStatusNotActive\" OR fault.name = \"invalid_client-app_not_approved\"</Condition>
+    </FaultRule>
+
+    <FaultRule name='expired-key'>
+      <Step>
+        <Name>AM-ExpiredApiKey</Name>
+      </Step>
+      <Condition>fault.name = \"consumer_key_expired\"</Condition>
+    </FaultRule>
+  </FaultRules>
 
   <PreFlow name='PreFlow'>
       <Request/>
@@ -2400,7 +2468,7 @@ consist only of the unique members of the original list.
 
 (defun apigee--sort-strings (strings)
   "lexicographically sort a list of strings"
-  (sort strings
+  (sort (copy-sequence strings)
         (lambda (a b) (string<  a b ))))
 
 
@@ -2490,7 +2558,8 @@ The output is a multi-leveled hierarchy, like this:
       (let ((cat (car categories))
             (n 0)
             (len (length candidates))
-            pane-items)
+            pane-items
+            (sort-by-name (lambda (a b) (not (string< (downcase (car a)) (downcase (car b)))))))
 
         (while (< n len)
           (let ((candidate (nth n candidates)))
@@ -2499,9 +2568,7 @@ The output is a multi-leveled hierarchy, like this:
           (setq n (1+ n)))
 
         ;; sort by description here
-        (setq pane-items
-              (sort pane-items
-                    (lambda (a b) (not (string< (downcase (car a)) (downcase (car b)) )) )))
+        (setq pane-items (sort pane-items sort-by-name))
 
         (if (= (length pane-items) 1)
             (let ((item (car pane-items)))
