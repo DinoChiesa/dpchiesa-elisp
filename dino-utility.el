@@ -261,6 +261,7 @@ cycles through those formats as well as a simplified date format:
              (stringp dino-timeofday--last-inserted-string)
              (markerp dino-timeofday--last-inserted-marker)
              (marker-position dino-timeofday--last-inserted-marker)
+             (eq (marker-buffer dino-timeofday--last-inserted-marker) (current-buffer))
              (or (eq last-command 'this-command)
                  (= (point) dino-timeofday--last-inserted-marker)))
 
@@ -775,6 +776,45 @@ Eg,
                      (kill-new xpath)
                      (message "%s" xpath))
                  xpath))))))))
+
+;; to fake self-insert
+(defun insert-as-self (CHAR N)
+  (let ((last-command-event CHAR)
+        (repeat (if N N 1)))
+    (self-insert-command repeat)))
+
+
+(defun dino-find-file-with-line-number (original-fn &rest args)
+  "Advice for `find-file'. When applied, a filename like file.js:14:10 results in opening file.js
+    and moving to line 14, col 10."
+  (save-match-data
+    (let* ((path (nth 0 args))
+           (match (string-match "^\\(.*?\\):\\([0-9]+\\):?\\([0-9]*\\)$" path))
+           (line-no (and match
+                         (match-string 2 path)
+                         (string-to-number (match-string 2 path))))
+           (col-no (and match
+                        (match-string 3 path)
+                        (string-to-number (match-string 3 path))))
+           (new-path (and match (match-string 1 path))))
+      (if line-no
+          (progn
+            (pop args)
+            (push new-path args)))
+
+      (let ((result (apply original-fn args)))
+
+        (when line-no
+          ;; goto-line is for interactive use
+          (goto-char (point-min))
+          (forward-line (1- line-no))
+          (when (> col-no 0)
+            (forward-char (1- col-no))))
+
+        result))))
+
+
+(advice-add 'find-file :around #'dino-find-file-with-line-number)
 
 (provide 'dino-utility)
 
