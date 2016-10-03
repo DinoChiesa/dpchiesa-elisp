@@ -2361,6 +2361,7 @@ if ( ! handled ) {
     <VirtualHost>secure</VirtualHost>
   </HTTPProxyConnection>
 
+  <FaultRules>
     <FaultRule name='invalid-key'>
       <Step>
         <Name>AM-InvalidApiKey</Name>
