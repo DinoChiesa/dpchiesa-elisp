@@ -1,6 +1,6 @@
 ;;; emacs.el -- dino's em Dino's .emacs setup file.
 ;;
-;; Last saved: <2016-July-20 19:39:58>
+;; Last saved: <2016-October-03 09:12:17>
 ;;
 ;; Works with v24.5 of emacs.
 ;;
@@ -108,6 +108,11 @@
 ;; </ruleset>
 
 
+;; for all modes
+(setq electric-pair-pairs '(
+                            (?\" . ?\")
+                            (?\{ . ?\})
+                            ) )
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -117,21 +122,26 @@
 (setq apigee-apiproxies-home "~/dev/apiproxies/")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; the go language
+;; golang
 ;;
-(add-to-list 'load-path "/usr/local/go/misc/emacs")
-(require 'go-mode-load) ;; editing mode
+;; (add-to-list 'load-path "/usr/local/go/misc/emacs") ;; removed in golang 1.4
+(add-to-list 'load-path "~/elisp/go-mode.el")
+(require 'go-mode-autoloads) ;; editing mode
 ;; for flycheck or compile support, I need the go binary on the path
-(setenv "GOPATH" "/Users/dino/dev/go/libs")
+(setenv "GOPATH" "/Users/dino/dev/go")
 
 (defun dino-go-mode-fn ()
   ;;(setq-default)
   (setq tab-width 2
         standard-indent 2
-        indent-tabs-mode nil)
+        indent-tabs-mode t) ;; golang prefers tabs, ugh
 
-  ;;Go auto-complete
   (require 'go-autocomplete)
+
+  (local-set-key "\M-\C-R"  'indent-region)
+  (local-set-key "\M-#"     'dino-indent-buffer)
+  (local-set-key "\C-c\C-w" 'compare-windows)
+  (local-set-key "\C-c\C-c"  'comment-region)
 
   (eval-after-load "smarter-compile"
     '(progn
@@ -143,7 +153,6 @@
     '(progn
        (add-to-list
         'flycheck-disabled-checkers 'go-build))) ;; go-gofmt?
-
 
   (local-set-key "\M-\C-R"  'indent-region)
   (local-set-key "\M-#"     'dino-indent-buffer)
@@ -170,6 +179,7 @@
 ;; org mode, including html5 presentations from .org documents
 ;;
 (require 'org)
+
 (org-babel-do-load-languages
  'org-babel-load-languages
  '(
@@ -184,6 +194,8 @@
     )))
 (setq org-confirm-babel-evaluate 'my-org-confirm-babel-evaluate)
 
+(require 'ox-taskjuggler)
+(add-to-list 'org-export-backends 'taskjuggler)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; including html5 presentations from .org documents
@@ -351,6 +363,17 @@
 (global-set-key "\C-x~"     'dino-toggle-buffer-modified)
 (global-set-key (kbd "C-<") 'beginning-of-defun)
 (global-set-key (kbd "C->") 'end-of-defun)
+
+
+;; unicode helpers
+(define-key key-translation-map (kbd "\C-x 8 i") (kbd "∞")) ;; infinity
+(define-key key-translation-map (kbd "\C-x 8 y") (kbd "λ")) ;; lambda
+(define-key key-translation-map (kbd "\C-x 8 a") (kbd "α")) ;; alpha
+(define-key key-translation-map (kbd "\C-x 8 b") (kbd "β")) ;; beta
+(define-key key-translation-map (kbd "\C-x 8 d") (kbd "Δ")) ;; delta
+(define-key key-translation-map (kbd "\C-x 8 m") (kbd "µ")) ;; mu / micro
+(define-key key-translation-map (kbd "\C-x 8 e") (kbd "ε")) ;; epsilon
+(define-key key-translation-map (kbd "\C-x 8 p") (kbd "π")) ;; pi
 
 
 ;;the help key is assigned to Ctrl-\, or Esc-Ctrl-\
@@ -605,6 +628,18 @@ With a prefix argument, makes a private paste."
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Powershell
+
+(autoload 'powershell-mode "powershell-mode" "major mode for editing powershell." t)
+(add-to-list 'auto-mode-alist '("\\.ps1\\'" . powershell-mode))
+
+(defun dino-powershell-mode-fn ()
+  (electric-pair-mode 1)
+  )
+
+(add-hook 'powershell-mode-hook 'dino-powershell-mode-fn)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Lua
 
 (autoload 'lua-mode "lua-mode" "major mode for editing Lua." t)
@@ -637,7 +672,6 @@ With a prefix argument, makes a private paste."
 ;; HTML
 
 (defun dino-html-mode-fn ()
-  ;;(setq powershell-indent-width 2)
   (local-set-key "\C-c1" 'just-one-space)
 
   (local-set-key (kbd "<f7>") 'find-file-at-point)
@@ -722,12 +756,11 @@ With a prefix argument, makes a private paste."
   ;; (local-set-key "\C-c\C-n"  'flymake-goto-next-error)
   ;; (local-set-key "\C-c\C-m"  'flymake-display-err-menu-for-current-line)
 
-
   ;; use autopair for curlies, parens, square brackets.
   ;; electric-pair-mode works better than autopair.el in 24.4,
   ;; and is important for use with popup / auto-complete.
   (if (or (not (fboundp 'version<)) (version< emacs-version "24.4"))
-    (progn (require 'autopair) (autopair-mode))
+      (progn (require 'autopair) (autopair-mode))
     (electric-pair-mode))
 
   ;;(require 'myfixme)
@@ -765,7 +798,7 @@ With a prefix argument, makes a private paste."
   ;; electric-pair-mode works better than autopair.el in 24.4,
   ;; and is important for use with popup / auto-complete.
   (if (or (not (fboundp 'version<)) (version< emacs-version "24.4"))
-    (progn (require 'autopair) (autopair-mode))
+      (progn (require 'autopair) (autopair-mode))
     (electric-pair-mode))
 
   (setq css-indent-offset 2)
@@ -934,11 +967,13 @@ just auto-corrects on common mis-spellings by me. "
 
   (define-abbrev-table 'text-mode-abbrev-table
     '(
+      ("teh" "the" nil 1)
       ("somehting" "something" nil 1)
+      ("hting" "thing" nil 1)
       ("rigueur" "rigeuer" nil 1)
+      ("riguer" "rigeuer" nil 1)
       ("submint" "submit" nil 1)
       ("rwquest" "request" nil 1)
-      ("riguer" "rigeuer" nil 1)
       ("hygeine" "hygiene" nil 0)
       ("laucnhed" "launched" nil 0)
       ("comittee" "committee" nil 0)
@@ -946,13 +981,14 @@ just auto-corrects on common mis-spellings by me. "
       ("siilar" "similar" nil 0)
       ("machiens" "machines" nil 0)
       ("cusotmer" "customer" nil 0)
+      ("accommplish" "accomplish" nil 0)
+      ("accomodate" "accommodate" nil 0)
       ("recieve" "receive" nil 0)
       ("vairous" "various" nil 0)
       ("multipel" "multiple" nil 0)
       ("acheive" "achieve" nil 0)
       ("acheived" "achieved" nil 0)
       ("APigee" "Apigee" nil 1)
-      ("teh" "the" nil 1)
       ("becasue" "because" nil 1)
       ("btw" "by the way" nil 3)
       ("omw" "on my way" nil 3)
@@ -2141,7 +2177,7 @@ Does not consider word syntax tables.
   ;; electric-pair-mode works better than autopair.el in 24.4,
   ;; and is important for use with popup / auto-complete.
   (if (or (not (fboundp 'version<)) (version< emacs-version "24.4"))
-    (progn (require 'autopair) (autopair-mode))
+      (progn (require 'autopair) (autopair-mode))
     (electric-pair-mode))
 
   ;; ya-snippet
@@ -2257,7 +2293,7 @@ i.e M-x kmacro-set-counter."
   ;; electric-pair-mode works better than autopair.el in 24.4,
   ;; and is important for use with popup / auto-complete.
   (if (or (not (fboundp 'version<)) (version< emacs-version "24.4"))
-    (progn (require 'autopair) (autopair-mode))
+      (progn (require 'autopair) (autopair-mode))
     (electric-pair-mode))
 
   (require 'flycheck)
