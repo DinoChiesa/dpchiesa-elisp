@@ -13,6 +13,10 @@
 ;;
 ;; run M-x flymake-mode to turn flymake on and off
 ;;
+;; Note from Dino, Tuesday, 13 September 2016, 12:16
+;; I recommend not using flymake and using flycheck instead.
+;; It's better designed and lighter-weight and more reliable.
+;;
 
 (require 'flymake)
 
