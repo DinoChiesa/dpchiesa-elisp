@@ -3,6 +3,7 @@
 # name : (function (foo){}());
 # --
 (function (${1:globalScope}){
+  'use strict';
   $0
 }(${2:this}));
 
