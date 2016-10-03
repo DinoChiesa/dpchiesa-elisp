@@ -11,7 +11,7 @@
 ;; Requires   : s.el, request.el, dino-netrc.el, xml.el
 ;; License    : New BSD
 ;; X-URL      : https://github.com/DinoChiesa/dpchiesa-elisp
-;; Last-saved : <2016-July-15 09:21:27>
+;; Last-saved : <2016-September-29 11:57:46>
 ;;
 ;;; Commentary:
 ;;
@@ -441,8 +441,7 @@ the only possible value currently.")
 
      '("KVM - Put"
        "KVM-PUT"
-       "<KeyValueMapOperations name='##'
-                       mapIdentifier='${1:nameOfMap}'>
+       "<KeyValueMapOperations name='##' mapIdentifier='${1:nameOfMap}'>
   <Scope>${2:$$(yas-choose-value '(\"organization\" \"environment\" \"apiproxy\"))}</Scope>
   <Put override='true'>
     <Key>
@@ -455,8 +454,7 @@ the only possible value currently.")
 
      '("KVM - Get"
        "KVM-Get"
-       "<KeyValueMapOperations name='##'
-                       mapIdentifier='${1:nameOfMap}'>
+       "<KeyValueMapOperations name='##' mapIdentifier='${1:nameOfMap}'>
   <Scope>${2:$$(yas-choose-value '(\"organization\" \"environment\" \"apiproxy\"))}</Scope>
   <Get assignTo='${3:variable.to.set}' index='2'>
     <Key>
@@ -839,12 +837,11 @@ apiproduct.developer.quota.timeunit*
         <Set>
           <!-- Shows how to request a token from usergrid. -->
           <!-- FIXME: should retrieve secrets from vault -->
-           <Payload contentType='application/json' variablePrefix='%'
-                    variableSuffix='#'><![CDATA[{
+           <Payload contentType='application/json'>{
     \"grant_type\":\"client_credentials\",
     \"client_id\":\"whatever\",
     \"client_secret\":\"something-secret\"
-}]]></Payload>
+}</Payload>
          <Verb>POST</Verb>
          <Path>/demo24/wagov1/token</Path>
       </Set>
@@ -866,10 +863,9 @@ apiproduct.developer.quota.timeunit*
         <Set>
           <!-- Shows how to request a token from usergrid. -->
           <!-- FIXME: should retrieve secrets from vault -->
-           <Payload contentType='application/json' variablePrefix='%'
-                    variableSuffix='#'><![CDATA[{
-  { \"grant_type\":\"password\", \"username\":\"%authn.uid#\", \"password\":\"%authn.pwd#\" }
-]]></Payload>
+           <Payload contentType='application/json'>
+  { \"grant_type\":\"password\", \"username\":\"{authn.uid}\", \"password\":\"{authn.pwd}\" }
+</Payload>
          <Verb>POST</Verb>
          <Path>/${1:BAAS_ORG}/${2:BAAS_APP}/token</Path>
       </Set>
@@ -2191,9 +2187,9 @@ applying as the CreatedBy element in an API Proxy.
 ")))
 
 (defun apigee--insert-policy-expired-api-key-fault-response (apiproxy-dir)
-  "inserts a policy for assigning a message for invalid api key"
-  (with-temp-file (concat apiproxy-dir "policies/AM-InvalidApiKey.xml")
-    (insert "<AssignMessage name='AM-InvalidApiKey'>
+  "inserts a policy for assigning a message for expired api key"
+  (with-temp-file (concat apiproxy-dir "policies/AM-ExpiredApiKey.xml")
+    (insert "<AssignMessage name='AM-ExpiredApiKey'>
     <Remove>
         <Headers>
             <Header name='Accept'/>
@@ -2304,8 +2300,7 @@ structure, in the `apigee-apiproxies-home' directory.
   <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
   <FaultResponse>
     <Set>
-      <Payload contentType='application/json'
-               variablePrefix='%' variableSuffix='#'><![CDATA[{
+      <Payload contentType='application/json'><![CDATA[{
   \"error\" : {
     \"code\" : 400.01,
     \"message\" : \"that request was unknown; try a different request.\"
