@@ -115,6 +115,31 @@
                             (?\{ . ?\})
                             ) )
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; package manager
+;;
+(require 'package)
+(dolist (item (list
+              ;;'("marmalade" . "http://marmalade-repo.org/packages/")
+              '("melpa"     . "https://stable.melpa.org/packages/")
+              '("org"       . "http://orgmode.org/elpa/")))
+  (add-to-list 'package-archives item))
+
+ 
+;; (setq package-archives
+;;       (list '("melpa" . "https://melpa.org/packages/")
+;;             '("gnu" . "http://elpa.gnu.org/packages/")
+;;             '("org" . "http://orgmode.org/elpa/")))
+
+(when (< emacs-major-version 24)
+  ;; For important compatibility libraries like cl-lib
+  (add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/")))
+
+(package-initialize)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; stuff for Apigee Edge
@@ -126,8 +151,11 @@
 ;; golang
 ;;
 ;; (add-to-list 'load-path "/usr/local/go/misc/emacs") ;; removed in golang 1.4
-(add-to-list 'load-path "~/elisp/go-mode.el")
-(require 'go-mode-autoloads) ;; editing mode
+;; (add-to-list 'load-path "~/elisp/go-mode.el")
+;; (add-to-list 'load-path "~/.emacs.d/elpa/go-mode-1.4.0")
+
+;;(require 'go-mode-autoloads) ;; editing mode
+(load "go-mode-autoloads") ;; editing mode; there is no provide statement!
 ;; for flycheck or compile support, I need the go binary on the path
 (setenv "GOPATH" "/Users/dino/dev/go")
 
@@ -2804,30 +2832,6 @@ i.e M-x kmacro-set-counter."
              (setq url-using-proxy proxy
                    url-proxy-services proxy))))))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; package manager
-;;
-(require 'package)
-(dolist (item (list
-              ;;'("marmalade" . "http://marmalade-repo.org/packages/")
-              '("melpa"     . "https://stable.melpa.org/packages/")
-              '("org"       . "http://orgmode.org/elpa/")))
-  (add-to-list 'package-archives item))
-
-;; (setq package-archives
-;;       (list '("melpa" . "https://melpa.org/packages/")
-;;             '("gnu" . "http://elpa.gnu.org/packages/")
-;;             '("org" . "http://orgmode.org/elpa/")))
-
-
-(when (< emacs-major-version 24)
-  ;; For important compatibility libraries like cl-lib
-  (add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/")))
-
-(package-initialize)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
