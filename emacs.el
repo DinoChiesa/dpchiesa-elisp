@@ -1,6 +1,6 @@
 ;;; emacs.el -- dino's em Dino's .emacs setup file.
 ;;
-;; Last saved: <2016-October-03 09:12:17>
+;; Last saved: <2016-December-08 19:32:26>
 ;;
 ;; Works with v24.5 of emacs.
 ;;
@@ -21,6 +21,7 @@
 (setq user-mail-address "dpchiesa@hotmail.com")
 
 (setq comment-style 'indent) ;; see doc for variable comment-styles
+(setq Buffer-menu-name-width 40)
 
 ;; for tetris
 (and (boundp 'tetris-score-file)
@@ -200,12 +201,16 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; including html5 presentations from .org documents
 ;;
-(require 'dpreso) ;; my own home-built thing. Org-export with reveal.js is cooler.
+
+;; my own home-built thing. Not quite as cool as Org-export with reveal.js .
+;; (require 'dpreso)
 (require 'ox-reveal)
 ;;(setq org-reveal-root "http://cdn.jsdelivr.net/reveal.js/2.5.0/")
 ;; to use: M-x org-reveal-export-to-html
 
 (setq org-reveal-root "http://dinochiesa.github.io/rv/")
+
+(require 'org-fixups)
 (add-hook 'org-fixups/after-export-reveal-file
           (lambda (filename)
             (message "the file was exported to %s" expanded-filename)))
@@ -224,7 +229,6 @@
     (call-process "open" nil t t
                   (concat "http://localhost:80/html/dpreso/"
                           base-fname))))
-(require 'org-fixups)
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1000,6 +1004,7 @@ just auto-corrects on common mis-spellings by me. "
   (auto-fill-mode 1)
   (abbrev-mode 1)
   (dino-fix-abbrev-table)
+  ;;(variable-pitch-mode)
   ;;
   ;; add new abbreviations above.
   ;;
