@@ -11,7 +11,7 @@
 ;; Requires   : s.el, request.el, dino-netrc.el, xml.el
 ;; License    : New BSD
 ;; X-URL      : https://github.com/DinoChiesa/dpchiesa-elisp
-;; Last-saved : <2016-September-29 11:57:46>
+;; Last-saved : <2016-December-14 16:12:48>
 ;;
 ;;; Commentary:
 ;;
@@ -364,7 +364,6 @@ the only possible value currently.")
      '("AssignMessage - assign variable"
      "AV"
      "<AssignMessage name='##'>
-  <DisplayName>##</DisplayName>
   <IgnoreUnresolvedVariables>false</IgnoreUnresolvedVariables>
   <AssignVariable>
     <Name>parsedRequest.client_id</Name>
@@ -2175,7 +2174,7 @@ applying as the CreatedBy element in an API Proxy.
         </Headers>
     </Remove>
     <Set>
-        <Payload contentType='application/json' variablePrefix='{' variableSuffix='}'>
+        <Payload contentType='application/json'>
 { \"error\" : { \"code\":152000, \"message\":\"Invalid client.\" } }
 </Payload>
         <StatusCode>401</StatusCode>

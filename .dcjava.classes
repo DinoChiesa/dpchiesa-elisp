@@ -162,3 +162,4 @@ java.util.Scanner
 org.codehaus.jackson.annotate.JsonProperty
 java.io.BufferedOutputStream
 java.util.HashSet
+java.io.BufferedReader

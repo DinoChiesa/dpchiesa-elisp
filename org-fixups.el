@@ -71,17 +71,17 @@ or, like this:
   (let ((expanded-filename (expand-file-name filename)))
     (run-hook-with-args 'org-fixups/after-export-reveal-file expanded-filename)))
 
-(if (fboundp 'org-reveal-export-to-html)
-    ;; allow post-processing of the file after export
-    (defun org-reveal-export-to-html
-      (&optional async subtreep visible-only body-only ext-plist)
-      "Export current buffer to a reveal.js HTML file."
-      (interactive)
-      (let* ((extension (concat "." org-html-extension))
-             (file (org-export-output-file-name extension subtreep)))
-        (org-export-to-file 'reveal file
-          async subtreep visible-only body-only ext-plist
-          'org-fixups/post-process-exported-reveal-file))))
+;; (if (fboundp 'org-reveal-export-to-html)
+;;     ;; allow post-processing of the file after export
+;;     (defun org-reveal-export-to-html
+;;       (&optional async subtreep visible-only body-only ext-plist)
+;;       "Export current buffer to a reveal.js HTML file."
+;;       (interactive)
+;;       (let* ((extension (concat "." org-html-extension))
+;;              (file (org-export-output-file-name extension subtreep)))
+;;         (org-export-to-file 'reveal file
+;;           async subtreep visible-only body-only ext-plist
+;;           'org-fixups/post-process-exported-reveal-file))))
 
 
 (provide 'org-fixups)

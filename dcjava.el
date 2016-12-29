@@ -11,7 +11,7 @@
 ;; Requires   : s.el
 ;; License    : New BSD
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2016-March-27 10:01:07>
+;; Last-saved : <2016-November-22 16:59:53>
 ;;
 ;;; Commentary:
 ;;
@@ -351,6 +351,7 @@ strings (filenames). "
 
 
 (defvar dcjava-wacapps-root "~/dev/wacapps/new/api_platform")
+(defvar dcjava-cps-root "~/dev/wacapps/cps")
 
 
 (defun dcjava-find-file-from-choice (flist)
@@ -364,10 +365,38 @@ strings (filenames). "
              (message "open file %s" (car chosen))))))
 
 
-(defun dcjava-find-wacapps-java-source-for-class-at-point (&optional clazzname)
-  "find a java source file that defines the class named by CLAZZNAME,
-in the wacapps dir tree, referred to by `dcjava-wacapps-root' . This is
-a wrapper on the shell find command.
+
+(defun dcjava-find-wacapps-java-source-for-class (classname)
+  "find a java source file in the wacapps dir tree, referred to by
+`dcjava-wacapps-root' that defines the class named by CLASSNAME.
+Prompts if no classname is provided. This fn is a wrapper on the shell
+find command. "
+
+  (interactive "P")
+  ;; prompt for classname if not specified
+  (if (not classname)
+      (setq classname (read-string "Class to find: " nil)))
+
+  (let ((filenames (and classname
+                        (or
+                         (dcjava-find-java-source-in-dir dcjava-wacapps-root classname)
+                         (dcjava-find-java-source-in-dir dcjava-cps-root classname)))))
+
+    (if filenames
+        (let ((numfiles (length filenames)))
+          (if (and (eq numfiles 1))
+              (if (file-exists-p (car filenames))
+                  (progn (find-file (car filenames))
+                         (message "open file %s" (car filenames)))
+                (message "E_NOEXIST %s" classname))
+            (dcjava-find-file-from-choice filenames)))
+      (message "no file for class %s" classname))))
+
+
+(defun dcjava-find-wacapps-java-source-for-class-at-point ()
+  "find a java source file in the wacapps dir tree, referred to by
+`dcjava-wacapps-root' that defines the class named by the `thing-at-point'.
+This fn is a wrapper on the shell find command.
 
 When invoked interactively, uses the class name at point. When
 none is found, then prompts for a classname.
@@ -378,30 +407,22 @@ select from.
   (interactive)
   (let* ((classname
           (or
-           clazzname
            (save-excursion
              (if (re-search-backward "[ \t]" (line-beginning-position) 1)
                  (forward-char))
              (if (looking-at dcjava--classname-regex)
-                 (replace-regexp-in-string
-                  (regexp-quote ".") "/"
+                 ;;(replace-regexp-in-string
+                 ;;(regexp-quote ".") "/"
                   (buffer-substring-no-properties (match-beginning 0) (match-end 0))
-                  t t)))
+                  ;;t t)
+
+               ))
            (let ((thing (thing-at-point 'word)))
              (if thing (substring-no-properties thing)))
            (read-string "Class to find: " nil)))
+         )
+    (dcjava-find-wacapps-java-source-for-class classname)))
 
-         (filenames (and classname
-                         (dcjava-find-java-source-in-dir dcjava-wacapps-root classname))))
-    (if filenames
-        (let ((numfiles (length filenames)))
-          (if (and (eq numfiles 1))
-              (if (file-exists-p (car filenames))
-                  (progn (find-file (car filenames))
-                         (message "open file %s" (car filenames)))
-                (message "E_NOEXIST %s" classname))
-            (dcjava-find-file-from-choice filenames)))
-      (message "no file for %s" classname))))
 
 
 (provide 'dcjava)
