@@ -163,3 +163,14 @@ org.codehaus.jackson.annotate.JsonProperty
 java.io.BufferedOutputStream
 java.util.HashSet
 java.io.BufferedReader
+java.util.UUID
+java.io.ByteArrayOutputStream
+java.net.HttpCookie
+java.util.SimpleTimeZone
+org.apache.commons.lang.time.FastDateFormat
+net.minidev.json.JSONObject
+com.nimbusds.jwt.ReadOnlyJWTClaimsSet
+com.nimbusds.jwt.JWTClaimsSet
+com.nimbusds.jose.JOSEObjectType
+com.nettgryppa.security.HashCash
+com.apigee.flow.execution.IOIntensive
