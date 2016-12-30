@@ -23,6 +23,7 @@
 
 (require 'cl)
 (require 'dired)
+(require 'dired-aux)
 (require 'ls-lisp)
 
     ;; (defun ls-lisp-format-time (file-attr time-index now)
@@ -265,7 +266,15 @@ for a given file or set of files. This function makes an intelligent guess."
             filename-list)))
 
 
-
+;; This fn redefined here to change the doc string, only.
+;; The current doc string is not helpful.
+(defun dired-do-touch (&optional arg)
+  "Change the timestamp of the marked (or next ARG) files.
+This calls touch. With prefix, accepts timestamp in [[CC]YY]MMDDhhmm[.SS] format.
+When invoked interactively, you can pull the current file timestamp of the file at
+point into the minibuffer, by typing M-n ."
+  (interactive "P")
+  (dired-do-chxxx "Timestamp" dired-touch-program 'touch arg))
 
 (provide 'dired-fixups)
 
