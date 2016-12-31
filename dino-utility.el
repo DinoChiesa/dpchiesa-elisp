@@ -2,7 +2,7 @@
 ;;
 ;; Author: Dino Chiesa
 ;; Created: Wed, 17 Jul 2013  12:06
-;; Package-Requires: ()
+;; Package-Requires: (package)
 ;; URL:
 ;; X-URL:
 ;; Version: 2016.04.28
@@ -53,6 +53,7 @@
 ;;; Code:
 
 (require 'cl)
+(require 'package)
 
 ;; when copying binary files into a clipboard buffer
 (fset 'dinoch-b64-copy
@@ -68,6 +69,16 @@
   (save-excursion
     (while (search-forward "\xd" nil t)
       (replace-match "" nil t))))
+
+
+(defun dino-ensure-package-installed (&rest packages)
+  "For each package in the list of PACKAGES, check if it is installed. If not,
+ask for installation. Return the list of packages."
+  (mapcar
+   (lambda (package)
+     (unless (package-installed-p package)
+       (package-install package)))
+     packages))
 
 
 (defun dino-add-path-if-not-present (pathlist)

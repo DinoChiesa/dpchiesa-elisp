@@ -1,6 +1,6 @@
 ;;; emacs.el -- dino's em Dino's .emacs setup file.
 ;;
-;; Last saved: <2016-December-08 19:32:26>
+;; Last saved: <2016-December-30 17:40:27>
 ;;
 ;; Works with v24.5 of emacs.
 ;;
@@ -49,12 +49,51 @@
 (require 'dino-utility)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; package manager
+;;
+(require 'package)
+(dolist (item (list
+              ;;'("marmalade" . "http://marmalade-repo.org/packages/")
+              '("melpa"     . "https://stable.melpa.org/packages/")
+              '("org"       . "http://orgmode.org/elpa/")))
+  (add-to-list 'package-archives item))
+
+
+;; (setq package-archives
+;;       (list '("melpa" . "https://melpa.org/packages/")
+;;             '("gnu" . "http://elpa.gnu.org/packages/")
+;;             '("org" . "http://orgmode.org/elpa/")))
+
+(when (< emacs-major-version 24)
+  ;; For important compatibility libraries like cl-lib
+  (add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/")))
+
+(package-initialize)
+
 ;; set load-path for elpa things. Some of these may take precedence
 ;; over builtin packages.  Eg org mode, which gets updated more
 ;; frequently than emacs.
 ;;
 (let ((default-directory "~/.emacs.d/elpa"))
   (normal-top-level-add-subdirs-to-load-path))
+
+;; simply add package names to the list
+(dino-ensure-package-installed
+ 's
+ 'yasnippet
+ 'yaxception
+ 'seq
+ 'magit
+ 'logito
+ 'go-autocomplete
+ 'flycheck
+ 'company
+ 'company-go
+ 'popup
+)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -114,29 +153,6 @@
                             (?\" . ?\")
                             (?\{ . ?\})
                             ) )
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; package manager
-;;
-(require 'package)
-(dolist (item (list
-              ;;'("marmalade" . "http://marmalade-repo.org/packages/")
-              '("melpa"     . "https://stable.melpa.org/packages/")
-              '("org"       . "http://orgmode.org/elpa/")))
-  (add-to-list 'package-archives item))
-
- 
-;; (setq package-archives
-;;       (list '("melpa" . "https://melpa.org/packages/")
-;;             '("gnu" . "http://elpa.gnu.org/packages/")
-;;             '("org" . "http://orgmode.org/elpa/")))
-
-(when (< emacs-major-version 24)
-  ;; For important compatibility libraries like cl-lib
-  (add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/")))
-
-(package-initialize)
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
 
