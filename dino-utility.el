@@ -109,11 +109,14 @@ This works only when the frame is split into exactly two windows."
       (split-window-vertically)) ; gives us a split with the other window twice
     (switch-to-buffer nil))) ; restore the original window in this part of the frame
 
-(defun dino-insert-filename ()
-  "inserts the name of the file behind th buffer, at point."
-  (interactive)
+(defun dino-insert-filename (&optional arg)
+  "inserts the name of the file behind the buffer, at point.
+When invoked with a prefix, include the full directory path."
+  (interactive "P")
   (insert
-   (file-name-nondirectory (buffer-file-name))))
+   (if arg
+       (buffer-file-name)
+     (file-name-nondirectory (buffer-file-name)))))
 
 (defun dino-indent-buffer ()
   "Dino's function to re-indent an entire buffer; helpful in progmodes
