@@ -1,6 +1,6 @@
 ;;; emacs.el -- dino's em Dino's .emacs setup file.
 ;;
-;; Last saved: <2016-December-30 17:40:27>
+;; Last saved: <2016-December-30 17:41:51>
 ;;
 ;; Works with v24.5 of emacs.
 ;;
@@ -57,12 +57,6 @@
               '("melpa"     . "https://stable.melpa.org/packages/")
               '("org"       . "http://orgmode.org/elpa/")))
   (add-to-list 'package-archives item))
-
-
-;; (setq package-archives
-;;       (list '("melpa" . "https://melpa.org/packages/")
-;;             '("gnu" . "http://elpa.gnu.org/packages/")
-;;             '("org" . "http://orgmode.org/elpa/")))
 
 (when (< emacs-major-version 24)
   ;; For important compatibility libraries like cl-lib
