@@ -1,6 +1,6 @@
 ;;; emacs.el -- dino's em Dino's .emacs setup file.
 ;;
-;; Last saved: <2016-December-30 17:41:51>
+;; Last saved: <2017-January-03 16:10:07>
 ;;
 ;; Works with v24.5 of emacs.
 ;;
@@ -79,6 +79,7 @@
  'seq
  'magit
  'logito
+ 'go-mode
  'go-autocomplete
  'flycheck
  'company
