@@ -1,6 +1,6 @@
 ;;; emacs.el -- dino's em Dino's .emacs setup file.
 ;;
-;; Last saved: <2017-January-03 16:10:07>
+;; Last saved: <2017-January-16 13:37:07>
 ;;
 ;; Works with v24.5 of emacs.
 ;;
@@ -676,9 +676,34 @@ With a prefix argument, makes a private paste."
 (autoload 'powershell-mode "powershell-mode" "major mode for editing powershell." t)
 (add-to-list 'auto-mode-alist '("\\.ps1\\'" . powershell-mode))
 
+(eval-after-load "hideshow"
+  '(progn
+     ;; hideshow for powershell
+     (setq dpc-hs-settings-for-powershell-mode
+           '(powershell-mode
+             "{"                                 ;; regexp for start block
+             "}"                                 ;; regexp for end block
+             "[ \\t]*#"                          ;; regexp for comment start
+             forward-sexp                        ;; hs-forward-sexp-func
+             hs-c-like-adjust-block-beginning    ;; c-like adjust (1 char)
+             ))
+
+     (unless (assoc 'powershell-mode hs-special-modes-alist)
+       (push dpc-hs-settings-for-powershell-mode hs-special-modes-alist))))
+
+;; replace:
+;;(setf (cdr (rassoc 'powershell-mode hs-special-modes-alist) ) something-here)
+
+;; shadow:
+;; (add-to-list 'hs-special-modes-alist dpc-hs-settings-for-powershell-mode )
+
+;; delete:
+;; (assq-delete-all 'powershell-mode hs-special-modes-alist)
+
 (defun dino-powershell-mode-fn ()
   (electric-pair-mode 1)
-  )
+  (require 'hideshow)
+  (hs-minor-mode t))
 
 (add-hook 'powershell-mode-hook 'dino-powershell-mode-fn)
 
@@ -1606,6 +1631,9 @@ just auto-corrects on common mis-spellings by me. "
 
 ;; for hideshow.el
 (require 'hideshow)
+
+
+;; hideshow for csharp - really this should be in csharp-mode.el
 (defun csharp-hs-forward-sexp (&optional arg)
 
   "I set hs-forward-sexp-func to this function.
@@ -1691,34 +1719,6 @@ again, I haven't see that as a problem."
         hs-special-modes-alist))
 
 
-(defun dino-insert-paired-quotes (arg)
-  "Skip the char if it is a typeover for the ending quote, otherwise
-insert a pair, and backup one character."
-  (interactive "*p")
-  (let ((char last-command-event))
-    (if (and (or (eq char ?\") (eq char ?\'))
-             (eq char (following-char)))
-        (forward-char)
-      (self-insert-command (prefix-numeric-value arg))
-      (self-insert-command (prefix-numeric-value arg))
-      (forward-char -1)
-      )))
-
-                                        ;    (?} . ?{)
-(defvar dino-skeleton-pair-alist
-  '((?\) . ?\()
-    (?\> . ?\<)
-    (?\] . ?\[)
-    (?" . ?")))
-
-(defun dino-skeleton-pair-end (arg)
-  "Skip the char if it is an ending, otherwise insert it."
-  (interactive "*p")
-  (let ((char last-command-event))
-    (if (and (assq char dino-skeleton-pair-alist)
-             (eq char (following-char)))
-        (forward-char)
-      (self-insert-command (prefix-numeric-value arg)))))
 
 
 (defun dino-csharp-mode-fn ()
