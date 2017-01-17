@@ -11,7 +11,7 @@
 ;; Requires   : s.el, request.el, dino-netrc.el, xml.el
 ;; License    : New BSD
 ;; X-URL      : https://github.com/DinoChiesa/dpchiesa-elisp
-;; Last-saved : <2016-December-14 16:12:48>
+;; Last-saved : <2017-January-13 17:44:09>
 ;;
 ;;; Commentary:
 ;;
@@ -2294,18 +2294,16 @@ structure, in the `apigee-apiproxies-home' directory.
 
         (with-temp-file (concat apiproxy-dir "policies/RF-UnknownRequest.xml")
           (insert "<RaiseFault name='RF-UnknownRequest'>
-  <DisplayName>RaiseFault-UnknownRequest</DisplayName>
-  <Description>Unknown Request</Description>
   <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
   <FaultResponse>
     <Set>
-      <Payload contentType='application/json'><![CDATA[{
+      <Payload contentType='application/json'>{
   \"error\" : {
-    \"code\" : 400.01,
+    \"code\" : 404.01,
     \"message\" : \"that request was unknown; try a different request.\"
   }
 }
-]]></Payload>
+</Payload>
       <StatusCode>404</StatusCode>
       <ReasonPhrase>Not Found</ReasonPhrase>
     </Set>
