@@ -113,10 +113,15 @@ This works only when the frame is split into exactly two windows."
   "inserts the name of the file behind the buffer, at point.
 When invoked with a prefix, include the full directory path."
   (interactive "P")
-  (insert
-   (if arg
-       (buffer-file-name)
-     (file-name-nondirectory (buffer-file-name)))))
+  (let ((fname
+         (if arg
+             (buffer-file-name)
+           (file-name-nondirectory (buffer-file-name)))))
+    (kill-new fname) ;; insert into kill-ring
+    (if (not buffer-read-only)
+        (insert fname)
+      (message fname)
+      )))
 
 (defun dino-indent-buffer ()
   "Dino's function to re-indent an entire buffer; helpful in progmodes
@@ -829,6 +834,36 @@ Eg,
 
 
 (advice-add 'find-file :around #'dino-find-file-with-line-number)
+
+(defun dino-insert-paired-quotes (arg)
+  "Skip the char if it is a typeover for the ending quote, otherwise
+insert a pair, and backup one character."
+  (interactive "*p")
+  (let ((char last-command-event))
+    (if (and (or (eq char ?\") (eq char ?\'))
+             (eq char (following-char)))
+        (forward-char)
+      (self-insert-command (prefix-numeric-value arg))
+      (self-insert-command (prefix-numeric-value arg))
+      (forward-char -1)
+      )))
+                                        ;    (?} . ?{)
+(defvar dino-skeleton-pair-alist
+  '((?\) . ?\()
+    (?\> . ?\<)
+    (?\] . ?\[)
+    (?" . ?")))
+
+(defun dino-skeleton-pair-end (arg)
+  "Skip the char if it is an ending, otherwise insert it."
+  (interactive "*p")
+  (let ((char last-command-event))
+    (if (and (assq char dino-skeleton-pair-alist)
+             (eq char (following-char)))
+        (forward-char)
+      (self-insert-command (prefix-numeric-value arg)))))
+
+
 
 (provide 'dino-utility)
 
