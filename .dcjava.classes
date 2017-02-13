@@ -174,3 +174,7 @@ com.nimbusds.jwt.JWTClaimsSet
 com.nimbusds.jose.JOSEObjectType
 com.nettgryppa.security.HashCash
 com.apigee.flow.execution.IOIntensive
+java.util.concurrent.TimeUnit
+javax.xml.xpath.XPathFactory
+org.w3c.dom.NodeList
+org.w3c.dom.Node
