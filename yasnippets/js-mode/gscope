@@ -1,0 +1,5 @@
+# name : globalScope.Xxxxx = x;
+# key : gscope
+# --
+var globalScope = (function(){ return this; }).call(null);
+

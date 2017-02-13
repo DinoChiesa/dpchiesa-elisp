@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: hashmap-iterator
+# key: hashi
+# --
+for (${1:Class} ${2:keyvar} : ${3:HashMap}.keySet()) {
+    ${4: System.out.printf("key(%s) value(%s)\n", $2, $3.get(key));}
+}
