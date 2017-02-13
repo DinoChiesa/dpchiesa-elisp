@@ -11,7 +11,7 @@
 ;; Requires   : s.el, request.el, dino-netrc.el, xml.el
 ;; License    : New BSD
 ;; X-URL      : https://github.com/DinoChiesa/dpchiesa-elisp
-;; Last-saved : <2017-January-13 17:44:09>
+;; Last-saved : <2017-February-13 13:00:42>
 ;;
 ;;; Commentary:
 ;;
@@ -160,14 +160,14 @@ the only possible value currently.")
 
 (defconst apigee-message-payload-template-alist
   (list
-   '("application/json" "<![CDATA[{
+   '("application/json" "{
   \"status\" : true,
   \"message\" : \"whatever\",
-  \"clientId\" : \"%parsedRequest.client_id#\"
+  \"clientId\" : \"{parsedRequest.client_id}\"
 }
-]]>")
-   '("application/x-www-form-urlencoded" "status=true&clientId=%parsedRequest.client_id#")
-   '("application/xml" "<message><here>%parsedRequest.client_id#</here></message>")))
+")
+   '("application/x-www-form-urlencoded" "status=true&clientId={parsedRequest.client_id}")
+   '("application/xml" "<message><here>{parsedRequest.client_id}</here></message>")))
 
 
 (defconst apigee--target-template-alist
@@ -402,8 +402,7 @@ the only possible value currently.")
   <!-- <AssignTo createNew='false' transport='http' type='request'></AssignTo> -->
   <IgnoreUnresolvedVariables>false</IgnoreUnresolvedVariables>
   <Set>
-    <Payload contentType='${2:$$(yas-choose-value (reverse (apigee--sort-strings (mapcar 'car apigee-message-payload-template-alist))))}'
-             variablePrefix='%' variableSuffix='#'>${2:$(cadr (assoc yas-text apigee-message-payload-template-alist))}</Payload>
+    <Payload contentType='${2:$$(yas-choose-value (reverse (apigee--sort-strings (mapcar 'car apigee-message-payload-template-alist))))}'>${2:$(cadr (assoc yas-text apigee-message-payload-template-alist))}</Payload>
     <StatusCode>${3:$$(yas-choose-value (reverse (apigee--sort-strings (mapcar 'car apigee-http-status-message-alist))))}</StatusCode>
     <ReasonPhrase>${3:$(cadr (assoc yas-text apigee-http-status-message-alist))}</ReasonPhrase>
   </Set>
@@ -462,8 +461,11 @@ the only possible value currently.")
   </Get>
 </KeyValueMapOperations>\n")
 
-;    <FaultRules/>
-;    <Properties/>
+     '("FlowCallout"
+       "FlowCallout"
+       "<FlowCallout name='##'>
+    <SharedFlowBundle>${1:Shared-Flow-Name}</SharedFlowBundle>
+</FlowCallout>\n")
 
      '("SpikeArrest"
        "SA"
@@ -2237,7 +2239,7 @@ structure, in the `apigee-apiproxies-home' directory.
                              "resources/java" "resources/xsl"
                              "resources/node" "resources/jsc" )))
           (while subdirs
-            (make-directory (concat apiproxy-dir (car subdirs)))
+            (make-directory (concat apiproxy-dir (car subdirs)) t)
             (setq subdirs (cdr subdirs))))
         ;; create the toplevel xml file
         (with-temp-file (concat apiproxy-dir proxy-name ".xml")
@@ -2379,6 +2381,12 @@ if ( ! handled ) {
         <Step><Name>AM-CleanResponseHeaders</Name></Step>
       </Response>
   </PostFlow>
+  <PostClientFlow name='PostFlow'>
+      <Request/>
+      <Response>
+        <!-- insert message logging policies here -->
+      </Response>
+  </PostClientFlow>
 
   <Flows>
     <Flow name='test 1'>
@@ -2677,7 +2685,7 @@ information for the target.
 
               ;; insure exists
               (and (not (file-exists-p targets-dir))
-                   (make-directory targets-dir))
+                   (make-directory targets-dir t))
 
               (let* ((default-value (apigee--suggested-target-name))
                      (target-name
@@ -2711,8 +2719,6 @@ information for the target.
                 )))))))
 
 
-
-
 ;;;###autoload
 (defun apigee-add-policy ()
   "Invoke this interactively, and the fn will prompt the user to
@@ -2721,7 +2727,6 @@ the policy, create the appropriate XML file, and using
 yas-snippet, expand the template associated to the chosen policy,
 into the policy file. It then will open any resource files as
 appropriate.
-
 "
   (interactive)
   (let ((apiproxy-dir (apigee-path-of-apiproxy)))
@@ -2736,7 +2741,7 @@ appropriate.
                   (raw-template (caddr chosen)))
 
               (and (not (file-exists-p policy-dir))
-                   (make-directory policy-dir))
+                   (make-directory policy-dir t))
 
               (let* ((default-value (apigee--suggested-policy-name ptype))
                      (policy-name
@@ -2763,20 +2768,22 @@ appropriate.
 
                 ;; here, optionally open the resource file, if any
                 (cond
-                 ((or (string= ptype "Javascript") (string= ptype "XSL") (string= ptype "Python"))
+                 ((member ptype '("JS" "Python" "XSL"))
                     (save-excursion
                       (goto-char (point-min))
-                      (if (re-search-forward "<ResourceURL>\\(jsc\\|xsl\\|py\\)://\\(.+\\)</ResourceURL>" (point-max) t)
+                      (if (re-search-forward "<ResourceURL>\\(jsc\\|xsl\\|py\\|java\\)://\\(.+\\)</ResourceURL>" (point-max) t)
                           (let ((resource-type (match-string-no-properties 1))
                                 (resource-basename (match-string-no-properties 2)))
                             (if resource-basename
                                 (let ((resource-dir
                                        (concat apiproxy-dir "apiproxy/resources/" resource-type "/")))
                                   (and (not (file-exists-p resource-dir))
-                                       (make-directory resource-dir))
-                                  (find-file-other-window (concat resource-dir resource-basename))
-                                  (apigee--maybe-insert-base-content resource-basename resource-type)
-                                  (apigee-mode 1)))))))
+                                       (make-directory resource-dir t))
+                                  (if (string= resource-type "java")
+                                      (find-file-other-window resource-dir)
+                                    (find-file-other-window (concat resource-dir resource-basename))
+                                    (apigee--maybe-insert-base-content resource-basename resource-type)
+                                    (apigee-mode 1))))))))
 
                  (t nil))
 
@@ -2842,7 +2849,7 @@ file, such as a Javascript, Python, or XSL policy.
                 resource-dir)
             (setq resource-dir
                   (concat (apigee-path-of-apiproxy) "apiproxy/resources/" resource-type))
-            (and (not (file-exists-p resource-dir)) (make-directory resource-dir))
+            (and (not (file-exists-p resource-dir)) (make-directory resource-dir t))
             (concat resource-dir "/" resource-basename))))))
     (and fullpath (find-file fullpath))))
 
