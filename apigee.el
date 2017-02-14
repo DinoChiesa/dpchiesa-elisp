@@ -11,7 +11,7 @@
 ;; Requires   : s.el, request.el, dino-netrc.el, xml.el
 ;; License    : New BSD
 ;; X-URL      : https://github.com/DinoChiesa/dpchiesa-elisp
-;; Last-saved : <2017-February-13 13:00:42>
+;; Last-saved : <2017-February-13 14:28:20>
 ;;
 ;;; Commentary:
 ;;
@@ -271,6 +271,114 @@ the only possible value currently.")
     "request.header.X-Forwarded-For"
     "target.received.content.length")
   "A list of common variables, can be used to prompt expansion in yas snippets")
+
+(defconst apigee--prebaked-policies-alist
+  (list
+   '("UnknownRequest"
+     "RF"
+     "<RaiseFault name='RF-UnknownRequest'>
+  <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+  <FaultResponse>
+    <Set>
+      <Payload contentType='application/json'>{
+  \"error\" : {
+    \"code\" : 404.01,
+    \"message\" : \"that request was unknown; try a different request.\"
+  }
+}
+</Payload>
+      <StatusCode>404</StatusCode>
+      <ReasonPhrase>Not Found</ReasonPhrase>
+    </Set>
+  </FaultResponse>
+</RaiseFault>
+")
+
+   '("MaybeFormatFault"
+     "JS"
+     "<Javascript name='JS-MaybeFormatFault' timeLimit='200' >
+  <ResourceURL>jsc://maybeFormatFault.js</ResourceURL>
+</Javascript>
+")
+
+   '("CleanResponseHeaders"
+     "AM"
+     "<AssignMessage name='AM-CleanResponseHeaders'>
+  <Remove>
+    <Headers>
+      <Header name='Accept'/>
+      <Header name='user-agent'/>
+      <Header name='Host'/>
+      <Header name='x-forwarded-for'/>
+      <Header name='X-Forwarded-Proto'/>
+      <Header name='X-Forwarded-Port'/>
+      <Header name='apikey'/>
+      <Header name='date'/>
+      <Header name='Authorization'/>
+      <Header name='Signature'/>
+      <Header name='X-Powered-By'/>
+    </Headers>
+  </Remove>
+  <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+  <AssignTo createNew='false' transport='http' type='response'/>
+</AssignMessage>
+")
+
+   '("InvalidApiKey"
+     "AM"
+     "<AssignMessage name='AM-InvalidApiKey'>
+    <Remove>
+        <Headers>
+            <Header name='Accept'/>
+            <Header name='user-agent'/>
+            <Header name='Authorization'/>
+            <Header name='Signature'/>
+            <Header name='Date'/>
+            <Header name='Host'/>
+            <Header name='X-Powered-By'/>
+            <Header name='X-Forwarded-Port'/>
+            <Header name='X-Forwarded-Proto'/>
+        </Headers>
+    </Remove>
+    <Set>
+        <Payload contentType='application/json'>
+{ \"error\" : { \"code\":152000, \"message\":\"Invalid client.\" } }
+</Payload>
+        <StatusCode>401</StatusCode>
+        <ReasonPhrase>Unauthorized</ReasonPhrase>
+    </Set>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+    <AssignTo createNew='false' transport='http' type='response'/>
+</AssignMessage>
+")
+   '("ExpiredApiKey"
+     "AM"
+     "<AssignMessage name='AM-ExpiredApiKey'>
+    <Remove>
+        <Headers>
+            <Header name='Accept'/>
+            <Header name='user-agent'/>
+            <Header name='Authorization'/>
+            <Header name='Signature'/>
+            <Header name='Date'/>
+            <Header name='Host'/>
+            <Header name='X-Powered-By'/>
+            <Header name='X-Forwarded-Port'/>
+            <Header name='X-Forwarded-Proto'/>
+        </Headers>
+    </Remove>
+    <Set>
+        <Payload contentType='application/json' variablePrefix='{' variableSuffix='}'>
+{ \"error\" : { \"code\":152001, \"message\":\"The API Key is expired.\" } }
+</Payload>
+        <StatusCode>401</StatusCode>
+        <ReasonPhrase>Unauthorized</ReasonPhrase>
+    </Set>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+    <AssignTo createNew='false' transport='http' type='response'/>
+</AssignMessage>
+")
+   ))
 
 (defconst apigee--policy-alist
     (list
@@ -2113,108 +2221,22 @@ applying as the CreatedBy element in an API Proxy.
 "
   (or (getenv "LOGNAME") (getenv "USER") "orgAdmin"))
 
-
-
 (defun apigee-entity-id-types (entity-type)
   "return a list of id types for a given entity-type."
   (let ((id-types (assoc entity-type apigee-entity-to-entity-id-types-alist)))
     (if id-types (cadr id-types))))
 
 
+(defun apigee--insert-prebaked-policy (apiproxy-dir keyname)
+  "inserts a pre-baked policy from the `apigee--prebaked-policies-alist'
+"
+  (let* ((prebaked (assoc keyname apigee--prebaked-policies-alist))
+         (ptype (cadr prebaked))
+         (full-policy-filename (concat ptype "-" keyname ".xml"))) ;; "AM-CleanResponseHeaders.xml"
+    (with-temp-file (concat apiproxy-dir "policies/" full-policy-filename)
+      (insert (caddr prebaked)))))
 
-;; (defun apigee--random-string (&optional len)
-;;   "produce a string of length LEN containing random characters,
-;; or of length 8 if the len is not specified.
-;; "
-;;   (let (s '())
-;;     (if (not len) (setq len 8))
-;;     (if (> len 144) (setq len 8)) ;; sanity
-;;     (while (> len 0)
-;;       (setq s (cons (+ (random 26) 97) s)
-;;             len (- len 1)))
-;;     (mapconcat 'string s "")))
 
-(defun apigee--insert-policy-clean-response-headers (apiproxy-dir)
-  "inserts a policy for clean response headers"
-  (with-temp-file (concat apiproxy-dir "policies/AM-CleanResponseHeaders.xml")
-    (insert "<AssignMessage name='AM-CleanResponseHeaders'>
-  <Remove>
-    <Headers>
-      <Header name='Accept'/>
-      <Header name='user-agent'/>
-      <Header name='Host'/>
-      <Header name='x-forwarded-for'/>
-      <Header name='X-Forwarded-Proto'/>
-      <Header name='X-Forwarded-Port'/>
-      <Header name='apikey'/>
-      <Header name='date'/>
-      <Header name='Authorization'/>
-      <Header name='Signature'/>
-      <Header name='X-Powered-By'/>
-    </Headers>
-  </Remove>
-  <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
-  <AssignTo createNew='false' transport='http' type='response'/>
-</AssignMessage>
-")))
-
-(defun apigee--insert-policy-invalid-api-key-fault-response (apiproxy-dir)
-  "inserts a policy for assigning a message for invalid api key"
-  (with-temp-file (concat apiproxy-dir "policies/AM-InvalidApiKey.xml")
-    (insert "<AssignMessage name='AM-InvalidApiKey'>
-    <Remove>
-        <Headers>
-            <Header name='Accept'/>
-            <Header name='user-agent'/>
-            <Header name='Authorization'/>
-            <Header name='Signature'/>
-            <Header name='Date'/>
-            <Header name='Host'/>
-            <Header name='X-Powered-By'/>
-            <Header name='X-Forwarded-Port'/>
-            <Header name='X-Forwarded-Proto'/>
-        </Headers>
-    </Remove>
-    <Set>
-        <Payload contentType='application/json'>
-{ \"error\" : { \"code\":152000, \"message\":\"Invalid client.\" } }
-</Payload>
-        <StatusCode>401</StatusCode>
-        <ReasonPhrase>Unauthorized</ReasonPhrase>
-    </Set>
-    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
-    <AssignTo createNew='false' transport='http' type='response'/>
-</AssignMessage>
-")))
-
-(defun apigee--insert-policy-expired-api-key-fault-response (apiproxy-dir)
-  "inserts a policy for assigning a message for expired api key"
-  (with-temp-file (concat apiproxy-dir "policies/AM-ExpiredApiKey.xml")
-    (insert "<AssignMessage name='AM-ExpiredApiKey'>
-    <Remove>
-        <Headers>
-            <Header name='Accept'/>
-            <Header name='user-agent'/>
-            <Header name='Authorization'/>
-            <Header name='Signature'/>
-            <Header name='Date'/>
-            <Header name='Host'/>
-            <Header name='X-Powered-By'/>
-            <Header name='X-Forwarded-Port'/>
-            <Header name='X-Forwarded-Proto'/>
-        </Headers>
-    </Remove>
-    <Set>
-        <Payload contentType='application/json' variablePrefix='{' variableSuffix='}'>
-{ \"error\" : { \"code\":152001, \"message\":\"The API Key is expired.\" } }
-</Payload>
-        <StatusCode>401</StatusCode>
-        <ReasonPhrase>Unauthorized</ReasonPhrase>
-    </Set>
-    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
-    <AssignTo createNew='false' transport='http' type='response'/>
-</AssignMessage>
-")))
 
 (defun apigee-new-proxy (proxy-name)
   "Interactive fn that creates a new exploded proxy bundle directory
@@ -2234,10 +2256,8 @@ structure, in the `apigee-apiproxies-home' directory.
           (error "set apigee-apiproxies-home to the name of an existing directory.")
         (setq apiproxy-dir (concat proxy-dir "/apiproxy/"))
         (make-directory apiproxy-dir t)
-        ;; create the sub-directories
-        (let ((subdirs (list "proxies" "targets" "resources" "policies"
-                             "resources/java" "resources/xsl"
-                             "resources/node" "resources/jsc" )))
+        ;; create the required sub-directories. the others will get created as needed.
+        (let ((subdirs (list "proxies" "policies" "resources/jsc")))
           (while subdirs
             (make-directory (concat apiproxy-dir (car subdirs)) t)
             (setq subdirs (cdr subdirs))))
@@ -2294,30 +2314,11 @@ structure, in the `apigee-apiproxies-home' directory.
   -->
 </TargetEndpoint>\n"))
 
-        (with-temp-file (concat apiproxy-dir "policies/RF-UnknownRequest.xml")
-          (insert "<RaiseFault name='RF-UnknownRequest'>
-  <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
-  <FaultResponse>
-    <Set>
-      <Payload contentType='application/json'>{
-  \"error\" : {
-    \"code\" : 404.01,
-    \"message\" : \"that request was unknown; try a different request.\"
-  }
-}
-</Payload>
-      <StatusCode>404</StatusCode>
-      <ReasonPhrase>Not Found</ReasonPhrase>
-    </Set>
-  </FaultResponse>
-</RaiseFault>
-"))
-
-        (with-temp-file (concat apiproxy-dir "policies/JS-MaybeFormatFault.xml")
-          (insert "<Javascript name='JS-MaybeFormatFault' timeLimit='200' >
-  <ResourceURL>jsc://maybeFormatFault.js</ResourceURL>
-</Javascript>
-"))
+        (apigee--insert-prebaked-policy apiproxy-dir "UnknownRequest")
+        (apigee--insert-prebaked-policy apiproxy-dir "MaybeFormatFault")
+        (apigee--insert-prebaked-policy apiproxy-dir "CleanResponseHeaders")
+        (apigee--insert-prebaked-policy apiproxy-dir "InvalidApiKey")
+        (apigee--insert-prebaked-policy apiproxy-dir "ExpiredApiKey")
 
         (with-temp-file (concat apiproxy-dir "resources/jsc/maybeFormatFault.js")
           (insert "// maybeFormatFault.js
@@ -2339,10 +2340,6 @@ if ( ! handled ) {
   context.setVariable('fault_handled', true);
 }
 "))
-
-        (apigee--insert-policy-clean-response-headers apiproxy-dir)
-        (apigee--insert-policy-invalid-api-key-fault-response apiproxy-dir)
-        (apigee--insert-policy-expired-api-key-fault-response apiproxy-dir)
 
         (with-temp-file (concat apiproxy-dir "proxies/default.xml")
           (insert
@@ -2421,7 +2418,7 @@ if ( ! handled ) {
 
         (find-file-existing apiproxy-dir)
         ))))
-
+ 
 
 
 (defun apigee--snippet-field (field-num)
@@ -2445,7 +2442,6 @@ or resources/py, or resources/xsl."
           (concat (downcase (substring s 0 1)) (substring s 1)))
       name)))
 
-
 (defun apigee-get-menu-position ()
   "get the position for the popup menu"
   (if (fboundp 'posn-at-point)
@@ -2454,7 +2450,6 @@ or resources/py, or resources/xsl."
                     (+ (cdr x-y) 20))
               (selected-window)))
     t))
-
 
 (defun apigee--remove-string-duplicates (list)
   "Given a LIST of strings, generate a new list whose members
