@@ -1,6 +1,6 @@
 ;;; emacs.el -- dino's em Dino's .emacs setup file.
 ;;
-;; Last saved: <2017-March-01 12:04:57>
+;; Last saved: <2017-March-01 12:49:12>
 ;;
 ;; Works with v24.5 of emacs.
 ;;
@@ -1011,7 +1011,7 @@ With a prefix argument, makes a private paste."
   (local-set-key "\C-c\C-g"  'dino-dired-kill-new-file-contents)
   (local-set-key "\C-c\C-c"  'dino-dired-copy-file-to-dir-in-other-window)
   (local-set-key "\C-c\C-m"  'dino-dired-move-file-to-dir-in-other-window)
-
+  (dired-sort-toggle "t") ;; by default, sort by time
   (local-set-key "F" 'dino-dired-do-find)
   (local-set-key "K" 'dired-kill-subdir)) ;; opposite of i (dired-maybe-insert-subdir)
 
@@ -1019,7 +1019,6 @@ With a prefix argument, makes a private paste."
 
 ;; eliminate the gid in dired on windows
 (setq ls-lisp-verbosity '(links uid))
-
 
 
 
