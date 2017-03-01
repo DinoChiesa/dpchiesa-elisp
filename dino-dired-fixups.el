@@ -55,70 +55,78 @@ which is up to 10gb.  Some files are larger than that.
                       insert-directory-program candidate)))
         (setq candidate-dirs (cdr candidate-dirs)))))
 
+(defvar dino-dired-switches-to-cycle '("t" "X" "S" "U")
+  "The one-character switches to cycle through for dired with `dired-toggle-sort'. -U stands for unsorted.")
+;; New toggle scheme: add/remove a trailing " -t" " -S",
+;; or " -U"
+;; -t = sort by time (date)
+;; -S = sort by size
+;; -X = sort by extension
+;; -U = unsorted
 
-
-(defun dired-sort-toggle ()
+(defun dired-sort-toggle (&optional arg)
   "This is a redefinition of the fn from dired.el. Normally,
 dired sorts on either name or time, and you can swap between them
 with the s key. This function allows sorting on name, size,
 time, and extension. Cycling works the same, with the s key.
 
+With optional ARG, do not cycle. Instead just use that arg as
+the new switch. It should be one of [tUXS] . This can be useful
+when called from a dired-mode hook fn, to set the default / initial
+sort.
+
 "
-  (setq dired-actual-switches
-        (let (case-fold-search)
-          (cond
-           ((string-match " " dired-actual-switches) ;; contains a space
-            ;; New toggle scheme: add/remove a trailing " -t" " -S",
-            ;; or " -U"
-            ;; -t = sort by time (date)
-            ;; -S = sort by size
-            ;; -X = sort by extension
-
+  (let ((switches-regex
+         (concat "[" (mapconcat 'identity dino-dired-switches-to-cycle "") "]")))
+    (setq dired-actual-switches
+          (let (case-fold-search)
             (cond
+             ((and arg (string-match switches-regex arg))
+              (dino-dired-generate-new-sorting-switch-string arg)) ;; set new switch to passed-in value
 
-             ((string-match " -t\\'" dired-actual-switches)
-              (concat
-               (substring dired-actual-switches 0 (match-beginning 0))
-               " -X"))
-
-             ((string-match " -X\\'" dired-actual-switches)
-              (concat
-               (substring dired-actual-switches 0 (match-beginning 0))
-               " -S"))
-
-             ((string-match " -S\\'" dired-actual-switches)
-              (substring dired-actual-switches 0 (match-beginning 0)))
-
+             ((string-match " " dired-actual-switches) ;; contains a space
+              (let ((n 0)
+                    (L (1- (length dino-dired-switches-to-cycle)))
+                    result)
+                (while (and (< n L) (not result))
+                  (let ((cur-switch (nth n dino-dired-switches-to-cycle)))
+                    (if (string-match (concat " -" cur-switch "\\'") dired-actual-switches)
+                        (setq result
+                              (concat
+                               (substring dired-actual-switches 0 (match-beginning 0))
+                               " -" (or (nth (1+ n) dino-dired-switches-to-cycle) "t"))))))
+                (if (not result)
+                    (concat dired-actual-switches " -t")
+                  result)))
              (t
-              (concat dired-actual-switches " -t"))))
-
-           (t
-            ;; old toggle scheme: look for a sorting switch, one of [tUXS]
-            ;; and switch between them. Assume there is only ONE present.
-            (let* ((old-sorting-switch
-                    (if (string-match (concat "[t" dired-ls-sorting-switches "]")
-                                      dired-actual-switches)
-                        (substring dired-actual-switches (match-beginning 0)
-                                   (match-end 0))
-                      ""))
-
-                   (new-sorting-switch
-                    (cond
-                     ((string= old-sorting-switch "t") "X")
-                     ((string= old-sorting-switch "X") "S")
-                     ((string= old-sorting-switch "S") "")
-                     (t "t"))))
-              (concat
-               "-l"
-               ;; strip -l and any sorting switches
-               (dired-replace-in-string (concat "[-lt"
-                                                dired-ls-sorting-switches "]")
-                                        ""
+              ;; old toggle scheme: look for a sorting switch, one of [tUXS]
+              ;; and switch between them. Assume there is only ONE present.
+              (let* ((old-sorting-switch
+                      (if (string-match (concat "[t" dired-ls-sorting-switches "]")
                                         dired-actual-switches)
-               new-sorting-switch))))))
+                          (substring dired-actual-switches (match-beginning 0)
+                                     (match-end 0))
+                        "U"))
+                     (found (member old-sorting-switch dino-dired-switches-to-cycle))
+                     (new-sorting-switch
+                      (or (and found
+                               (or (cadr found) "t"))
+                          "t")))
+                (dino-dired-generate-new-sorting-switch-string new-sorting-switch))))))
 
-  (dired-sort-set-mode-line)
-  (revert-buffer))
+    (dired-sort-set-mode-line)
+    (revert-buffer)))
+
+
+(defun dino-dired-generate-new-sorting-switch-string (new)
+  (concat
+   "-l"
+   ;; strip -l and any other sorting switches
+   (dired-replace-in-string
+    (concat "[-l" (mapconcat 'identity dino-dired-switches-to-cycle "") "]")
+    ""
+    dired-actual-switches)
+   new))
 
 
 (defun dired-sort-set-modeline ()
