@@ -11,7 +11,7 @@
 ;; Requires   : s.el, request.el, dino-netrc.el, xml.el
 ;; License    : New BSD
 ;; X-URL      : https://github.com/DinoChiesa/dpchiesa-elisp
-;; Last-saved : <2017-February-13 14:28:20>
+;; Last-saved : <2017-March-01 12:18:43>
 ;;
 ;;; Commentary:
 ;;
@@ -190,6 +190,13 @@ the only possible value currently.")
   <Flows/>
   <FaultRules/>
   <HTTPTargetConnection>
+    <SSLInfo>
+        <Enabled>true</Enabled>
+        <IgnoreValidationErrors>true</IgnoreValidationErrors>
+    </SSLInfo>
+    <Properties>
+        <Property name='success.codes'>1XX,2XX,3XX,4XX,5XX</Property>
+    </Properties>
     <URL>${2:http://example.com/getSearchResults}</URL>
   </HTTPTargetConnection>
 </TargetEndpoint>
@@ -716,7 +723,8 @@ Variables populated by this policy: verifyapikey.{policy_name}.
 client_id: The consumer key (aka API key or app key) supplied by the requesting app
 client_secret: The consumer secret associated with the consumer key
 redirection_uris: Any redirect URIs in the request
-developer.app.name: The app name of the developer app making the request
+developer.app.id: the id of the developer app
+developer.app.name: The name of the developer app making the request
 developer.id: The developer ID of the developer registered as the owner of the requesting app
 failed: Set when API Key validation fails
 developer.app.{custom_attribute_name} ?? - custom attribute on the app
@@ -843,10 +851,11 @@ apiproduct.developer.quota.timeunit*
      "<ExtractVariables name='##'>
    <DisplayName>Extract a portion of the url path</DisplayName>
    <Source>request</Source>
+   <VariablePrefix>extracted</VariablePrefix>
    <URIPath>
+      <!-- the extracted value into extracted.id -->
       <Pattern ignoreCase='true'>/accounts/{id}</Pattern>
    </URIPath>
-   <VariablePrefix>extracted</VariablePrefix>
    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
 </ExtractVariables>")
 
@@ -957,6 +966,10 @@ apiproduct.developer.quota.timeunit*
   </Request>
   <Response>tokenResponse</Response>
   <HTTPTargetConnection>
+    <SSLInfo>
+        <Enabled>true</Enabled>
+        <IgnoreValidationErrors>true</IgnoreValidationErrors>
+    </SSLInfo>
     <Properties>
       <Property name='success.codes'>2xx, 4xx, 5xx</Property>
     </Properties>
@@ -981,6 +994,10 @@ apiproduct.developer.quota.timeunit*
   </Request>
   <Response>tokenResponse</Response>
   <HTTPTargetConnection>
+    <SSLInfo>
+        <Enabled>true</Enabled>
+        <IgnoreValidationErrors>true</IgnoreValidationErrors>
+    </SSLInfo>
     <Properties>
       <Property name='success.codes'>2xx, 4xx</Property>
     </Properties>
@@ -1008,6 +1025,10 @@ apiproduct.developer.quota.timeunit*
   </Request>
   <Response>tokenResponse</Response>
   <HTTPTargetConnection>
+    <SSLInfo>
+        <Enabled>true</Enabled>
+        <IgnoreValidationErrors>true</IgnoreValidationErrors>
+    </SSLInfo>
     <Properties>
       <Property name='success.codes'>2xx, 3xx</Property>
     </Properties>
@@ -2257,7 +2278,7 @@ structure, in the `apigee-apiproxies-home' directory.
         (setq apiproxy-dir (concat proxy-dir "/apiproxy/"))
         (make-directory apiproxy-dir t)
         ;; create the required sub-directories. the others will get created as needed.
-        (let ((subdirs (list "proxies" "policies" "resources/jsc")))
+        (let ((subdirs (list "proxies" "policies" "resources/jsc" "targets")))
           (while subdirs
             (make-directory (concat apiproxy-dir (car subdirs)) t)
             (setq subdirs (cdr subdirs))))
@@ -2301,6 +2322,10 @@ structure, in the `apigee-apiproxies-home' directory.
   </PreFlow>
 
   <HTTPTargetConnection>
+    <SSLInfo>
+        <Enabled>true</Enabled>
+        <IgnoreValidationErrors>true</IgnoreValidationErrors>
+    </SSLInfo>
     <Properties/>
     <!-- modify this URL to point to something valid -->
     <URL>http://internal.example.com/v1/XYZ/something</URL>
@@ -2418,7 +2443,7 @@ if ( ! handled ) {
 
         (find-file-existing apiproxy-dir)
         ))))
- 
+
 
 
 (defun apigee--snippet-field (field-num)
