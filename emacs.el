@@ -1,6 +1,6 @@
 ;;; emacs.el -- dino's em Dino's .emacs setup file.
 ;;
-;; Last saved: <2017-January-16 13:37:07>
+;; Last saved: <2017-March-01 12:04:57>
 ;;
 ;; Works with v24.5 of emacs.
 ;;
@@ -998,7 +998,7 @@ With a prefix argument, makes a private paste."
 ;; Dired mode
 
 (require 'dired)
-(require 'dired-fixups)
+(require 'dino-dired-fixups)
 
 (defun dino-dired-mode-hook-fn ()
   (hl-line-mode 1)

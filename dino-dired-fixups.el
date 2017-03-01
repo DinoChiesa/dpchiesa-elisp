@@ -1,10 +1,10 @@
-;;; dired-fixups.el --- fixups for dired mode
+;;; dino-dired-fixups.el --- fixups for dired mode
 ;;
 ;; Author: Dino Chiesa
 ;; Created: Sat, 31 Mar 2012  10:31
 ;; Package-Requires: ()
-;; Version: 2015.06.28
-;; URL: https://github.com/DinoChiesa/dpchiesa-elisp/blob/master/dired-fixups.el
+;; Version: 2017.03.01
+;; URL: https://github.com/DinoChiesa/dpchiesa-elisp/blob/master/dino-dired-fixups.el
 ;; License: Public Domain
 ;; Keywords: dired
 
@@ -17,7 +17,7 @@
 ;; To use it, place this in your .emacs file:
 ;;
 ;; (require 'dired)
-;; (require 'dired-fixups)
+;; (require 'dino-dired-fixups)
 ;;
 
 
@@ -62,6 +62,7 @@ which is up to 10gb.  Some files are larger than that.
 dired sorts on either name or time, and you can swap between them
 with the s key. This function allows sorting on name, size,
 time, and extension. Cycling works the same, with the s key.
+
 "
   (setq dired-actual-switches
         (let (case-fold-search)
@@ -276,6 +277,6 @@ point into the minibuffer, by typing M-n ."
   (interactive "P")
   (dired-do-chxxx "Timestamp" dired-touch-program 'touch arg))
 
-(provide 'dired-fixups)
+(provide 'dino-dired-fixups)
 
-;;; dired-fixups.el ends here
+;;; dino-dired-fixups.el ends here
