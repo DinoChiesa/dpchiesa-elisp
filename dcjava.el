@@ -1,6 +1,6 @@
 ;;; dcjava.el --- utility functions for working with Java
 ;;
-;; Copyright (C) 2014-2016 Dino Chiesa and Apigee Corporation
+;; Copyright (C) 2014-2016 Dino Chiesa and Apigee Corporation, 2017 Google, Inc.
 ;;
 ;; Author     : Dino Chiesa
 ;; Maintainer : Dino Chiesa <dpchiesa@hotmail.com>
@@ -9,9 +9,9 @@
 ;; Version    : 1.4
 ;; Keywords   : apigee
 ;; Requires   : s.el
-;; License    : New BSD
+;; License    : Apache 2.0
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2016-November-22 16:59:53>
+;; Last-saved : <2017-March-02 12:59:19>
 ;;
 ;;; Commentary:
 ;;
@@ -349,8 +349,46 @@ strings (filenames). "
     (if (s-blank? result) nil
       (s-split "\n" result))))
 
+(defun dcjava--is-directory (dir-name)
+  "Tests to see whether a name refers to a directory"
+  (and
+   (file-exists-p dir-name)
+   (let ((attrs (file-attributes dir-name)))
+     (and
+      (car attrs)
+      (not (stringp (car attrs)))))))
 
-(defvar dcjava-wacapps-root "~/dev/wacapps/new/api_platform")
+(defun dcjava-path-of-api-platform ()
+  "returns a string representing the api_platform directory for the
+given current working directory."
+  (interactive)
+  (let ((to-find "api_platform"))
+    (let ((path
+           (dcjava-insure-trailing-slash
+            (let ((maybe-this (concat (file-name-directory default-directory) to-find)))
+              (if (dcjava--is-directory maybe-this)
+                  (file-name-directory default-directory)
+                (let ((elts (reverse (split-string (file-name-directory default-directory) "/")))
+                      r)
+                  (while (and elts (not r))
+                    (if (string= (car elts) to-find)
+                        (setq r (reverse (cdr elts)))
+                      (setq elts (cdr elts))))
+                  (if r
+                      (mapconcat 'identity r "/") )))))))
+      (and path (file-truename path)))))
+
+(defun dcjava-insure-trailing-slash (path)
+  "Insure the given path ends with a slash. This is useful with
+`default-directory'. Setting `default-directory' to a value that
+does not end with a slash causes it to use the parent directory.
+"
+  (and path
+       (if (s-ends-with? "/" path) path (concat path "/"))))
+
+
+
+;;(defvar dcjava-wacapps-root "~/dev/wacapps/new/api_platform")
 (defvar dcjava-cps-root "~/dev/wacapps/cps")
 
 
@@ -367,20 +405,20 @@ strings (filenames). "
 
 
 (defun dcjava-find-wacapps-java-source-for-class (classname)
-  "find a java source file in the wacapps dir tree, referred to by
-`dcjava-wacapps-root' that defines the class named by CLASSNAME.
-Prompts if no classname is provided. This fn is a wrapper on the shell
-find command. "
+  "find a java source file in the source tree that defines the class named
+by CLASSNAME. Prompts if no classname is provided. This fn is a wrapper on
+the shell find command. "
 
   (interactive "P")
   ;; prompt for classname if not specified
   (if (not classname)
       (setq classname (read-string "Class to find: " nil)))
 
-  (let ((filenames (and classname
-                        (or
-                         (dcjava-find-java-source-in-dir dcjava-wacapps-root classname)
-                         (dcjava-find-java-source-in-dir dcjava-cps-root classname)))))
+  (let* ((src-root (concat (dcjava-insure-trailing-slash (dcjava-path-of-api-platform)) "api_platform/"))
+    (filenames (and classname
+                    (or
+                     (dcjava-find-java-source-in-dir src-root classname)
+                     (dcjava-find-java-source-in-dir dcjava-cps-root classname)))))
 
     (if filenames
         (let ((numfiles (length filenames)))
@@ -394,9 +432,9 @@ find command. "
 
 
 (defun dcjava-find-wacapps-java-source-for-class-at-point ()
-  "find a java source file in the wacapps dir tree, referred to by
-`dcjava-wacapps-root' that defines the class named by the `thing-at-point'.
-This fn is a wrapper on the shell find command.
+  "find a java source file in the wacapps dir tree that defines the
+class named by the `thing-at-point'. This fn is a wrapper on the shell
+find command.
 
 When invoked interactively, uses the class name at point. When
 none is found, then prompts for a classname.
@@ -422,7 +460,6 @@ select from.
            (read-string "Class to find: " nil)))
          )
     (dcjava-find-wacapps-java-source-for-class classname)))
-
 
 
 (provide 'dcjava)
