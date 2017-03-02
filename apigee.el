@@ -11,7 +11,7 @@
 ;; Requires   : s.el, request.el, dino-netrc.el, xml.el
 ;; License    : New BSD
 ;; X-URL      : https://github.com/DinoChiesa/dpchiesa-elisp
-;; Last-saved : <2017-March-01 12:18:43>
+;; Last-saved : <2017-March-01 18:01:32>
 ;;
 ;;; Commentary:
 ;;
@@ -67,11 +67,12 @@
 (defgroup apigee nil
   "Utility fns for use with the Apigee platform.")
 
-(defcustom apigee-apiproxies-home "~/dev/apiproxies/"
-  "The directory to contain newly-created API proxy bundle directories.
+(defcustom apigee-default-apiproxies-home "~/dev/apiproxies/"
+  "The default directory to contain newly-created API proxy bundle directories.
+See `apigee-new-proxy' for details. An example of setting this:
 
    (require 'apigee)
-   (setq apigee-apiproxies-home \"~/dev/apiproxies/\")
+   (setq apigee-default-apiproxies-home \"~/dev/apiproxies/\")
 
 Or you can customize this variable.
 "
@@ -130,6 +131,9 @@ Or you can customize this variable.
 
 (defvar apigee--most-recently-used-upload-command nil
   "the most recently used upload command")
+
+(defvar apigee--most-recently-used-containing-dir nil
+  "the most recently used directory to contain API Proxies")
 
 ;; (defcustom apigee-prompt-mechanism 'x-popup-menu
 ;;   "The mechanism used to prompt the user for his choice.
@@ -2257,50 +2261,50 @@ applying as the CreatedBy element in an API Proxy.
     (with-temp-file (concat apiproxy-dir "policies/" full-policy-filename)
       (insert (caddr prebaked)))))
 
+(defun apigee-new-proxy-noninteractive (proxy-name &optional containing-dir)
+  "non-interactive function to create a new proxy"
+  (let ((proxy-containing-dir (or containing-dir apigee-default-apiproxies-home)))
 
+    (if (not (s-ends-with-p "/" proxy-containing-dir))
+        (setq proxy-containing-dir (concat proxy-containing-dir "/")))
 
-(defun apigee-new-proxy (proxy-name)
-  "Interactive fn that creates a new exploded proxy bundle directory
-structure, in the `apigee-apiproxies-home' directory.
-"
-  (interactive "Mproxy name: ")
-  (if (not (s-ends-with-p "/" apigee-apiproxies-home))
-      (setq apigee-apiproxies-home (concat apigee-apiproxies-home "/")))
+    (if (not (apigee--is-directory proxy-containing-dir))
+        (error (format "dir %s doe not exist. specify the name of an existing directory." proxy-containing-dir)))
 
-  (let ((proxy-dir (concat apigee-apiproxies-home proxy-name))
-        apiproxy-dir
-        file-attrs)
+    (setq apigee--most-recently-used-containing-dir proxy-containing-dir)
 
-    (if (file-exists-p proxy-dir)
-        (error (format "proxy dir %s already exists" proxy-dir))
-      (if (not (apigee--is-directory apigee-apiproxies-home))
-          (error "set apigee-apiproxies-home to the name of an existing directory.")
-        (setq apiproxy-dir (concat proxy-dir "/apiproxy/"))
-        (make-directory apiproxy-dir t)
-        ;; create the required sub-directories. the others will get created as needed.
-        (let ((subdirs (list "proxies" "policies" "resources/jsc" "targets")))
-          (while subdirs
-            (make-directory (concat apiproxy-dir (car subdirs)) t)
-            (setq subdirs (cdr subdirs))))
-        ;; create the toplevel xml file
-        (with-temp-file (concat apiproxy-dir proxy-name ".xml")
-          (insert
-           (concat
-            "<APIProxy revision='1' name='" proxy-name "'>\n"
-            "  <ConfigurationVersion minorVersion='0' majorVersion='4'/>\n"
-            "  <CreatedAt>" (apigee--java-get-time-in-millis) "</CreatedAt>\n"
-            "  <CreatedBy>" (apigee--get-createdby) "</CreatedBy>\n"
-            "  <Description></Description>\n"
-            "  <DisplayName>" proxy-name "</DisplayName>\n"
-            "  <LastModifiedAt>" (apigee--java-get-time-in-millis) "</LastModifiedAt>\n"
-            "  <LastModifiedBy>orgAdmin</LastModifiedBy>\n"
-            "  <TargetEndpoints>\n"
-            "    <TargetEndpoint>default</TargetEndpoint>\n"
-            "  </TargetEndpoints>\n"
-            "</APIProxy>\n")))
+    (let* ((proxy-dir (concat proxy-containing-dir proxy-name))
+          (apiproxy-dir (concat proxy-dir "/apiproxy/"))
+          file-attrs)
 
-        (with-temp-file (concat apiproxy-dir "targets/default.xml")
-          (insert "<TargetEndpoint name='default'>
+      (if (file-exists-p proxy-dir)
+          (error (format "proxy dir %s already exists" proxy-dir)))
+
+      (make-directory apiproxy-dir t)
+      ;; create the required sub-directories. the others will get created as needed.
+      (let ((subdirs (list "proxies" "policies" "resources/jsc" "targets")))
+        (while subdirs
+          (make-directory (concat apiproxy-dir (car subdirs)) t)
+          (setq subdirs (cdr subdirs))))
+      ;; create the toplevel xml file
+      (with-temp-file (concat apiproxy-dir proxy-name ".xml")
+        (insert
+         (concat
+          "<APIProxy revision='1' name='" proxy-name "'>\n"
+          "  <ConfigurationVersion minorVersion='0' majorVersion='4'/>\n"
+          "  <CreatedAt>" (apigee--java-get-time-in-millis) "</CreatedAt>\n"
+          "  <CreatedBy>" (apigee--get-createdby) "</CreatedBy>\n"
+          "  <Description></Description>\n"
+          "  <DisplayName>" proxy-name "</DisplayName>\n"
+          "  <LastModifiedAt>" (apigee--java-get-time-in-millis) "</LastModifiedAt>\n"
+          "  <LastModifiedBy>orgAdmin</LastModifiedBy>\n"
+          "  <TargetEndpoints>\n"
+          "    <TargetEndpoint>default</TargetEndpoint>\n"
+          "  </TargetEndpoints>\n"
+          "</APIProxy>\n")))
+
+      (with-temp-file (concat apiproxy-dir "targets/default.xml")
+        (insert "<TargetEndpoint name='default'>
   <Description>default target endpoint</Description>
   <FaultRules>
     <FaultRule name='other-fault'>
@@ -2339,14 +2343,14 @@ structure, in the `apigee-apiproxies-home' directory.
   -->
 </TargetEndpoint>\n"))
 
-        (apigee--insert-prebaked-policy apiproxy-dir "UnknownRequest")
-        (apigee--insert-prebaked-policy apiproxy-dir "MaybeFormatFault")
-        (apigee--insert-prebaked-policy apiproxy-dir "CleanResponseHeaders")
-        (apigee--insert-prebaked-policy apiproxy-dir "InvalidApiKey")
-        (apigee--insert-prebaked-policy apiproxy-dir "ExpiredApiKey")
+      (apigee--insert-prebaked-policy apiproxy-dir "UnknownRequest")
+      (apigee--insert-prebaked-policy apiproxy-dir "MaybeFormatFault")
+      (apigee--insert-prebaked-policy apiproxy-dir "CleanResponseHeaders")
+      (apigee--insert-prebaked-policy apiproxy-dir "InvalidApiKey")
+      (apigee--insert-prebaked-policy apiproxy-dir "ExpiredApiKey")
 
-        (with-temp-file (concat apiproxy-dir "resources/jsc/maybeFormatFault.js")
-          (insert "// maybeFormatFault.js
+      (with-temp-file (concat apiproxy-dir "resources/jsc/maybeFormatFault.js")
+        (insert "// maybeFormatFault.js
 // ------------------------------------------------------------------
 //
 // maybe format a fault message if one is not present.
@@ -2366,9 +2370,9 @@ if ( ! handled ) {
 }
 "))
 
-        (with-temp-file (concat apiproxy-dir "proxies/default.xml")
-          (insert
-           "<ProxyEndpoint name='default'>
+      (with-temp-file (concat apiproxy-dir "proxies/default.xml")
+        (insert
+         "<ProxyEndpoint name='default'>
   <Description>Default Proxy</Description>
   <HTTPProxyConnection>
     <BasePath>/" proxy-name "</BasePath>
@@ -2441,8 +2445,32 @@ if ( ! handled ) {
 
 </ProxyEndpoint>\n"))
 
-        (find-file-existing apiproxy-dir)
-        ))))
+      (find-file-existing apiproxy-dir))))
+
+
+(defun apigee-new-proxy (arg)
+  "Interactive fn that creates a new exploded proxy bundle directory
+structure. Prompts for the name of the API Proxy.
+
+When invoked with a prefix, this fn will prompt the user also for
+the name of the directory in which to store the apiproxy.
+
+When invoked without a prefix, it uses the most recent apiproxy
+home directory. If no directory has ever been used, it defaults
+to the `apigee-default-apiproxies-home' directory.
+
+"
+  (interactive "P")
+  (let ((mrud (or
+              apigee--most-recently-used-containing-dir
+              apigee-default-apiproxies-home)))
+
+    (let ((proxy-name (read-string "proxy name?: " nil nil nil))
+          (proxy-containing-dir
+           (if arg
+               (read-directory-name "containing directory?: " mrud nil t nil)
+             mrud)))
+      (apigee-new-proxy-noninteractive proxy-name proxy-containing-dir))))
 
 
 
