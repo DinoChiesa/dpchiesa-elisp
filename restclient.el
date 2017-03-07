@@ -57,14 +57,36 @@
 (defvar restclient-http-do-hook nil
   "Hook to run before making request.")
 
+
+;; this is the new advice pashky has recommended to avoid the
+;; warnings like:
+;;     Warning (bytecomp): assignment to free variable ‘success’
+
+;; (defadvice url-http-handle-authentication (around restclient-fix)
+;;   (if restclient-within-call
+;;       (setq ad-return-value t)
+;;     ad-do-it))
+;; (ad-activate 'url-http-handle-authentication)
+;;
+;; (defadvice url-cache-extract (around restclient-fix-2)
+;;   (unless restclient-within-call
+;;     ad-do-it))
+;; (ad-activate 'url-cache-extract)
+
+(defvar success nil
+  "placeholder to allow the advice below to not throw warnings")
+
+
 ;; The following disables the interactive request for user name and
 ;; password should an API call encounter a permission-denied response.
 ;; This API is meant to be usable without constant asking for username
 ;; and password.
 (defadvice url-http-handle-authentication (around restclient-fix)
+  (let ((have-success (boundp 'success)))
   (if restclient-within-call
       (setq success t ad-return-value t)
-    ad-do-it))
+    ad-do-it)))
+
 (ad-activate 'url-http-handle-authentication)
 
 (defadvice url-cache-extract (around restclient-fix-2)
