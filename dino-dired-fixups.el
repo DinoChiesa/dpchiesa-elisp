@@ -26,8 +26,19 @@
 (require 'dired-aux)
 (require 'ls-lisp)
 
-    ;; (defun ls-lisp-format-time (file-attr time-index now)
-    ;;   "################")
+;; (defun ls-lisp-format-time (file-attr time-index now)
+;;   "################")
+
+(defvar dino-dired-switches-to-cycle '("t" "U" "S" "")
+  "The one-character switches to cycle through for dired with `dired-toggle-sort'. ")
+;; New toggle scheme: add/remove a trailing " -t" " -S", " -X" (maybe) or " -U".
+;; Sort by:
+;; -t = last mod time
+;; -U = time of file creation
+;; -S = size
+;; -X = extension (not always available - conditionally added later)
+;; default = name
+
 
 (defun ls-lisp-format-file-size (f-size human-readable)
   "This is a redefinition of the function from `dired.el'. This
@@ -51,71 +62,78 @@ which is up to 10gb.  Some files are larger than that.
       (while candidate-dirs
         (let ((candidate (concat (file-name-as-directory (car candidate-dirs)) "gls")))
           (if (file-exists-p candidate)
-                (setq ls-lisp-use-insert-directory-program t
-                      insert-directory-program candidate)))
+              (setq ls-lisp-use-insert-directory-program t
+                    dino-dired-switches-to-cycle (reverse (cons "X" (reverse dino-dired-switches-to-cycle)))
+                    insert-directory-program candidate)))
         (setq candidate-dirs (cdr candidate-dirs)))))
 
-(defvar dino-dired-switches-to-cycle '("t" "X" "S" "U")
-  "The one-character switches to cycle through for dired with `dired-toggle-sort'. -U stands for unsorted.")
-;; New toggle scheme: add/remove a trailing " -t" " -S",
-;; or " -U"
-;; -t = sort by time (date)
-;; -S = sort by size
-;; -X = sort by extension
-;; -U = unsorted
 
-(defun dired-sort-toggle (&optional arg)
-  "This is a redefinition of the fn from dired.el. Normally,
-dired sorts on either name or time, and you can swap between them
-with the s key. This function allows sorting on name, size,
-time, and extension. Cycling works the same, with the s key.
+(defun dino-dired-next-sorting-switch (old)
+  "returns the next sorting switch, a one-character string, after OLD"
+  (let ((found (member old dino-dired-switches-to-cycle)))
+    (or (and found
+             (or (cadr found) "t"))
+        "t")))
 
-With optional ARG, do not cycle. Instead just use that arg as
-the new switch. It should be one of [tUXS] . This can be useful
-when called from a dired-mode hook fn, to set the default / initial
-sort.
+
+(defun dino-dired-sort-cycle (&optional arg)
+  "This is intended as a replacement for the `dired-sort-toggle' fn from
+dired.el. Normally, dired sorts on either name or time, and you can
+swap between those two (eg, toggle) with the s key. This function allows
+sorting on name, size, mod time, create time, and (maybe)
+extension. Cycling works the same, with the s key. So it's no
+longer toggling, but rotating.
+
+With optional ARG, do not cycle. Instead just use that arg as the
+new switch. It should be one of [tUXS] . X is only legal on a
+platform with gls. Invoking with an optional arg can be useful
+when called from a dired-mode hook fn, to set the default /
+initial sort.
 
 "
-  (let ((switches-regex
-         (concat "[" (mapconcat 'identity dino-dired-switches-to-cycle "") "]")))
-    (setq dired-actual-switches
-          (let (case-fold-search)
-            (cond
-             ((and arg (string-match switches-regex arg))
-              (dino-dired-generate-new-sorting-switch-string arg)) ;; set new switch to passed-in value
+  (interactive)
+  (setq dired-actual-switches
+        (let (case-fold-search)
+          (cond
+           ((and arg (member arg dino-dired-switches-to-cycle))
+            (dino-dired-generate-new-sorting-switch-string arg)) ;; set new switch to passed-in value
 
-             ((string-match " " dired-actual-switches) ;; contains a space
-              (let ((n 0)
-                    (L (1- (length dino-dired-switches-to-cycle)))
-                    result)
-                (while (and (< n L) (not result))
-                  (let ((cur-switch (nth n dino-dired-switches-to-cycle)))
-                    (if (string-match (concat " -" cur-switch "\\'") dired-actual-switches)
-                        (setq result
-                              (concat
-                               (substring dired-actual-switches 0 (match-beginning 0))
-                               " -" (or (nth (1+ n) dino-dired-switches-to-cycle) "t"))))))
-                (if (not result)
-                    (concat dired-actual-switches " -t")
-                  result)))
-             (t
-              ;; old toggle scheme: look for a sorting switch, one of [tUXS]
-              ;; and switch between them. Assume there is only ONE present.
-              (let* ((old-sorting-switch
-                      (if (string-match (concat "[t" dired-ls-sorting-switches "]")
-                                        dired-actual-switches)
-                          (substring dired-actual-switches (match-beginning 0)
-                                     (match-end 0))
-                        "U"))
-                     (found (member old-sorting-switch dino-dired-switches-to-cycle))
-                     (new-sorting-switch
-                      (or (and found
-                               (or (cadr found) "t"))
-                          "t")))
-                (dino-dired-generate-new-sorting-switch-string new-sorting-switch))))))
+           (arg
+            (dino-dired-generate-new-sorting-switch-string "")) ;; illegal passed-in value, sort by name
 
-    (dired-sort-set-mode-line)
-    (revert-buffer)))
+           ;; Both of the next 2 conds rotate among the sort switches.
+
+           ;; this case handles the situation in which the options to ls are not concatted.
+           ((string-match " " dired-actual-switches)
+            (let ((n 0)
+                  (L (1- (length dino-dired-switches-to-cycle)))
+                  result)
+              (while (and (< n L) (not result))
+                (let ((cur-switch (nth n dino-dired-switches-to-cycle)))
+
+                  (if (and (not (string= cur-switch ""))
+                           (string-match (concat " -" cur-switch "\\'") dired-actual-switches))
+                      (setq result
+                            (concat
+                             (substring dired-actual-switches 0 (match-beginning 0))
+                             " -" (dino-dired-next-sorting-switch cur-switch))))))
+              (or result
+                  (concat dired-actual-switches " -t"))))
+
+           ;; this case handles the situation in which the options to ls are concatted.
+           (t
+            (let* ((switches-regex
+                    (concat "[" (mapconcat 'identity dino-dired-switches-to-cycle "") "]"))
+                   (old-sorting-switch
+                    (if (string-match switches-regex dired-actual-switches)
+                        (substring dired-actual-switches (match-beginning 0) (match-end 0))
+                      "ZZ")))
+
+              (dino-dired-generate-new-sorting-switch-string
+               (dino-dired-next-sorting-switch old-sorting-switch)))))))
+
+  (dino-dired-sort-set-modeline)
+  (revert-buffer))
 
 
 (defun dino-dired-generate-new-sorting-switch-string (new)
@@ -125,14 +143,14 @@ sort.
    (dired-replace-in-string
     (concat "[-l" (mapconcat 'identity dino-dired-switches-to-cycle "") "]")
     ""
-    dired-actual-switches)
+    (or dired-actual-switches ""))
    new))
 
 
-(defun dired-sort-set-modeline ()
+(defun dino-dired-sort-set-modeline ()
  "This is a redefinition of the fn from `dired.el'. This one
 properly provides the modeline in dired mode, supporting the new
-search modes defined in the new `dired-sort-toggle'.
+search modes defined in the new `dino-dired-sort-cycle'.
 "
   ;; Set modeline display according to dired-actual-switches.
   ;; Modeline display of "by name" or "by date" guarantees the user a
@@ -142,7 +160,9 @@ search modes defined in the new `dired-sort-toggle'.
     (setq mode-name
           (let (case-fold-search)
             (cond ((string-match "^-[^t]*t[^t]*$" dired-actual-switches)
-                   "Dired by time")
+                   "Dired by mtime")
+                  ((string-match "^-[^U]*U[^U]*$" dired-actual-switches)
+                   "Dired by ctime")
                   ((string-match "^-[^X]*X[^X]*$" dired-actual-switches)
                    "Dired by ext")
                   ((string-match "^-[^S]*S[^S]*$" dired-actual-switches)
