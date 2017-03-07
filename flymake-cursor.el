@@ -200,7 +200,8 @@ second, does the flymake error message (if any) get displayed."
 (defun flymake-cursor-follow-flymake-mode ()
   "Hook function to make `flymake-cursor-mode` follow the on/off
 status of `flymake-mode'."
-  (if flymake-mode
+
+  (if (and (boundp 'flymake-mode) flymake-mode)
     (when flymake-cursor-auto-enable (flymake-cursor-mode 1))
     (flymake-cursor-mode 0)))
 
