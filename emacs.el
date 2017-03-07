@@ -1,6 +1,6 @@
 ;;; emacs.el -- dino's em Dino's .emacs setup file.
 ;;
-;; Last saved: <2017-March-01 12:49:12>
+;; Last saved: <2017-March-07 10:00:44>
 ;;
 ;; Works with v24.5 of emacs.
 ;;
@@ -100,7 +100,7 @@
   '(progn
      (setq-default flycheck-disabled-checkers '(emacs-lisp-checkdoc))
      ;; (setq flycheck-phpcs-standard "Drupal") ;; DinoChiesa
-     (setq flycheck-phpcs-standard "/Users/dino/.composer/vendor/squizlabs/php_codesniffer/CodeSniffer/Standards/DinoChiesa")
+     (setq flycheck-phpcs-standard "/Users/dchiesa/.composer/vendor/squizlabs/php_codesniffer/CodeSniffer/Standards/DinoChiesa")
      )) ;; DinoChiesa
 ;; $ pear config-get php_dir
 ;; will show the pear PHP config directory.  Eg /usr/local/share/pear
@@ -168,7 +168,7 @@
 ;;(require 'go-mode-autoloads) ;; editing mode
 (load "go-mode-autoloads") ;; editing mode; there is no provide statement!
 ;; for flycheck or compile support, I need the go binary on the path
-(setenv "GOPATH" "/Users/dino/dev/go")
+(setenv "GOPATH" "/Users/dchiesa/dev/go")
 
 (defun dino-go-mode-fn ()
   ;;(setq-default)
@@ -262,7 +262,7 @@
   (let* ((base-fname
           (file-name-nondirectory filename))
          (new-fname
-          (concat "/Users/dino/dev/html/dpreso/" base-fname)))
+          (concat "/Users/dchiesa/dev/html/dpreso/" base-fname)))
 
     (rename-file filename new-fname t)
     (call-process "open" nil t t
@@ -457,7 +457,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Frames preferences: initial and default frames
 ;; see http://www.gnu.org/software/emacs/windows/big.html#windows-frames
-(setq dino-name-of-preferred-font "-*-Consolas-normal-normal-normal-*-11-*-*-*-m-0-iso10646-1")
+;;(setq dino-name-of-preferred-font "-*-Consolas-normal-normal-normal-*-11-*-*-*-m-0-iso10646-1")
 
 (setq default-frame-alist
       '((top . 10) (left . 860)
@@ -467,11 +467,11 @@
         ;;(foreground-color . "White")
         ;;(background-color . "Black")
         (mouse-color . "sienna3")
-        (font . "-*-Consolas-normal-normal-normal-*-11-*-*-*-m-0-iso10646-1")
+        ;;(font . "-*-Consolas-normal-normal-normal-*-11-*-*-*-m-0-iso10646-1")
         )
       )
 
-(set-face-attribute 'default t :font "Consolas-11")
+;(set-face-attribute 'default t :font "Consolas-11")
 
 ;; (message (face-font 'tooltip))
 ;; (message (face-font 'default))
@@ -908,7 +908,7 @@ With a prefix argument, makes a private paste."
 (require 'defaultcontent)
 
 ;; specify the directory to look in for templates
-(setq dc-auto-insert-directory "/Users/Dino/elisp/defaultcontent")
+(setq dc-auto-insert-directory "~/elisp/defaultcontent")
 (setq dc-fast-variable-handling t)
 
 ;; specify the template to use for various files:
@@ -1011,8 +1011,9 @@ With a prefix argument, makes a private paste."
   (local-set-key "\C-c\C-g"  'dino-dired-kill-new-file-contents)
   (local-set-key "\C-c\C-c"  'dino-dired-copy-file-to-dir-in-other-window)
   (local-set-key "\C-c\C-m"  'dino-dired-move-file-to-dir-in-other-window)
-  (dired-sort-toggle "t") ;; by default, sort by time
   (local-set-key "F" 'dino-dired-do-find)
+  (local-set-key "s" 'dino-dired-sort-cycle)
+  (dino-dired-sort-cycle "t") ;; by default, sort by time
   (local-set-key "K" 'dired-kill-subdir)) ;; opposite of i (dired-maybe-insert-subdir)
 
 (add-hook 'dired-mode-hook 'dino-dired-mode-hook-fn)
@@ -1100,7 +1101,7 @@ just auto-corrects on common mis-spellings by me. "
     (set-face-background 'linum "gray19")
     ;; to see font string M-x describe-font
     ;;(set-face-font 'linum "-*-Lucida Console-normal-r-*-*-11-82-96-96-c-*-iso8859-1")
-    (set-face-font 'linum "-*-Consolas-normal-r-*-*-11-82-96-96-c-*-iso8859-1")
+    ;;(set-face-font 'linum "-*-Consolas-normal-r-*-*-11-82-96-96-c-*-iso8859-1")
     ;;(setq setnu-line-number-face 'setnu)
     (setq linum-delay t)
 ))
@@ -2957,7 +2958,7 @@ i.e M-x kmacro-set-counter."
 (global-hl-line-mode)
 
 (custom-set-faces
- '(flymake-errline              ((t (:inherit error :background "firebrick4"))))
+ ;; '(flymake-errline              ((t (:inherit error :background "firebrick4"))))
  '(flycheck-error               ((t (:background "firebrick4"))))
  '(font-lock-comment-face       ((t (:foreground "PaleVioletRed3"))))
  '(font-lock-keyword-face       ((t (:foreground "CadetBlue2"))))
