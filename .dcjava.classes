@@ -178,3 +178,5 @@ java.util.concurrent.TimeUnit
 javax.xml.xpath.XPathFactory
 org.w3c.dom.NodeList
 org.w3c.dom.Node
+org.apache.commons.codec.binary.StringUtils
+org.apache.commons.codec.digest.DigestUtils
