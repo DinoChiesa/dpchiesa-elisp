@@ -11,7 +11,7 @@
 ;; Requires   : s.el, request.el, dino-netrc.el, xml.el
 ;; License    : New BSD
 ;; X-URL      : https://github.com/DinoChiesa/dpchiesa-elisp
-;; Last-saved : <2017-March-01 18:01:32>
+;; Last-saved : <2017-April-21 16:00:38>
 ;;
 ;;; Commentary:
 ;;
@@ -201,7 +201,7 @@ the only possible value currently.")
     <Properties>
         <Property name='success.codes'>1XX,2XX,3XX,4XX,5XX</Property>
     </Properties>
-    <URL>${2:http://example.com/getSearchResults}</URL>
+    <URL>${2:https://example.com/getSearchResults}</URL>
   </HTTPTargetConnection>
 </TargetEndpoint>
 ")
@@ -224,9 +224,39 @@ the only possible value currently.")
   <FaultRules/>
   <ScriptTarget>
       <ResourceURL>node://${2:nodeServer.js}</ResourceURL>
+      <EnvironmentVariables>
+          <EnvironmentVariable name=\"NAME\">VALUE</EnvironmentVariable>
+      </EnvironmentVariables>
+      <Arguments>
+          <Argument>ARG</Argument>
+      </Arguments>
   </ScriptTarget>
 </TargetEndpoint>
 ")
+     '("LocalTarget"
+       "<TargetEndpoint name='##'>
+  <!-- <Description>${1:##}</Description> -->
+  <PreFlow name='PreFlow'>
+    <Request>
+    </Request>
+    <Response>
+    </Response>
+  </PreFlow>
+  <PostFlow name='PostFlow'>
+    <Request>
+    </Request>
+    <Response>
+    </Response>
+  </PostFlow>
+  <Flows/>
+  <FaultRules/>
+  <LocalTargetConnection>
+    <APIProxy>myproxy2</APIProxy>
+    <ProxyEndpoint>default</ProxyEndpoint>
+  </LocalTargetConnection>
+</TargetEndpoint>
+")
+
 ))
 
 
@@ -379,7 +409,7 @@ the only possible value currently.")
         </Headers>
     </Remove>
     <Set>
-        <Payload contentType='application/json' variablePrefix='{' variableSuffix='}'>
+        <Payload contentType='application/json'>
 { \"error\" : { \"code\":152001, \"message\":\"The API Key is expired.\" } }
 </Payload>
         <StatusCode>401</StatusCode>
@@ -567,12 +597,14 @@ the only possible value currently.")
     <Value ref='${4:variable.containing.value.to.store}'/>
     <Value ref='${5:another.variable.with.a.value.to.store}'/>
   </Put>
+  <ExpiryTimeInSecs>10</ExpiryTimeInSecs>
 </KeyValueMapOperations>\n")
 
      '("KVM - Get"
        "KVM-Get"
        "<KeyValueMapOperations name='##' mapIdentifier='${1:nameOfMap}'>
   <Scope>${2:$$(yas-choose-value '(\"organization\" \"environment\" \"apiproxy\"))}</Scope>
+  <ExpiryTimeInSecs>300</ExpiryTimeInSecs>
   <Get assignTo='${3:variable.to.set}' index='2'>
     <Key>
       <Parameter ref='${4:variable.containing.key}'/>
@@ -1469,7 +1501,7 @@ apiproduct.developer.quota.timeunit*
     Use one of the following forms: a referenced variable or
     an explicitly passed client_id.
      -->
-    <ClientId ref='{flow.variable}'/>
+    <ClientId ref='flow.variable'/>
     <ClientId>abcdefghijklmnop</ClientId>
     <!--
     On Success, the following flow variables will be set.
@@ -1797,8 +1829,7 @@ Authorization.
   <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
   <FaultResponse>
     <Set>
-      <Payload contentType='${3:$$(yas-choose-value (reverse (apigee--sort-strings (mapcar 'car apigee-message-payload-template-alist))))}'
-               variablePrefix='%' variableSuffix='#'>${3:$(cadr (assoc yas-text apigee-message-payload-template-alist))}$0</Payload>
+      <Payload contentType='${3:$$(yas-choose-value (reverse (apigee--sort-strings (mapcar 'car apigee-message-payload-template-alist))))}'>${3:$(cadr (assoc yas-text apigee-message-payload-template-alist))}$0</Payload>
       <StatusCode>${4:$$(yas-choose-value (reverse (apigee--sort-strings (mapcar 'car apigee-http-status-message-alist))))}</StatusCode>
       <ReasonPhrase>${4:$(cadr (assoc yas-text apigee-http-status-message-alist))}</ReasonPhrase>
     </Set>
@@ -1884,6 +1915,10 @@ $1
   Parameters are optional. reference them in the XSL as:
     <xsl:param name=\"uid\" select=\"''\"/>
     <xsl:param name=\"pwd\" select=\"''\"/>
+
+  and then embed them in the output like so:
+   <xsl:value-of select=\"$uid\"/>
+
   -->
   <Parameters ignoreUnresolvedVariables='true'>
     <Parameter name='uid' ref='authn.uid'/>
@@ -2332,13 +2367,25 @@ applying as the CreatedBy element in an API Proxy.
     </SSLInfo>
     <Properties/>
     <!-- modify this URL to point to something valid -->
-    <URL>http://internal.example.com/v1/XYZ/something</URL>
+    <URL>https://internal.example.com/v1/XYZ/something</URL>
   </HTTPTargetConnection>
+
+  <!--
+  <LocalTargetConnection>
+    <APIProxy>myproxy2</APIProxy>
+    <ProxyEndpoint>default</ProxyEndpoint>
+  </LocalTargetConnection>
+  -->
 
   <!--
   <ScriptTarget>
       <ResourceURL>node://yahoo-weather.js</ResourceURL>
-      <Properties/>
+      <EnvironmentVariables>
+          <EnvironmentVariable name=\"NAME\">VALUE</EnvironmentVariable>
+      </EnvironmentVariables>
+      <Arguments>
+          <Argument>ARG</Argument>
+      </Arguments>
   </ScriptTarget>
   -->
 </TargetEndpoint>\n"))
@@ -2410,7 +2457,7 @@ if ( ! handled ) {
   <PostClientFlow name='PostFlow'>
       <Request/>
       <Response>
-        <!-- insert message logging policies here -->
+        <!-- this is a good place to insert message logging policies -->
       </Response>
   </PostClientFlow>
 
