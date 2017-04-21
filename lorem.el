@@ -9,15 +9,23 @@
 (defvar lorem-text-list nil
   "A list of lorem ipsum sentences. Computed at runtime.")
 
-(defvar lorem-text-file
+(defvar lorem-current-source-file nil
+  "name of the current file to use for lorem ipsum text")
+
+(defvar lorem-default-source-file
   (concat
    (file-name-as-directory
     (if (eq system-type 'windows-nt)
         (getenv "USERPROFILE")
         (getenv "HOME")))
           "Documents/Lorem.txt")
-  "name of the file containing lorem ipsum text")
+  "name of the default file to use for lorem ipsum text")
 
+(defun lorem-set-source-file (file)
+  "set the current source file for subsequent lorem generation"
+  (interactive "fSource file: ")
+  (setq lorem-text-list nil
+        lorem-current-source-file file) )
 
 (defun lorem-string-ends-with (s ending)
   "return non-nil if string S ends with ENDING"
@@ -35,19 +43,21 @@
   (if (not lorem-text-list)
       (let (beg txt pmax)
         (with-temp-buffer
-          (insert-file-contents lorem-text-file)
+          (insert-file-contents (or lorem-current-source-file lorem-default-source-file))
           (goto-char (point-min))
           (setq pmax (point-max)
                 beg (point))
-          (while (re-search-forward "[\.\n]" pmax t)
-            (setq txt (buffer-substring-no-properties beg (point)))
-            (if (> (length txt) 0)
+          (while (re-search-forward "[\.\n\?]" pmax t)
+            (setq txt (buffer-substring-no-properties (if (> beg 1) (1- beg) beg) (point)))
+            (if (> (length txt) 1)
                 (progn
                   (while (lorem-string-ends-with txt "\n")
                     (setq txt (substring txt 0 -1)))
-                  (if (not (lorem-string-ends-with txt "."))
+                  (if (not (or (lorem-string-ends-with txt ".")
+                               (lorem-string-ends-with txt "?")))
                       (setq txt (concat txt ".")))
-                  (setq lorem-text-list (cons txt lorem-text-list))))
+                  (if (> (length txt) 1)
+                      (setq lorem-text-list (cons txt lorem-text-list)))))
             (setq beg (1+ (point)))))))
 
   (let ((n-sentences (+ (random 3) 3))
