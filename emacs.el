@@ -1,6 +1,6 @@
 ;;; emacs.el -- dino's em Dino's .emacs setup file.
 ;;
-;; Last saved: <2017-March-07 10:00:44>
+;; Last saved: <2017-March-30 14:27:06>
 ;;
 ;; Works with v24.5 of emacs.
 ;;
@@ -89,7 +89,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
-
+(setq magit-git-executable "/usr/local/git/current/bin/git")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; flycheck, always
@@ -703,7 +703,9 @@ With a prefix argument, makes a private paste."
 (defun dino-powershell-mode-fn ()
   (electric-pair-mode 1)
   (require 'hideshow)
-  (hs-minor-mode t))
+  (hs-minor-mode t)
+  (dino-enable-delete-trailing-whitespace)
+  )
 
 (add-hook 'powershell-mode-hook 'dino-powershell-mode-fn)
 
