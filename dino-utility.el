@@ -578,7 +578,7 @@ Overwrites register 9. "
 
 (defun dino-filter-list (condp lst)
   "A filter. Emacs Lisp doesn't come with a filter function to keep
-elements that satisfya conditional and excise the elements that
+elements that satisfy a conditional and excise the elements that
 do not satisfy it. One can use mapcar to iterate over a list with
 a conditional, and then use delq to remove the nil
 values.
