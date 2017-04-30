@@ -309,9 +309,10 @@ BigHugeLabs web service."
         (thesaurus-msgbox msg)
         (browse-url "http://words.bighugelabs.com/getkey.php")
         nil)
-    (url-retrieve-synchronously
-     (concat "http://words.bighugelabs.com/api/2/"
-             thesaurus-bhl-api-key "/" word "/"))))
+    (let ((bhl-url (concat "http://words.bighugelabs.com/api/2/"
+                           thesaurus-bhl-api-key "/" word "/")))
+      (message (concat "retrieving " bhl-url))
+      (url-retrieve-synchronously bhl-url))))
 
 
 
@@ -325,16 +326,16 @@ This implementation deletes each line until finding a blank line,
 which in correctly-formatted HTTP messages signals the end of the
 headers and the beginning of the message content.
 "
-  (let ((clength -1))
+  (let ((clength 0))
     (while (/= (point) (line-end-position))
-      (when (and (< clength 0)
-               (re-search-forward "^[Cc]ontent-[Ll]ength ?: *\\(.*\\)$" (line-end-position) t))
-          (setq clength (string-to-number (match-string 1)))
-          (goto-char (line-beginning-position)))
+      (when (and (= clength 0)
+                 (re-search-forward "^[Cc]ontent-[Ll]ength ?: *\\(.*\\)$" (line-end-position) t))
+        (setq clength (string-to-number (match-string 1)))
+        (goto-char (line-beginning-position)))
       (delete-region (point) (line-end-position))
       (delete-char 1))
     (delete-char 1)
-    clength))
+    (if (> clength 0) clength (point-max))))
 
 
 
@@ -379,7 +380,7 @@ in that order.
                     (if elt
                         (add-to-list 'synonym-list elt))))
               (message-box "No synonyms found.")))
-          (kill-buffer buf)
+;;          (kill-buffer buf)
           (nreverse synonym-list)))))
 
 
