@@ -1,6 +1,6 @@
 ;;; emacs.el -- dino's em Dino's .emacs setup file.
 ;;
-;; Last saved: <2017-March-30 14:27:06>
+;; Last saved: <2017-May-06 13:23:08>
 ;;
 ;; Works with v24.5 of emacs.
 ;;
@@ -1087,7 +1087,7 @@ just auto-corrects on common mis-spellings by me. "
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; linum - line numbering
-;
+;; linum-ex - enhancements with coloring and delay (for performance)
 
 ;;(require 'linum)
 (autoload 'linum-on "linum-ex" nil t)
@@ -2091,7 +2091,7 @@ Does not consider word syntax tables.
   ;; for hide/show support
   (hs-minor-mode 1)
   (setq hs-isearch-open t)
-
+  (linum-on)
   (local-set-key "\M-\C-R"  'indent-region)
   (local-set-key "\C-cn"    'sgml-name-char) ;; inserts entity ref of pressed char
   (local-set-key "\M-#"     'dino-xml-pretty-print-buffer)
