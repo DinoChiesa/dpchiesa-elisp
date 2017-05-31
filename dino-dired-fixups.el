@@ -305,6 +305,10 @@ point into the minibuffer, by typing M-n ."
   (interactive "P")
   (dired-do-chxxx "Timestamp" dired-touch-program 'touch arg))
 
+;; eliminate the error message:
+;; "ls does not support --dired; see `dired-use-ls-dired' for more details."
+(setq dired-use-ls-dired nil)
+
 (provide 'dino-dired-fixups)
 
 ;;; dino-dired-fixups.el ends here

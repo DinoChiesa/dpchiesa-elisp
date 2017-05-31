@@ -1,6 +1,6 @@
 ;;; emacs.el -- dino's em Dino's .emacs setup file.
 ;;
-;; Last saved: <2017-March-30 14:27:06>
+;; Last saved: <2017-May-30 16:58:11>
 ;;
 ;; Works with v24.5 of emacs.
 ;;
@@ -155,8 +155,11 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; stuff for Apigee Edge
 ;;
-(require 'apigee)
-(setq apigee-apiproxies-home "~/dev/apiproxies/")
+;; (require 'apigee)
+;; (setq apigee-apiproxies-home "~/dev/apiproxies/")
+
+(add-to-list 'load-path "~/elisp/apigee")
+(require 'apigee-edge)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; golang
@@ -656,6 +659,12 @@ With a prefix argument, makes a private paste."
     (gist-internal-new files private description callback)))
      ))
 
+;; (defun dino-add-user-agent (old-function &rest arguments)
+;;   "set the user agent when invoking github APIs"
+;;   (let ((url-user-agent "emacs/url-http.el"))
+;;     (apply old-function arguments)))
+;;(advice-add #'gh-api-authenticated-request :around #'dino-add-user-agent)
+;;(advice-remove #'gh-api-authenticated-request  #'dino-add-user-agent)
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -704,6 +713,7 @@ With a prefix argument, makes a private paste."
   (electric-pair-mode 1)
   (require 'hideshow)
   (hs-minor-mode t)
+  (linum-on)
   (dino-enable-delete-trailing-whitespace)
   )
 
@@ -2441,6 +2451,8 @@ i.e M-x kmacro-set-counter."
   (local-set-key "\C-c\C-f"  'dcjava-find-wacapps-java-source-for-class-at-point)
   (local-set-key "\C-c\C-r"  'dcjava-reload-classlist)
   (local-set-key "\C-c\C-s"  'dcjava-sort-import-statements)
+  (dino-enable-delete-trailing-whitespace)
+  (linum-on)
   )
 
 (add-hook 'java-mode-hook 'dino-java-mode-fn)
@@ -2526,11 +2538,18 @@ i.e M-x kmacro-set-counter."
 
 (eval-after-load "url"
   '(progn
-     (defadvice url-http-create-request (around dino-url-eliminate-giant-useless-header activate)
-       "make emacs be less chatty when sending requests"
-       (let (url-mime-charset-string url-user-agent url-extensions-header)
-         ad-do-it))))
+     (defun dino-url-http-cleaner-request (old-function &rest arguments)
+       "make url-http be less chatty when sending requests"
+       (let (url-mime-charset-string
+             url-extensions-header
+             (url-user-agent "User-Agent: emacs/url-http.el\r\n"))
+         (apply old-function arguments)))
+     (advice-add #'url-http-create-request :around #'dino-url-http-cleaner-request)))
 
+
+;; to disable at runtime:
+;; (ad-disable-advice 'url-http-create-request 'around 'dino-url-eliminate-giant-useless-header)
+;; (ad-activate 'url-http-create-request)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; perl mode
