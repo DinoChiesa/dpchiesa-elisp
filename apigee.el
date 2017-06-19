@@ -11,7 +11,7 @@
 ;; Requires   : s.el, request.el, dino-netrc.el, xml.el
 ;; License    : New BSD
 ;; X-URL      : https://github.com/DinoChiesa/dpchiesa-elisp
-;; Last-saved : <2017-April-21 16:00:38>
+;; Last-saved : <2017-May-30 14:46:01>
 ;;
 ;;; Commentary:
 ;;
@@ -78,13 +78,13 @@ Or you can customize this variable.
 "
   :group 'apigee)
 
-(defcustom apigee-upload-bundle-pgm "~/dev/apiproxies/pushapi"
+(defcustom apigee-upload-bundle-pgm "~/dev/apiproxies/apiploy/pushapi/pushapi"
   "The script or program that uploads proxies to the Apigee gateway.
 Can be a python or bash script or other program. Should be executable.
 Specify the full path. Use this in your emacs:
 
    (require 'apigee)
-   (setq apigee-upload-bundle-pgm \"~/dev/apiproxies/pushapi\"
+   (setq apigee-upload-bundle-pgm \"~/bin/pushapi\"
          apigee-upload-bundle-args \"-v -d\")
 
 Or you can customize this variable.
@@ -752,7 +752,7 @@ ratelimit.{policy_name}.class.total.exceed.count
      "<VerifyAPIKey name='##'>
     <!-- created at ${1:$$(format-time-string \"%Y-%m-%dT%T%z\" (current-time) t)} -->
     <DisplayName>Verify API Key</DisplayName>
-    <APIKey ref='${2:$$(yas-choose-value '(\"request.queryparam.apikey\" \"request.header.X-Apikey\"))}'></APIKey>
+    <APIKey ref='${2:$$(yas-choose-value '(\"request.queryparam.apikey\" \"request.header.Apikey\"))}'></APIKey>
 <!--
 Variables populated by this policy: verifyapikey.{policy_name}.
 
@@ -1121,7 +1121,7 @@ apiproduct.developer.quota.timeunit*
           not explicitly validate the client_id and client_secret.
           Still, the client_id is expected to be present in the request.
 
-        - if 'oauth_external_authorization_status' is false, thi signals
+        - if 'oauth_external_authorization_status' is false, this signals
           that external authorization has failed and the policy throws
           an appropriate fault.
 
@@ -1209,6 +1209,116 @@ apiproduct.developer.quota.timeunit*
 
     <!-- variable that specifies the requested grant type -->
     <GrantType>${2:$$(yas-choose-value '(\"request.queryparam.grant_type\" \"request.formparam.grant_type\" \"flowVariable.something\" ))}</GrantType>
+
+  <UserName>login</UserName>
+  <PassWord>password</PassWord>
+
+    <!--
+    ExternalAuthorization is used to support external authorization. It is
+    optional; if not present, the implied value is false. If it is present and
+    true:
+        - this policy looks for a flow variable with the fixed name
+          'oauth_external_authorization_status', which indicates the
+          external authorization status.
+
+        - if 'oauth_external_authorization_status' is true, the policy does
+          not explicitly validate the client_id and client_secret.
+          Still, the client_id is expected to be present in the request.
+
+        - if 'oauth_external_authorization_status' is false, thi signals
+          that external authorization has failed and the policy throws
+          an appropriate fault.
+
+    If ExternalAuthorization is set to false or if the element is not present, then
+    the policy validates the client_id and secret against the internal key store.
+    -->
+
+    <ExternalAuthorization>${3:$$(yas-choose-value '(\"true\" \"false\" ))}</ExternalAuthorization>
+
+    <!--
+    Optional: these attributes get associated to the token.
+    They will be available to the api proxy whenever the token is
+    subsequently validated.
+    -->
+    <Attributes>
+      <Attribute name='attr_name1' ref='flow.variable1' display='true|false'>value1</Attribute>
+      <Attribute name='attr_name2' ref='flow.variable2' display='true|false'>value2</Attribute>
+    </Attributes>
+
+    <GenerateResponse enabled='true'/>
+    <!--
+
+    If you include GenerateResponse and have enabled='true', then
+    the response is sent directly to the caller. The payload looks like
+    this:
+
+    {
+     \"issued_at\": \"1420262924658\",
+     \"scope\": \"READ\",
+     \"application_name\": \"ce1e94a2-9c3e-42fa-a2c6-1ee01815476b\",
+     \"refresh_token_issued_at\": \"1420262924658\",
+     \"status\": \"approved\",
+     \"refresh_token_status\": \"approved\",
+     \"api_product_list\": \"[PremiumWeatherAPI]\",
+     \"expires_in\": \"1799\",
+     \"developer.email\": \"tesla@weathersample.com\",
+     \"organization_id\": \"0\",
+     \"token_type\": \"BearerToken\",
+     \"refresh_token\": \"fYACGW7OCPtCNDEnRSnqFlEgogboFPMm\",
+     \"client_id\": \"5jUAdGv9pBouF0wOH5keAVI35GBtx3dT\",
+     \"access_token\": \"2l4IQtZXbn5WBJdL6EF7uenOWRsi\",
+     \"organization_name\": \"docs\",
+     \"refresh_token_expires_in\": \"0\",
+     \"refresh_count\": \"0\"
+    }
+
+    If you omit GenerateResponse or have enabled='false', then
+    these flow variables are set on success:
+
+      oauthv2accesstoken.##.access_token
+      oauthv2accesstoken.##.token_type
+      oauthv2accesstoken.##.expires_in
+      oauthv2accesstoken.##.refresh_token
+      oauthv2accesstoken.##.refresh_token_expires_in
+      oauthv2accesstoken.##.refresh_token_issued_at
+      oauthv2accesstoken.##.refresh_token_status
+    -->
+
+</OAuthV2>\n")
+
+          '("OAuthV2 - Import external Access Token"
+            "OAuthV2-ImportAccessToken"
+            "<OAuthV2 name='##'>
+    <!-- created at ${1:$$(format-time-string \"%Y-%m-%dT%T%z\" (current-time) t)} -->
+    <Operation>GenerateAccessToken</Operation>
+    <!--
+    ExpiresIn, in milliseconds. The ref is optional. The explicitly specified
+    value is the default, when the variable reference cannot be resolved.
+      2400000 = 40 minutes
+      3600000 = 60 minutes
+    -->
+    <ExpiresIn ref='importSettings.accessTokenExpiresIn'>1800000</ExpiresIn>
+
+    <!--
+    RefreshTokenExpiresIn, in milliseconds. Optional; if it is not
+    specified, the default value will be used which is -1 (no expiration).
+      691200000 = 8 days
+      2592000000 = 30 days
+      7776000000 = 90 days
+  -->
+    <RefreshTokenExpiresIn ref='importSettings.refreshTokenExpiresIn'>7776000000</RefreshTokenExpiresIn>
+
+  <!-- these are variables -->
+  <ExternalAccessToken>importSettings.externalAccessToken</ExternalAccessToken>
+  <ExternalRefreshToken>importSettings.refreshAccessToken</ExternalRefreshToken>
+  <StoreToken>true</StoreToken>
+
+    <SupportedGrantTypes>
+        <GrantType>password</GrantType>
+    </SupportedGrantTypes>
+
+    <!-- variable that specifies the requested grant type -->
+    <GrantType>importSettings.grantType</GrantType>
 
   <UserName>login</UserName>
   <PassWord>password</PassWord>
@@ -2379,7 +2489,7 @@ applying as the CreatedBy element in an API Proxy.
 
   <!--
   <ScriptTarget>
-      <ResourceURL>node://yahoo-weather.js</ResourceURL>
+      <ResourceURL>node://index.js</ResourceURL>
       <EnvironmentVariables>
           <EnvironmentVariable name=\"NAME\">VALUE</EnvironmentVariable>
       </EnvironmentVariables>
@@ -2508,16 +2618,23 @@ to the `apigee-default-apiproxies-home' directory.
 
 "
   (interactive "P")
-  (let ((mrud (or
-              apigee--most-recently-used-containing-dir
-              apigee-default-apiproxies-home)))
+  (let ((proxy-name (read-string "proxy name?: " nil nil nil))
+        (proxy-containing-dir
+         (if arg
+             (let ((homedir (concat (getenv "HOME") "/"))
+                   (candidate-list (and (boundp 'recentf-list)
+                                        (mapcar
+                                         (lambda (n) (file-name-directory n))
+                                         recentf-list))))
+               (add-to-list 'candidate-list apigee--most-recently-used-containing-dir)
+               (add-to-list 'candidate-list apigee-default-apiproxies-home)
+               (ido-completing-read "containing directory?: "
+                                        (mapcar (lambda (x)
+                                                  (replace-regexp-in-string homedir "~/" x))
+                                                (delq nil (delete-dups candidate-list))) nil nil nil))
+           (or apigee--most-recently-used-containing-dir apigee-default-apiproxies-home))))
 
-    (let ((proxy-name (read-string "proxy name?: " nil nil nil))
-          (proxy-containing-dir
-           (if arg
-               (read-directory-name "containing directory?: " mrud nil t nil)
-             mrud)))
-      (apigee-new-proxy-noninteractive proxy-name proxy-containing-dir))))
+    (apigee-new-proxy-noninteractive proxy-name proxy-containing-dir)))
 
 
 
