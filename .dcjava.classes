@@ -180,3 +180,13 @@ org.w3c.dom.NodeList
 org.w3c.dom.Node
 org.apache.commons.codec.binary.StringUtils
 org.apache.commons.codec.digest.DigestUtils
+com.google.common.cache.CacheLoader
+com.google.common.cache.LoadingCache
+com.google.common.cache.CacheBuilder
+javax.crypto.Mac
+java.security.Signature
+javax.crypto.spec.SecretKeySpec
+java.util.concurrent.ExecutionException
+java.net.URL
+javax.xml.transform.URIResolver
+javax.xml.transform.stream.StreamSource
