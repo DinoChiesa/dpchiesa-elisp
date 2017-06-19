@@ -1,6 +1,6 @@
 ;;; emacs.el -- dino's em Dino's .emacs setup file.
 ;;
-;; Last saved: <2017-May-31 09:20:32>
+;; Last saved: <2017-June-09 10:09:00>
 ;;
 ;; Works with v24.5 of emacs.
 ;;
@@ -2522,6 +2522,8 @@ i.e M-x kmacro-set-counter."
 ;; restclient - invoke REST API calls from within Emacs
 
 (require 'restclient)
+(require 'dino-netrc)
+
 (eval-after-load "restclient"
   '(progn
 
