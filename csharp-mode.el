@@ -7,7 +7,7 @@
 ;; Version    : 0.8.6
 ;; Keywords   : c# languages oop mode
 ;; X-URL      : http://code.google.com/p/csharpmode/
-;; Last-saved : <2016-March-19 20:05:50>
+;; Last-saved : <2017-May-17 11:29:28>
 
 ;;
 ;; This program is free software; you can redistribute it and/or modify
@@ -5587,17 +5587,16 @@ Key bindings:
   ;; issue is that tooltips can get clipped.  This is the topic of Emacs
   ;; bug #5908, unfixed in v23 and present in v22.
 
-
-  (defadvice tooltip-show (before
-                           flymake-for-csharp-fixup-tooltip
-                           (arg &optional use-echo-area)
-                           activate compile)
-    (progn
-      (if ;;(and (not use-echo-area) (eq major-mode 'csharp-mode))
-          (not use-echo-area)
-          (let ((orig (ad-get-arg 0)))
-            (ad-set-arg 0 (concat " " (cheeso-string-trim (cheeso-reform-string 74 orig) ?\ )))
-            ))))
+  ;; (defadvice tooltip-show (before
+  ;;                          flymake-for-csharp-fixup-tooltip
+  ;;                          (arg &optional use-echo-area)
+  ;;                          activate compile)
+  ;;   (progn
+  ;;     (if ;;(and (not use-echo-area) (eq major-mode 'csharp-mode))
+  ;;         (not use-echo-area)
+  ;;         (let ((orig (ad-get-arg 0)))
+  ;;           (ad-set-arg 0 (concat " " (cheeso-string-trim (cheeso-reform-string 74 orig) ?\ )))
+  ;;           ))))
 
 
 
