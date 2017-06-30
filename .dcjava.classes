@@ -190,3 +190,11 @@ java.util.concurrent.ExecutionException
 java.net.URL
 javax.xml.transform.URIResolver
 javax.xml.transform.stream.StreamSource
+org.apache.wss4j.dom.handler.WSHandlerResult
+org.apache.wss4j.common.crypto.Crypto
+org.apache.wss4j.common.crypto.CryptoFactory
+org.apache.wss4j.dom.WSConstants
+org.apache.wss4j.dom.str.STRParser.REFERENCE_TYPE
+org.apache.wss4j.dom.common.SOAPUtil
+org.apache.wss4j.dom.message.WSSecHeader
+org.apache.wss4j.dom.message.WSSecSignature
