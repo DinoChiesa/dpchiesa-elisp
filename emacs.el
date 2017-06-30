@@ -1,6 +1,6 @@
 ;;; emacs.el -- dino's em Dino's .emacs setup file.
 ;;
-;; Last saved: <2017-June-09 10:09:00>
+;; Last saved: <2017-June-29 18:48:42>
 ;;
 ;; Works with v24.5 of emacs.
 ;;
@@ -100,11 +100,12 @@
   '(progn
      (setq-default flycheck-disabled-checkers '(emacs-lisp-checkdoc))
      ;; (setq flycheck-phpcs-standard "Drupal") ;; DinoChiesa
-     (setq flycheck-phpcs-standard "/Users/dchiesa/.composer/vendor/squizlabs/php_codesniffer/CodeSniffer/Standards/DinoChiesa")
+     (setq flycheck-phpcs-standard "/usr/local/share/pear/PHP/CodeSniffer/src/Standards/DinoChiesa")
      )) ;; DinoChiesa
 ;; $ pear config-get php_dir
 ;; will show the pear PHP config directory.  Eg /usr/local/share/pear
 ;; .. which means the phpcs dir is /usr/local/share/pear/PHP/CodeSniffer
+;; .. and the standards are in     /usr/local/share/pear/PHP/CodeSniffer/src/Standards
 ;;
 ;; ?? or this?
 ;; $ php composer.phar global show -P
@@ -115,7 +116,7 @@
 ;;   cd   ${phpcs_dir}/Standards
 ;;   mkdir DinoChiesa
 ;;
-;; place the following content in DinoChiesa/ruleset.xml
+;; then, place the following content in DinoChiesa/ruleset.xml
 ;;
 ;; <ruleset name="Custom Standard">
 ;;   <description>My custom coding standard</description>
@@ -131,9 +132,12 @@
 ;;     <exclude name="PEAR.Commenting.InlineComment"/>
 ;;     <exclude name="PEAR.Classes.ClassDeclaration"/>
 ;;     <exclude name="PEAR.Functions.FunctionDeclaration.BraceOnSameLine"/>
+;;     <exclude name="PEAR.Functions.FunctionCallSignature.ContentAfterOpenBracket" />
 ;;     <exclude name="Generic.Files.LineEndings"/>
 ;;     <exclude name="Generic.Files.LineLength.TooLong"/>
 ;;     <exclude name="PEAR.ControlStructures.ControlSignature"/>
+;;     <exclude name="PEAR.Functions.FunctionCallSignature.CloseBracketLine"/>
+;;     <exclude name="PEAR.Functions.FunctionCallSignature.Indent"/>
 ;;   </rule>
 ;;   <rule ref="PEAR.WhiteSpace.ScopeIndent">
 ;;     <properties>
@@ -345,8 +349,6 @@
 (ac-config-default)
 
 
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; httpget
 (require 'httpget)
@@ -396,7 +398,7 @@
 (global-set-key "\C-cs"     'search-forward-regexp)
 (global-set-key "\C-cy"     'linum-mode)
 (global-set-key "\C-c\C-p"  'dino-copy-value-from-key-into-killring)
-(global-set-key "\C-cm"     'dino-gtm-url)
+;;(global-set-key "\C-cm"     'dino-gtm-url)
 (global-set-key "\C-cq"     'query-replace)
 (global-set-key "\C-cc"     'goto-char)
 (global-set-key "\C-cr"     'replace-regexp)
@@ -444,7 +446,7 @@
 (setq messages-buffer-max-lines 2500)
 
 ;; for fontification in emacs progmodes:
-(load "font-lock")
+(require 'font-lock)
 (setq font-lock-maximum-decoration t)
 
 (setq completion-auto-help nil)
@@ -523,7 +525,7 @@
 (defun dino-web-mode-fn ()
   "My hook for web mode"
   (turn-on-font-lock)
-  ;;;xxxxx minor-mode
+  ;;; minor-mode
   ;;(hs-minor-mode 1)
   (linum-on)
   ;; why I have to re-set this key is baffling to me.
@@ -543,6 +545,12 @@
 ;; equivalent unless there is a filename with a new line in it (not
 ;; likely).
 ;;
+;; (setq auto-mode-alist
+;;       (append
+;;        '(
+;;          ("\\.proto$"                         . protobuf-mode)
+;;          ) auto-mode-alist ))
+
 (setq auto-mode-alist
       (append
        '(
@@ -551,6 +559,7 @@
          ;;("\\.s?html?\\'"                     . nxhtml-mumamo-mode)
          ("\\(Iirf\\|iirf\\|IIRF\\)\\(Global\\)?\\.ini$"   . iirf-mode)
          ("\\.css$"                           . css-mode)
+         ("\\.proto$"                         . protobuf-mode)
          ("\\.php$"                           . php-mode)
          ("\\.cs$"                            . csharp-mode)
          ("\\.asp$"                           . html-mode)
@@ -753,9 +762,7 @@ With a prefix argument, makes a private paste."
 
 (defun dino-html-mode-fn ()
   (local-set-key "\C-c1" 'just-one-space)
-
   (local-set-key (kbd "<f7>") 'find-file-at-point)
-
   ;; Make sure autofill is OFF.
   (auto-fill-mode -1)
   )
@@ -802,7 +809,6 @@ With a prefix argument, makes a private paste."
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 
 
 
@@ -1484,6 +1490,25 @@ just auto-corrects on common mis-spellings by me. "
 
 (add-hook 'c++-mode-hook 'dino-cpp-mode-fn)
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; protobufs
+
+(require 'protobuf-mode)
+(defconst my-protobuf-style
+   '((c-basic-offset . 2)
+     (indent-tabs-mode . nil)))
+(defun dino-protobuf-mode-hook-fn ()
+  "my mode hook for protobuf-mode"
+         (local-set-key "\M-\C-R"  'indent-region)
+         (local-set-key "\M-#"     'dino-indent-buffer)
+         (local-set-key "\C-c\C-w" 'compare-windows)
+  (linum-on)
+  (c-add-style "my-style" my-protobuf-style t)
+  ;;(require 'flycheck)
+  ;;(flycheck-mode 1)
+  )
+(add-hook 'protobuf-mode-hook 'dino-protobuf-mode-fn)
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; csharp mode
@@ -1518,7 +1543,6 @@ just auto-corrects on common mis-spellings by me. "
                        (statement-cont        . (dinoch-csharp-lineup-string-continuations +))
                        ))
    ))
-
 
 
 ;; Aligns long strings broken across multiple lines.
