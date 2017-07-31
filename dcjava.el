@@ -11,7 +11,7 @@
 ;; Requires   : s.el
 ;; License    : Apache 2.0
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2017-March-02 12:59:19>
+;; Last-saved : <2017-July-10 09:18:40>
 ;;
 ;;; Commentary:
 ;;
@@ -187,7 +187,6 @@
           (sort-lines nil start (point)))
       (mesage "cannot find import statements"))))
 
-
 (defun dcjava--gen-import-regex (package-name &optional symbol)
   "returns a regex that matches an import for a given java class defined by a package name and a symbol.  If the symbol is null, then the package-name is treated as a fully-qualified classname."
   (concat "^import[\t ]+"
@@ -195,7 +194,6 @@
            (if symbol (concat package-name "." symbol)
              package-name))
           "[\t ]*;"))
-
 
 (defun dcjava-add-one-import-statement (package-name &optional symbol-name)
   "add one import statement, append to the list of imports at or near beginning-of-buffer.
@@ -222,9 +220,9 @@ If the symbol is null, then the package-name is treated as a fully-qualified cla
             (setq want-extra-newline t))
           (newline)
           (insert import-statement)
+          (dcjava-sort-import-statements)
           (if want-extra-newline (newline))
           (message import-statement))))))
-
 
 
 (defun dcjava--generate-menu (candidates &optional format heading)
