@@ -555,25 +555,52 @@ Overwrites register 9. "
       (narrow-to-region beg end)
       (goto-char (point-min))
       (cond
-       ;; is there a C-u prefix?
-       ((and (listp arg) (> (length arg) 0))
-        (and (re-search-forward "<!-- *[\n\r]" nil t)
-             (goto-char (- (point-max) 1))
-             (re-search-backward " *-->" nil t)
-             (goto-char (point-min))
-             (progn
-               (re-search-forward "<!-- *[\n\r]" nil t)
-               (replace-match "")
-               (goto-char (- (point-max) 1))
-               (re-search-backward "[\n\r] *-->" nil t)
-               (replace-match ""))))
+
+       ((and (listp arg) (> (length arg) 0)        ;; is there a C-u prefix?
+             (re-search-forward (concat "<!-- *"   ;; and a multiline commented-block?
+                                        "\\(.*\n\\)+"
+                                        " *-->") nil t))
+        (progn
+          (goto-char (point-min))
+          (re-search-forward "<!-- *" nil t)
+          (replace-match "")
+          (goto-char (- (point-max) 1))
+          (re-search-backward " *-->" nil t)
+          (replace-match "")
+          ;; naively un-replace existing comment brackets
+          (goto-char (point-min))
+          (while (re-search-forward "< ! - - " nil t)
+            (replace-match "<!-- "))
+          (goto-char (point-min))
+          (while (re-search-forward " - - >" nil t)
+            (replace-match " -->"))
+          ))
 
        (t
+        ;; naively replace existing comment brackets
+        (goto-char (point-min))
+        (while (re-search-forward "<!-- " nil t)
+          (replace-match "< ! - - "))
+        (goto-char (point-min))
+        (while (re-search-forward " -->" nil t)
+          (replace-match " - - >"))
+        (goto-char (point-min))
         (insert "<!--\n")
         (goto-char (- (point-max) 1))
         (unless (= 10 (following-char))
           (forward-char))
         (insert "\n-->"))))))
+
+(defun dino-maybe-xml-comment-region (old-function &rest arguments)
+  "invoke `dino-xml-comment-region' when in an xml mode."
+  (apply
+   (if (or (eq major-mode 'nxml-mode))
+      'dino-xml-comment-region
+     old-function) arguments))
+
+(advice-add #'comment-region :around #'dino-maybe-xml-comment-region)
+;;(advice-remove #'gh-api-authenticated-request  #'dino-add-user-agent)
+
 
 
 (defun dino-filter-list (condp lst)
