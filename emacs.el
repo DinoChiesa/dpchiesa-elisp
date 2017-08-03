@@ -1,6 +1,6 @@
 ;;; emacs.el -- dino's em Dino's .emacs setup file.
 ;;
-;; Last saved: <2017-June-29 18:48:42>
+;; Last saved: <2017-August-03 10:16:44>
 ;;
 ;; Works with v24.5 of emacs.
 ;;
@@ -2471,6 +2471,7 @@ i.e M-x kmacro-set-counter."
   (require 'dcjava)
   (local-set-key "\C-ci"     'dcjava-auto-add-import)
   (local-set-key "\C-c\C-i"  'dcjava-auto-add-import)
+  (local-set-key "\C-cp"     'dcjava-insert-inferred-package-name)
   (local-set-key "\C-c\C-l"  'dcjava-learn-new-import)
   (local-set-key "\C-c\C-f"  'dcjava-find-wacapps-java-source-for-class-at-point)
   (local-set-key "\C-c\C-r"  'dcjava-reload-classlist)
