@@ -1,6 +1,6 @@
 ;;; emacs.el -- dino's em Dino's .emacs setup file.
 ;;
-;; Last saved: <2017-August-03 10:16:44>
+;; Last saved: <2017-August-30 15:08:54>
 ;;
 ;; Works with v24.5 of emacs.
 ;;
@@ -693,6 +693,7 @@ With a prefix argument, makes a private paste."
 
 (autoload 'powershell-mode "powershell-mode" "major mode for editing powershell." t)
 (add-to-list 'auto-mode-alist '("\\.ps1\\'" . powershell-mode))
+(add-to-list 'auto-mode-alist '("\\.psm1\\'" . powershell-mode))
 
 (eval-after-load "hideshow"
   '(progn
@@ -2196,6 +2197,27 @@ Does not consider word syntax tables.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; highlighting specific chars
+;;
+
+(require 'highlight-chars) ; Load this library.
+
+;; (global-set-key (kbd "<f8>")
+;;                 'hc-toggle-highlight-trailing-whitespace)
+
+(defun dino-enable-highlight-trailing-ws-based-on-extension ()
+  "turns on highlighting of trailing whitespace based on file extension"
+  (let ((extension (file-name-extension buffer-file-name))
+        (extensions-that-get-highlighting '("md") ))
+    (while extensions-that-get-highlighting
+      (if (string= (car extensions-that-get-highlighting) extension)
+          (hc-highlight-trailing-whitespace))
+      (setq extensions-that-get-highlighting (cdr extensions-that-get-highlighting)))))
+
+(add-hook 'find-file-hook 'dino-enable-highlight-trailing-ws-based-on-extension)
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
