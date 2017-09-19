@@ -220,3 +220,6 @@ org.xmlunit.util.Predicate
 com.google.common.collect.Iterables
 java.security.spec.RSAPublicKeySpec
 java.util.stream.Collectors
+com.google.common.io.BaseEncoding
+java.util.zip.DataFormatException
+javax.xml.xpath.XPath
