@@ -1,0 +1,11 @@
+# key : timestamp
+# name : function timestamp() {...}
+# --
+function timestamp() {
+  function padLeft(number) {
+    return  (number < 10) ? '0' + number : number;
+  }
+  var now = new Date();
+  return '' + now.getUTCFullYear() + '' + padLeft(now.getUTCMonth() + 1) + '' + padLeft(now.getUTCDate()) +
+    '-' + padLeft(now.getUTCHours()) + '' + padLeft(now.getUTCMinutes()) + padLeft(now.getUTCSeconds());
+}
