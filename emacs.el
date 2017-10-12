@@ -1,6 +1,6 @@
 ;;; emacs.el -- dino's em Dino's .emacs setup file.
 ;;
-;; Last saved: <2017-August-30 15:08:54>
+;; Last saved: <2017-October-12 10:59:26>
 ;;
 ;; Works with v24.5 of emacs.
 ;;
@@ -548,8 +548,8 @@
 ;; (setq auto-mode-alist
 ;;       (append
 ;;        '(
-;;          ("\\.proto$"                         . protobuf-mode)
-;;          ) auto-mode-alist ))
+;;         ("\\.\\(php\\|module\\)$"            . php-mode)
+;;         ) auto-mode-alist ))
 
 (setq auto-mode-alist
       (append
@@ -560,7 +560,7 @@
          ("\\(Iirf\\|iirf\\|IIRF\\)\\(Global\\)?\\.ini$"   . iirf-mode)
          ("\\.css$"                           . css-mode)
          ("\\.proto$"                         . protobuf-mode)
-         ("\\.php$"                           . php-mode)
+         ("\\.\\(php\\|module\\)$"            . php-mode)
          ("\\.cs$"                            . csharp-mode)
          ("\\.asp$"                           . html-mode)
          ;;("\\.aspx$"                        . html-helper-mode)
