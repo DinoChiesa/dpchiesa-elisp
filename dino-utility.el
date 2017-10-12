@@ -892,6 +892,180 @@ insert a pair, and backup one character."
 
 
 
+;;; Thursday, 12 October 2017, 13:18
+;;; replace xml-parse-tag-1 to not skip comments.
+;;; This modified version of the fn returns a cons of (nil . "<!-- string -->")
+;;; for a comment.
+(defun xml-parse-tag-1 (&optional parse-dtd parse-ns)
+  "Like `xml-parse-tag', but possibly modify the buffer while working."
+  (let* ((xml-validating-parser (or parse-dtd xml-validating-parser))
+         (xml-ns
+          (cond ((eq parse-ns 'symbol-qnames)
+                 (cons 'symbol-qnames xml-default-ns))
+                ((or (consp (car-safe parse-ns))
+                     (and (eq (car-safe parse-ns) 'symbol-qnames)
+                          (listp (cdr parse-ns))))
+                 parse-ns)
+                (parse-ns
+                 xml-default-ns))))
+    (cond
+     ;; Processing instructions, like <?xml version="1.0"?>.
+     ((looking-at-p "<\\?")
+      (search-forward "?>")
+      (skip-syntax-forward " ")
+      (xml-parse-tag-1 parse-dtd xml-ns))
+     ;; Character data (CDATA) sections, in which no tag should be interpreted
+     ((looking-at "<!\\[CDATA\\[")
+      (let ((pos (match-end 0)))
+        (unless (search-forward "]]>" nil t)
+          (error "XML: (Not Well Formed) CDATA section does not end anywhere in the document"))
+        (concat
+         (buffer-substring-no-properties pos (match-beginning 0))
+         (xml-parse-string))))
+     ;; DTD for the document
+     ((looking-at-p "<!DOCTYPE[ \t\n\r]")
+      (let ((dtd (xml-parse-dtd parse-ns)))
+        (skip-syntax-forward " ")
+        (if xml-validating-parser
+            (cons dtd (xml-parse-tag-1 nil xml-ns))
+          (xml-parse-tag-1 nil xml-ns))))
+     ;; comment
+     ((looking-at-p "<!--")
+      (let ((start (point))
+            comment)
+        (search-forward "-->")
+        (setq comment (buffer-substring-no-properties start (point)))
+      ;; FIXME: This loses the skipped-over spaces.
+        (skip-syntax-forward " ")
+        (cons nil comment)))
+
+     ;; end tag
+     ((looking-at-p "</")
+      '())
+     ;; opening tag
+     ((looking-at (eval-when-compile (concat "<\\(" xml-name-re "\\)")))
+      (goto-char (match-end 1))
+      ;; Parse this node
+      (let* ((node-name (match-string-no-properties 1))
+             ;; Parse the attribute list.
+             (attrs (xml-parse-attlist xml-ns))
+             children)
+        ;; add the xmlns:* attrs to our cache
+        (when (consp xml-ns)
+          (dolist (attr attrs)
+            (when (and (consp (car attr))
+                       (equal "http://www.w3.org/2000/xmlns/"
+                              (caar attr)))
+              (push (cons (cdar attr) (cdr attr))
+                    (if (symbolp (car xml-ns))
+                        (cdr xml-ns)
+                      xml-ns)))))
+        (setq children (list attrs (xml-maybe-do-ns node-name "" xml-ns)))
+        (cond
+         ;; is this an empty element ?
+         ((looking-at-p "/>")
+          (forward-char 2)
+          (nreverse children))
+         ;; is this a valid start tag ?
+         ((eq (char-after) ?>)
+          (forward-char 1)
+          ;; Now check that we have the right end-tag.
+          (let ((end (concat "</" node-name "\\s-*>")))
+            (while (not (looking-at end))
+              (cond
+               ((eobp)
+                (error "XML: (Not Well-Formed) End of document while reading element `%s'"
+                       node-name))
+               ((looking-at-p "</")
+                (forward-char 2)
+                (error "XML: (Not Well-Formed) Invalid end tag `%s' (expecting `%s')"
+                       (let ((pos (point)))
+                         (buffer-substring pos (if (re-search-forward "\\s-*>" nil t)
+                                                   (match-beginning 0)
+                                                 (point-max))))
+                       node-name))
+               ;; Read a sub-element and push it onto CHILDREN.
+               ((= (char-after) ?<)
+                (let ((tag (xml-parse-tag-1 nil xml-ns)))
+                  (when tag
+                    (push tag children))))
+               ;; Read some character data.
+               (t
+                (let ((expansion (xml-parse-string)))
+                  (push (if (stringp (car children))
+                            ;; If two strings were separated by a
+                            ;; comment, concat them.
+                            (concat (pop children) expansion)
+                          expansion)
+                        children)))))
+            ;; Move point past the end-tag.
+            (goto-char (match-end 0))
+            (nreverse children)))
+         ;; Otherwise this was an invalid start tag (expected ">" not found.)
+         (t
+          (error "XML: (Well-Formed) Couldn't parse tag: %s"
+                 (buffer-substring-no-properties (- (point) 10) (+ (point) 1)))))))
+
+     ;; (Not one of PI, CDATA, Comment, End tag, or Start tag)
+     (t
+      (unless xml-sub-parser   ; Usually, we error out.
+        (error "XML: (Well-Formed) Invalid character"))
+      ;; However, if we're parsing incrementally, then we need to deal
+      ;; with stray CDATA.
+      (let ((s (xml-parse-string)))
+        (when (zerop (length s))
+          ;; We haven't consumed any input! We must throw an error in
+          ;; order to prevent looping forever.
+          (error "XML: (Not Well-Formed) Could not parse: %s"
+                 (buffer-substring-no-properties
+                  (point) (min (+ (point) 10) (point-max)))))
+        s)))))
+
+
+;;; Thursday, 12 October 2017, 13:18
+;;; this allows the xml-print to print out comments correctly
+;;;
+(defun xml-debug-print-internal (xml indent-string)
+  "Outputs the XML tree in the current buffer.
+The first line is indented with INDENT-STRING."
+  (let ((tree xml)
+        attlist)
+    (insert indent-string ?< (symbol-name (xml-node-name tree)))
+
+    ;;  output the attribute list
+    (setq attlist (xml-node-attributes tree))
+    (while attlist
+      (insert ?\  (symbol-name (caar attlist)) "=\""
+              (xml-escape-string (cdar attlist)) ?\")
+      (setq attlist (cdr attlist)))
+
+    (setq tree (xml-node-children tree))
+
+    (if (null tree)
+        (insert ?/ ?>)
+      (insert ?>)
+
+      ;;  output the children
+      (dolist (node tree)
+        (cond
+         ((listp node)
+          (cond
+           ((not (car node))
+            (insert (cdr node)))
+           (t
+          (insert ?\n)
+          (xml-debug-print-internal node (concat indent-string "  ")))))
+         ((stringp node)
+          (insert (xml-escape-string node)))
+         (t
+          (error "Invalid XML tree"))))
+
+      (when (not (and (null (cdr tree))
+                      (stringp (car tree))))
+        (insert ?\n indent-string))
+      (insert ?< ?/ (symbol-name (xml-node-name xml)) ?>))))
+
+
 (provide 'dino-utility)
 
 ;;; dino-utility.el ends here
