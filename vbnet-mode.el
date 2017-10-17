@@ -6,11 +6,11 @@
 ;;            : T.K.Anderson
 ;;            : Dino Chiesa <dpchiesa@hotmail.com>
 ;; Created    : April 1996
-;; Modified   : May 2011
-;; Version    : 1.6
+;; Modified   : October 2017
+;; Version    : 1.7
 ;; Keywords   : languages, basic, VB, VBNET
-;; X-URL      : http://code.google.com/p/vbnetmode/
-;; Last-saved : <2011-May-18 01:33:47>
+;; X-URL      :
+;; Last-saved : <2017-October-17 12:03:54>
 
 ;; Copyright (C) 1996 Fred White <fwhite@alum.mit.edu>
 ;; Copyright (C) 1998 Free Software Foundation, Inc.
@@ -397,6 +397,20 @@
 ;;
 ;;      Updated comments on usage.
 ;;
+;; 1.7 DPC changes October 2017
+;;
+;;     Updated regexp for block-start, block-end, and etc, to get
+;;     indentation and fontification to work for this:
+;;
+;;         Module main
+;;             Sub main()
+;;                 Console.WriteLine("Hello World!")
+;;             End Sub
+;;         End Module
+;;
+
+
+
 
 
 ;; Notes by Dave Love
@@ -894,7 +908,7 @@ See `imenu-create-index-function' for more information.
              (consp (car index-alist))
              (let ((tokens (split-string
                             (car (car index-alist))
-                            "[ \t]" t)))
+                            "[[:blank:]]" t)))
                (and (<= 1 (length tokens))
                     (string= (downcase
                               (nth 0 tokens)) "namespace"))))
@@ -968,6 +982,18 @@ See `imenu-create-index-function' for more information.
 (defvar vbnet-mode-hook ())
 
 
+(defvar vbnet--accessibility-regexp1
+  ;; This regex fragment is used in the indentation and font locking. The non-capturing
+  ;; groups denoted with (?:) are important for the operation of font-lock.
+      (concat
+       "\\("
+       "\\(?:"
+       "\\(?:[Pp]ublic\\|[Pp]rivate\\|[Ff]riend\\)[[:blank:]]+"
+       "\\)"
+       "\\(?:[Ss]hared[[:blank:]]+\\)?"
+       "\\)?"
+       ))
+
 ;; Is there a way to case-fold all regexp matches?
 ;; Change KJW Add enum, , change matching from 0 or more to zero or one for public etc.
 
@@ -987,7 +1013,7 @@ See `imenu-create-index-function' for more information.
 
 ;; alist of regexps for various structures in a vbnet file.
 (eval-and-compile
-  (defconst vbnet-regexp-alist
+ (defconst vbnet-regexp-alist
     (list
 
      ;; These elements in the list are used for fontification as well as
@@ -996,39 +1022,39 @@ See `imenu-create-index-function' for more information.
 
      `(block-start  ;; general-purpose block start
        ,(concat
-         "^[ \t]*" ;; leading whitespace
-         "\\([Pp]ublic\\(?: [Ss]hared\\)?\\(?: [Nn]ot[Ii]nheritable\\)?\\|"
-         "[Pp]rivate\\(?: [Ss]hared\\)?\\(?: [Nn]ot[Ii]nheritable\\)?\\|"
-         "[Ff]riend\\(?: [Ss]hared\\)?\\(?: [Nn]ot[Ii]nheritable\\)?\\|"
-         "[Ss]tatic\\)"
-         "[ \t]+"
+         "^[[:blank:]]*" ;; optional leading whitespace
+         vbnet--accessibility-regexp1
          "\\([Ss]ub\\|"
          "[Ff]unction\\|"
          "[Ss]tructure\\|"
+         "[Oo]perator\\|"
+         "[Pp]roperty\\|"
+         "[Ii]nterface\\|"
+         "[Tt]ype\\|"
+         "[Ee]num\\|"
+         "\\(?:[Nn]ot[Ii]nheritable[[:blank:]]+\\)?[Cc]lass\\|"
+         "[Mm]odule\\)"
+         "[[:blank:]]+"
+         "\\([[:alpha:]_][[:alnum:]_.]+\\)" ;; name of thing
+         "[[:blank:]]*"
+         "\(?"  ;; optional open-paren
+         ))
+
+     `(block-end
+       ,(concat
+         "^[[:blank:]]*[Ee]nd[[:blank:]]+"
+         "\\("
+         "[Ss]ub\\|"
+         "[Ff]unction\\|"
+         "[Ss]tructure\\|"
+         "[Oo]perator\\|"
          "[Pp]roperty\\|"
          "[Ii]nterface\\|"
          "[Tt]ype\\|"
          "[Ee]num\\|"
          "[Cc]lass\\|"
          "[Mm]odule\\)"
-         "[ \t]+"
-         "\\([^ \t\(\n]+\\)" ;; name of thing
-         "[ \t]*"
-         "\(?"))  ;; optional open-paren
-
-     `(block-end
-       ,(concat
-         "^[ \t]*[Ee]nd "
-         "\\("
-         "[Ss]ub\\|"
-         "[Ff]unction\\|"
-         "[Ss]tructure\\|"
-         "[Pp]roperty\\|"
-         "[Ii]nterface\\|"
-         "[Tt]ype\\|"
-         "[Ee]num\\|"
-         "[Cc]lass\\|"
-         "[Mm]odule\\)"))
+         ))
 
      `(block-flavor
        ,(concat
@@ -1044,165 +1070,172 @@ See `imenu-create-index-function' for more information.
 
      `(intf-start
        ,(concat
-         "^[ \t]*" ;; leading whitespace
-         "\\([Pp]ublic\\(?: [Ss]hared\\)?\\|"
-         "[Pp]rivate\\(?: [Ss]hared\\)?\\|"
-         "[Ff]riend\\(?: [Ss]hared\\)?\\|"
-         "[Ss]tatic\\)"
-         "[ \t]+"
+         "^[[:blank:]]*" ;; optional leading whitespace
+         "\\("
+         "\\(?:"
+         "[Pp]ublic\\|"
+         "[Pp]rotected\\|"
+         "[Ff]riend\\|"
+         "[Pp]rivate\\|"
+         "[Pp]rotected [Ff]riend"
+         "\\)"
+         "[[:blank:]]+"
+         "\\)"
          "\\([Ii]nterface\\)"
-         "[ \t]+"
-         "\\([^ \t\(\n]+\\)" ;; name of interface
-         "[ \t]*"
+         "[[:blank:]]+"
+         "\\([[:alpha:]_][[:alnum:]_.]+\\)" ;; name of interface
+         "[[:blank:]]*"
          "\(?"))  ;; open-paren
 
-     '(intf-end      "^[ \t]*[Ee]nd +[Ii]nterface")
+     '(intf-end      "^[[:blank:]]*[Ee]nd +[Ii]nterface")
+
+     `(module-start
+       ,(concat
+         "^[[:blank:]]*"
+         "[Mm]odule"
+         "[[:blank:]]+"
+         "\\([[:alpha:]_][[:alnum:]_.]+\\)" ;; name of module
+         ))
+
+     '(module-end      "^[[:blank:]]*[Ee]nd[[:blank:]]+[Mm]odule")
 
      `(func-start
        ,(concat
-         "^[ \t]*" ;; leading whitespace
-         "\\([Pp]ublic\\(?: [Ss]hared\\)?\\|"
-         "[Pp]rivate\\(?: [Ss]hared\\)?\\|"
-         "[Ff]riend\\(?: [Ss]hared\\)?\\|"
-         "[Ss]tatic\\)"
-         "[ \t]+"
+         "^[[:blank:]]*" ;; optional leading whitespace
+         vbnet--accessibility-regexp1
          "\\([Ff]unction\\)"
-         "[ \t]+"
-         "\\([^ \t\(\n]+\\)" ;; name of func
-         "[ \t]*"
+         "[[:blank:]]+"
+         "\\([[:alpha:]_][[:alnum:]_.]+\\)" ;; name of func
+         "[[:blank:]]*"
          "\(?"))  ;; open-paren
 
-     '(func-end      "^[ \t]*[Ee]nd +[Ff]unction")
+     '(func-end      "^[[:blank:]]*[Ee]nd +[Ff]unction")
 
      `(sub-start
        ,(concat
-         "^[ \t]*" ;; leading whitespace
-         "\\([Pp]ublic\\(?: [Ss]hared\\)?\\|"
-         "[Pp]rivate\\(?: [Ss]hared\\)?\\|"
-         "[Ss]tatic\\|"
-         "[Ff]riend\\)"
-         "[ \t]+"
+         "^[[:blank:]]*" ;; optional leading whitespace
+         vbnet--accessibility-regexp1
          "\\([Ss]ub\\)"
-         "[ \t]+"
-         "\\([^ \t\(\n]+\\)" ;; name of sub
-         "[ \t]*"
+         "[[:blank:]]+"
+         "\\([[:alpha:]_][[:alnum:]_.]+\\)" ;; name of sub
+         "[[:blank:]]*"
          "\(?"))  ;; optional open-paren
 
-     '(sub-end      "^[ \t]*[Ee]nd +[Ss]ub")
+     '(sub-end      "^[[:blank:]]*[Ee]nd[[:blank:]]+[Ss]ub")
 
      `(prop-start
        ,(concat
-         "^[ \t]*" ;; leading whitespace
-         "\\([Pp]ublic\\(?: [Ss]hared\\)?[ \t]+\\|"
-         "[Pp]rivate\\(?: [Ss]hared\\)?[ \t]+\\|"
+         "^[[:blank:]]*" ;; leading whitespace
+         "\\([Pp]ublic\\(?: [Ss]hared\\)?[[:blank:]]+\\|"
+         "[Pp]rivate\\(?: [Ss]hared\\)?[[:blank:]]+\\|"
          "\\)"                                   ;; no qualifier at all
          "\\([Pp]roperty\\)"
-         "[ \t]+"
+         "[[:blank:]]+"
          "\\([^ \t\(\n]+\\)" ;; name of prop
          ))
 
-     '(prop-end      "^[ \t]*[Ee]nd +[Pp]roperty")
+     '(prop-end      "^[[:blank:]]*[Ee]nd +[Pp]roperty")
 
      `(class-start
        ,(concat
-         "^[ \t]*" ;; leading whitespace
+         "^[[:blank:]]*" ;; leading whitespace
          "\\([Pp]ublic\\b\\(?: [Ss]hared\\)?\\(?: [Nn]ot[Ii]nheritable\\)?\\|"
          "[Pp]rivate\\b\\(?: [Ss]hared\\)?\\(?: [Nn]ot[Ii]nheritable\\)?\\|"
          "[Ss]tatic\\b\\|"
          "\\)"
-         "[ \t]*"
+         "[[:blank:]]*"
          "\\([Cc]lass\\)"
-         "[ \t]+"
+         "[[:blank:]]+"
          "\\([^ \t\(\n]+\\)" ;; name of class
-         "[ \t]*"))  ;; optional ws
+         "[[:blank:]]*"))  ;; optional ws
 
-     '(class-end      "^[ \t]*[Ee]nd +[Cc]lass")
+     '(class-end      "^[[:blank:]]*[Ee]nd +[Cc]lass")
 
      `(struct-start
        ,(concat
-         "^[ \t]*"
+         "^[[:blank:]]*"
          "\\([Pp]ublic\\(?: [Ss]hared\\)?\\(?: [Nn]ot[Ii]nheritable\\)?\\|"
          "[Pp]rivate\\(?: [Ss]hared\\)?\\(?: [Nn]ot[Ii]nheritable\\)?\\|"
          "[Ff]riend\\(?: [Ss]hared\\)?\\(?: [Nn]ot[Ii]nheritable\\)?\\|"
          "[Ss]tatic\\)"
-         "[ \t]+"
+         "[[:blank:]]+"
          "\\([Ss]tructure\\)"
-         "[ \t]+"
+         "[[:blank:]]+"
          "\\([^ \t\(\n]+\\)" ;; name of struct
-         "[ \t]*"))  ;; optional ws
+         "[[:blank:]]*"))  ;; optional ws
 
-     '(struct-end      "^[ \t]*[Ee]nd +[Ss]tructure")
+     '(struct-end      "^[[:blank:]]*[Ee]nd +[Ss]tructure")
 
      `(enum-start
        ,(concat
-         "^[ \t]*"
+         "^[[:blank:]]*"
          "\\([Pp]ublic\\|"
          "[Pp]rivate\\|"
          "[Ff]riend\\)"
-         "[ \t]+"
+         "[[:blank:]]+"
          "\\([Ee]num\\)"
-         "[ \t]+"
+         "[[:blank:]]+"
          "\\([^ \t\(\n]+\\)" ;; name of enum
-         "\\(?:\\([ \t]+[Aa]s\\)\\([ \t]+[^ \t\(\n]+\\)\\)?" ;; optional base type
-         "[ \t]*"))  ;; optional trailing ws
+         "\\(?:\\([[:blank:]]+[Aa]s\\)\\([[:blank:]]+[^ \t\(\n]+\\)\\)?" ;; optional base type
+         "[[:blank:]]*"))  ;; optional trailing ws
 
-     '(enum-end      "^[ \t]*[Ee]nd +[Ee]num")
+     '(enum-end      "^[[:blank:]]*[Ee]nd +[Ee]num")
 
      `(namespace-start
        ,(concat
-         "^[ \t]*"
+         "^[[:blank:]]*"
          "\\([Nn]amespace\\)"
-         "[ \t]+"
+         "[[:blank:]]+"
          "\\([^ \t\(\n]+\\)" ;; name of ns
-         "[ \t]*"))
+         "[[:blank:]]*"))
 
-     '(namespace-end   "^[ \t]*[Ee]nd[ \t]+[Nn]amespace\\b")
+     '(namespace-end   "^[[:blank:]]*[Ee]nd[[:blank:]]+[Nn]amespace\\b")
 
-     '(if              "^[ \t]*#?\\([Ii]f\\)[ \t]+.*[ \t_]+")
-     '(ifthen          "^[ \t]*#?\\([Ii]f\\)\\b.+\\<[Tt]hen\\>\\s-\\S-+")
-     '(else            "^[ \t]*#?[Ee]lse\\([Ii]f\\)?")
-     '(endif           "[ \t]*#?[Ee]nd[ \t]*[Ii]f")
-     '(end-of-attr-and-continuation    "^.*>[ \t]+_[ \t]*$")
-     '(continuation    "^.* _[ \t]*$")
-     '(label           "^[ \t]*[a-zA-Z0-9_]+:$")
-     '(select          "^[ \t]*\\([Ss]elect\\)[ \t]+[Cc]ase")
-     '(case            "^[ \t]*[Cc]ase")
-     '(select-end      "^[ \t]*[Ee]nd[ \t]+[Ss]elect")
-     '(for             "^[ \t]*[Ff]or\\b")
-     '(next            "^[ \t]*[Nn]ext\\b")
-     '(do              "^[ \t]*[Dd]o\\b")
-     '(loop            "^[ \t]*[Ll]oop\\b")
-     '(while           "^[ \t]*\\([Ww]hile\\)\\b")
-     '(end-while       "^[ \t]*[Ee]nd[ \t]+[Ww]hile\\b")
-     '(wend            "^[ \t]*[Ww]end\\b")
-     '(with            "^[ \t]*\\([Ww]ith\\)\\b")
-     '(end-with        "^[ \t]*[Ee]nd[ \t]+[Ww]ith\\b")
-     '(try             "^[ \t]*\\([Tr]ry\\)\\b")
-     '(catch           "^[ \t]*[Cc]atch\\b")
-     '(finally         "^[ \t]*[Ff]inally\\b")
-     '(end-try         "^[ \t]*[Ee]nd[ \t]+[Tt]ry\\b")
-     '(class           "^[ \t]*[Cc]lass\\b")
-     '(end-class       "^[ \t]*[Ee]nd[ \t]+[Cc]lass\\b")
-     '(module          "^[ \t]*[Mm]odule\\b")
-     '(end-module      "^[ \t]*[Ee]nd[ \t]+[Mm]odule\\b")
-     '(using           "^[ \t]*\\([Uu]sing\\)\\b")
-     '(end-using       "^[ \t]*[Ee]nd[ \t]+[Uu]sing\\b")
-     '(blank           "^[ \t]*$")
-     '(comment         "^[ \t]*\\s<.*$")
+     '(if              "^[[:blank:]]*#?\\([Ii]f\\)[[:blank:]]+.*[ \t_]+")
+     '(ifthen          "^[[:blank:]]*#?\\([Ii]f\\)\\b.+\\<[Tt]hen\\>\\s-\\S-+")
+     '(else            "^[[:blank:]]*#?[Ee]lse\\([Ii]f\\)?")
+     '(endif           "[[:blank:]]*#?[Ee]nd[[:blank:]]*[Ii]f")
+     '(end-of-attr-and-continuation    "^.*>[[:blank:]]+_[[:blank:]]*$")
+     '(continuation    "^.* _[[:blank:]]*$")
+     '(label           "^[[:blank:]]*[a-zA-Z0-9_]+:$")
+     '(select          "^[[:blank:]]*\\([Ss]elect\\)[[:blank:]]+[Cc]ase")
+     '(case            "^[[:blank:]]*[Cc]ase")
+     '(select-end      "^[[:blank:]]*[Ee]nd[[:blank:]]+[Ss]elect")
+     '(for             "^[[:blank:]]*[Ff]or\\b")
+     '(next            "^[[:blank:]]*[Nn]ext\\b")
+     '(do              "^[[:blank:]]*[Dd]o\\b")
+     '(loop            "^[[:blank:]]*[Ll]oop\\b")
+     '(while           "^[[:blank:]]*\\([Ww]hile\\)\\b")
+     '(end-while       "^[[:blank:]]*[Ee]nd[[:blank:]]+[Ww]hile\\b")
+     '(wend            "^[[:blank:]]*[Ww]end\\b")
+     '(with            "^[[:blank:]]*\\([Ww]ith\\)\\b")
+     '(end-with        "^[[:blank:]]*[Ee]nd[[:blank:]]+[Ww]ith\\b")
+     '(try             "^[[:blank:]]*\\([Tr]ry\\)\\b")
+     '(catch           "^[[:blank:]]*[Cc]atch\\b")
+     '(finally         "^[[:blank:]]*[Ff]inally\\b")
+     '(end-try         "^[[:blank:]]*[Ee]nd[[:blank:]]+[Tt]ry\\b")
+     '(class           "^[[:blank:]]*[Cc]lass\\b")
+     '(end-class       "^[[:blank:]]*[Ee]nd[[:blank:]]+[Cc]lass\\b")
+     '(module          "^[[:blank:]]*[Mm]odule\\b")
+     '(end-module      "^[[:blank:]]*[Ee]nd[[:blank:]]+[Mm]odule\\b")
+     '(using           "^[[:blank:]]*\\([Uu]sing\\)\\b")
+     '(end-using       "^[[:blank:]]*[Ee]nd[[:blank:]]+[Uu]sing\\b")
+     '(blank           "^[[:blank:]]*$")
+     '(comment         "^[[:blank:]]*\\s<.*$")
 
-     '(propget-start   "^[ \t]*\\([Gg]et\\)[ \t]*$")
-     '(propget-end     "^[ \t]*[Ee]nd[ \t]+[Gg]et\\b")
+     '(propget-start   "^[[:blank:]]*\\([Gg]et\\)[[:blank:]]*$")
+     '(propget-end     "^[[:blank:]]*[Ee]nd[[:blank:]]+[Gg]et\\b")
 
-     '(propset-start   "^[ \t]*\\([Ss]et\\)[ \t]*(")
-     '(propset-end     "^[ \t]*[Ee]nd[ \t]+[Ss]et\\b")
+     '(propset-start   "^[[:blank:]]*\\([Ss]et\\)[[:blank:]]*(")
+     '(propset-end     "^[[:blank:]]*[Ee]nd[[:blank:]]+[Ss]et\\b")
 
 
      ;; =======================================================
      ;; the following elements are used for fontification, only.
 
-     '(funcall         "\\b\\([[:alpha:]_][[:alnum:]_.]+\\)[ \t]*(")
+     '(funcall         "\\b\\([[:alpha:]_][[:alnum:]_.]+\\)[[:blank:]]*(")
 
-     '(import          "^[ \t]*[Ii]mports[ \t]+\\([[:alpha:]_][[:alnum:]_.]+\\)[ \t]*$")
+     '(import          "^[[:blank:]]*[Ii]mports[[:blank:]]+\\([[:alpha:]_][[:alnum:]_.]+\\)[[:blank:]]*$")
 
      ;; Some of these regexps match on partial lines.
      ;; The Dim regexp is one example.  This allows the AS fragment and
@@ -1212,17 +1245,17 @@ See `imenu-create-index-function' for more information.
      `(field         ;; Public foo As Integer
        ,(concat
          "\\(?:[Pp]ublic\\|[Pp]rivate\\|[Ff]riend\\)"
-         "[ \t]+"                            ;; ws
+         "[[:blank:]]+"                            ;; ws
          "\\([^- \t\(]+\\)"                  ;; name of field
-         "[ \t]+"                            ;; ws
-         "\\([Aa]s\\)\\([ \t]+[^- \t\(\n]+\\)" ;; type decl
-         "[ \t]*"                            ;; optional trailing ws
+         "[[:blank:]]+"                            ;; ws
+         "\\([Aa]s\\)\\([[:blank:]]+[^- \t\(\n]+\\)" ;; type decl
+         "[[:blank:]]*"                            ;; optional trailing ws
          ))
 
      `(dim            ;; Dim X
        ,(concat
-         "^[ \t]*"
-         "[Dd]im[ \t]+"
+         "^[[:blank:]]*"
+         "[Dd]im[[:blank:]]+"
          "\\([[:alpha:]_][[:alnum:]_]+\\)"
          "\\(?:([^)]*)\\)?"       ;; optional array dimension (no capture)
          ))
@@ -1230,37 +1263,37 @@ See `imenu-create-index-function' for more information.
      `(as             ;; As X  ||   As New X
        ;; The As keyword may appear in a func/sub argument list or in a Dim
        ,(concat
-         "[ \t]+[Aa]s"
-         "\\(?:[ \t]+[Nn]ew\\)?"  ;; optional New keyword (no capture)
-         "[ \t]+\\([-A-Za-z.0-9_]+\\)"))
+         "[[:blank:]]+[Aa]s"
+         "\\(?:[[:blank:]]+[Nn]ew\\)?"  ;; optional New keyword (no capture)
+         "[[:blank:]]+\\([-A-Za-z.0-9_]+\\)"))
 
      `(assign            ;; x = foo
        ;; partial match, leave point after equals sign
        ,(concat
-         "^[ \t]*"
+         "^[[:blank:]]*"
          "\\("
          "[[:alpha:]_][[:alnum:]_.]+\\|" ;; variable name
          "\\[[[:alpha:]_][[:alnum:]_.]+\\]" ;; var name in square brackets (for resvd words)
          "\\)"
-         "[ \t]*"                 ;; optional ws
+         "[[:blank:]]*"                 ;; optional ws
          "\\(?:([^)]*)\\)?"       ;; optional array dimension (no capture)
-         "[ \t]*"                 ;; optional ws
+         "[[:blank:]]*"                 ;; optional ws
          "="
-         "[ \t]*"                 ;; optional white space
+         "[[:blank:]]*"                 ;; optional white space
          ))
 
      `(using-simple       ;; Using x
        ;; partial match on Using statement, up to and including the variable
        ,(concat
-         "^[ \t]*"
-         "[Uu]sing[ \t]+"
+         "^[[:blank:]]*"
+         "[Uu]sing[[:blank:]]+"
          "\\([[:alpha:]_][[:alnum:]_.]+\\)"  ;; variable name
-         "[ \t]*"))
+         "[[:blank:]]*"))
 
      `(new         ;; New foo()
        ,(concat
-         "[ \t]*"
-         "[Nn]ew[ \t]+"                     ;; New keyword (no capture)
+         "[[:blank:]]*"
+         "[Nn]ew[[:blank:]]+"                     ;; New keyword (no capture)
          "\\([[:alpha:]_][[:alnum:]_.]+\\)" ;; constructor
          ))
 
@@ -1406,9 +1439,9 @@ in VB.NET buffers.")
 
      ;; sub declaration
      (list (vbnet-regexp 'sub-start)
-           '(1 font-lock-keyword-face nil t)
-           '(2 font-lock-keyword-face nil t)
-           '(3 font-lock-function-name-face))
+           '(1 font-lock-keyword-face nil t)  ;; modifiers
+           '(2 font-lock-keyword-face nil t)  ;; "Sub"
+           '(3 font-lock-function-name-face)) ;; name of sub
 
      ;; class decl
      (list (vbnet-regexp 'class-start)
@@ -1451,7 +1484,7 @@ in VB.NET buffers.")
 
      ;; Case values
      ;; String-valued cases get font-lock-string-face regardless.
-     (list "^[ \t]*case[ \t]+\\([^'\n]+\\)" 1 'font-lock-keyword-face t)
+     (list "^[[:blank:]]*case[[:blank:]]+\\([^'\n]+\\)" 1 'font-lock-keyword-face t)
 
      ;; Any keywords you like.
      (list (concat "\\<" (regexp-opt
@@ -1864,7 +1897,7 @@ If the original point is not within a Function or Sub, returns nil.
   (interactive)
   (save-excursion
     (beginning-of-line)
-    (let ((comment-re "^[ \t]*\\s<+[ \t]*"))
+    (let ((comment-re "^[[:blank:]]*\\s<+[[:blank:]]*"))
       (if (looking-at comment-re)
           (let ((fill-prefix
                  (buffer-substring
@@ -2117,7 +2150,7 @@ Indent continuation lines according to some rules.
              ;; Else, after first word on original line.
              (back-to-indentation)
              (forward-word 1)
-             (while (looking-at "[ \t]")
+             (while (looking-at "[[:blank:]]")
                (forward-char 1))
              (current-column))))))))
 
@@ -2190,6 +2223,11 @@ Indent continuation lines according to some rules.
        ((looking-at (vbnet-regexp 'sub-end))
         (vbnet-find-matching-stmt (vbnet-regexp 'sub-start)
                                   (vbnet-regexp 'sub-end))
+        (current-indentation))
+
+       ((looking-at (vbnet-regexp 'module-end))
+        (vbnet-find-matching-stmt (vbnet-regexp 'module-start)
+                                  (vbnet-regexp 'module-end))
         (current-indentation))
 
        ;; The outdenting stmts, which simply match their original.
@@ -2711,7 +2749,7 @@ string is found at the top of the buffer:
       (save-restriction
         (widen)
         (let ((re-string
-               (concat "\\b" marker-string "[ \t]*:[ \t]*\\(.+\\)$")))
+               (concat "\\b" marker-string "[[:blank:]]*:[[:blank:]]*\\(.+\\)$")))
           (if (and start
                    (< (goto-char start) search-limit)
                    (re-search-forward re-string search-limit 'move))
@@ -2799,7 +2837,7 @@ It burps if a different /t argument is found.
 
 
 (defvar vbnet-flymake-vbc-error-pattern
-  "^[ \t]*\\([_A-Za-z0-9][^(]+\\.[Vv][Bb]\\)(\\([0-9]+\\)) : \\(\\(error\\|warning\\) BC[0-9]+:[ \t\n]*\\(.+\\)\\)"
+  "^[[:blank:]]*\\([_A-Za-z0-9][^(]+\\.[Vv][Bb]\\)(\\([0-9]+\\)) : \\(\\(error\\|warning\\) BC[0-9]+:[ \t\n]*\\(.+\\)\\)"
 
   "Regexp to find error messages in the output of VBC.exe. Used for Flymake integration.")
 
@@ -3011,7 +3049,7 @@ ctrl-e.
             ;; VBC.exe example compiler error message:
             ;; c:\dev\dotnet\test\Module.vb(25) : error BC30451: Name 'arf' is not declared.
             '(msvbc
-              "^[ \t]*\\([-_A-Za-z0-9][^\n(]*\\.vb\\)(\\([0-9]+\\)) ?: +\\(error\\|warning\\) BC[0-9]+:"
+              "^[[:blank:]]*\\([-_A-Za-z0-9][^\n(]*\\.vb\\)(\\([0-9]+\\)) ?: +\\(error\\|warning\\) BC[0-9]+:"
               1 2 nil)))
        (add-to-list 'compilation-error-regexp-alist-alist e1)
        (add-to-list 'compilation-error-regexp-alist (car e1)))))
@@ -3156,5 +3194,3 @@ Here's a summary of the key bindings:
 (provide 'vbnet-mode)
 
 ;;; vbnet-mode.el ends here
-
-
