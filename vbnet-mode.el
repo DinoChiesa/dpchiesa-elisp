@@ -7,10 +7,10 @@
 ;;            : Dino Chiesa <dpchiesa@hotmail.com>
 ;; Created    : April 1996
 ;; Modified   : October 2017
-;; Version    : 1.7
+;; Version    : 1.7.1
 ;; Keywords   : languages, basic, VB, VBNET
 ;; X-URL      :
-;; Last-saved : <2017-October-17 12:03:54>
+;; Last-saved : <2017-October-17 15:09:28>
 
 ;; Copyright (C) 1996 Fred White <fwhite@alum.mit.edu>
 ;; Copyright (C) 1998 Free Software Foundation, Inc.
@@ -397,9 +397,9 @@
 ;;
 ;;      Updated comments on usage.
 ;;
-;; 1.7 DPC changes October 2017
+;; 1.7.1 DPC changes October 2017
 ;;
-;;     Updated regexp for block-start, block-end, and etc, to get
+;;     Update regexp for block-start, block-end, and etc, to get
 ;;     indentation and fontification to work for this:
 ;;
 ;;         Module main
@@ -407,6 +407,9 @@
 ;;                 Console.WriteLine("Hello World!")
 ;;             End Sub
 ;;         End Module
+;;
+;;     Update regexp for assign to capture array dimensions and not match on if clauses.
+;;     Include regexp for for-fragment to fontify the variable.
 ;;
 
 
@@ -981,18 +984,52 @@ See `imenu-create-index-function' for more information.
 
 (defvar vbnet-mode-hook ())
 
+(defconst vbnet--symbol-or-constant-regexp
+  (concat
+   "\\(?:"
+   "[[:blank:]]*"
+   "\\(?:"
+   "[[:alpha:]_][[:alnum:]_.]*"  ;; symbol
+   "\\|"
+   "[[:digit:]]+"                ;; decimal constant
+   "\\|"
+   "&H[[:xdigit:]]+"             ;; hexadecimal constant
+   "\\)"
+   "[[:blank:]]*"
+   "\\)"
+   ))
 
-(defvar vbnet--accessibility-regexp1
+
+(defconst vbnet--optional-array-dimension-regexp           ;; array specifier, one or more dimensions, no capture
+  (concat
+   "\\(?:"
+   "("
+   vbnet--symbol-or-constant-regexp
+   "\\(?:"
+   ","
+   vbnet--symbol-or-constant-regexp
+   "\\)*"
+   ")"
+   "\\)?"
+   )
+  )
+
+(defconst vbnet--capturing-symbol-name-regexp
+  "\\([[:alpha:]_][[:alnum:]_.]*\\)"
+  )
+
+(defconst vbnet--accessibility-regexp1
   ;; This regex fragment is used in the indentation and font locking. The non-capturing
   ;; groups denoted with (?:) are important for the operation of font-lock.
-      (concat
-       "\\("
-       "\\(?:"
-       "\\(?:[Pp]ublic\\|[Pp]rivate\\|[Ff]riend\\)[[:blank:]]+"
-       "\\)"
-       "\\(?:[Ss]hared[[:blank:]]+\\)?"
-       "\\)?"
-       ))
+  (concat
+   "\\("
+   "\\(?:"
+   "\\(?:[Pp]ublic\\|[Pp]rivate\\|[Ff]riend\\)[[:blank:]]+"
+   "\\)"
+   "\\(?:[Ss]hared[[:blank:]]+\\)?"
+   "\\)?"
+   ))
+
 
 ;; Is there a way to case-fold all regexp matches?
 ;; Change KJW Add enum, , change matching from 0 or more to zero or one for public etc.
@@ -1020,9 +1057,9 @@ See `imenu-create-index-function' for more information.
      ;; indenting. The former is delegated to font-lock.el, while the
      ;; latter is done directly by this mode.
 
-     `(block-start  ;; general-purpose block start
+     `(block-start                                                       ;; general-purpose block start
        ,(concat
-         "^[[:blank:]]*" ;; optional leading whitespace
+         "^[[:blank:]]*"                                                 ;; optional leading whitespace
          vbnet--accessibility-regexp1
          "\\([Ss]ub\\|"
          "[Ff]unction\\|"
@@ -1035,9 +1072,9 @@ See `imenu-create-index-function' for more information.
          "\\(?:[Nn]ot[Ii]nheritable[[:blank:]]+\\)?[Cc]lass\\|"
          "[Mm]odule\\)"
          "[[:blank:]]+"
-         "\\([[:alpha:]_][[:alnum:]_.]+\\)" ;; name of thing
+         vbnet--capturing-symbol-name-regexp
          "[[:blank:]]*"
-         "\(?"  ;; optional open-paren
+         "\(?"                                                           ;; optional open-paren
          ))
 
      `(block-end
@@ -1070,7 +1107,7 @@ See `imenu-create-index-function' for more information.
 
      `(intf-start
        ,(concat
-         "^[[:blank:]]*" ;; optional leading whitespace
+         "^[[:blank:]]*"                                                 ;; optional leading whitespace
          "\\("
          "\\(?:"
          "[Pp]ublic\\|"
@@ -1083,9 +1120,9 @@ See `imenu-create-index-function' for more information.
          "\\)"
          "\\([Ii]nterface\\)"
          "[[:blank:]]+"
-         "\\([[:alpha:]_][[:alnum:]_.]+\\)" ;; name of interface
+         vbnet--capturing-symbol-name-regexp
          "[[:blank:]]*"
-         "\(?"))  ;; open-paren
+         "\(?"))                                                         ;; open-paren
 
      '(intf-end      "^[[:blank:]]*[Ee]nd +[Ii]nterface")
 
@@ -1094,51 +1131,63 @@ See `imenu-create-index-function' for more information.
          "^[[:blank:]]*"
          "[Mm]odule"
          "[[:blank:]]+"
-         "\\([[:alpha:]_][[:alnum:]_.]+\\)" ;; name of module
+         vbnet--capturing-symbol-name-regexp
          ))
 
      '(module-end      "^[[:blank:]]*[Ee]nd[[:blank:]]+[Mm]odule")
 
+     `(operator-start
+       ,(concat
+         "^[[:blank:]]*"                                                 ;; optional leading whitespace
+         vbnet--accessibility-regexp1
+         "\\([Oo]perator\\)"
+         "[[:blank:]]+"
+         vbnet--capturing-symbol-name-regexp
+         "[[:blank:]]*"
+         "\(?"))                                                         ;; open-paren
+
+     '(operator-end      "^[[:blank:]]*[Ee]nd +[Oo]perator")
+
      `(func-start
        ,(concat
-         "^[[:blank:]]*" ;; optional leading whitespace
+         "^[[:blank:]]*"                                                 ;; optional leading whitespace
          vbnet--accessibility-regexp1
          "\\([Ff]unction\\)"
          "[[:blank:]]+"
-         "\\([[:alpha:]_][[:alnum:]_.]+\\)" ;; name of func
+         vbnet--capturing-symbol-name-regexp                             ;; name of func
          "[[:blank:]]*"
-         "\(?"))  ;; open-paren
+         "\(?"))                                                         ;; open-paren
 
      '(func-end      "^[[:blank:]]*[Ee]nd +[Ff]unction")
 
      `(sub-start
        ,(concat
-         "^[[:blank:]]*" ;; optional leading whitespace
+         "^[[:blank:]]*"                                                 ;; optional leading whitespace
          vbnet--accessibility-regexp1
          "\\([Ss]ub\\)"
          "[[:blank:]]+"
-         "\\([[:alpha:]_][[:alnum:]_.]+\\)" ;; name of sub
+         vbnet--capturing-symbol-name-regexp
          "[[:blank:]]*"
-         "\(?"))  ;; optional open-paren
+         "\(?"))                                                         ;; optional open-paren
 
      '(sub-end      "^[[:blank:]]*[Ee]nd[[:blank:]]+[Ss]ub")
 
      `(prop-start
        ,(concat
-         "^[[:blank:]]*" ;; leading whitespace
+         "^[[:blank:]]*"                                                 ;; leading whitespace
          "\\([Pp]ublic\\(?: [Ss]hared\\)?[[:blank:]]+\\|"
          "[Pp]rivate\\(?: [Ss]hared\\)?[[:blank:]]+\\|"
-         "\\)"                                   ;; no qualifier at all
+         "\\)"                                                           ;; no qualifier at all
          "\\([Pp]roperty\\)"
          "[[:blank:]]+"
-         "\\([^ \t\(\n]+\\)" ;; name of prop
+         vbnet--capturing-symbol-name-regexp
          ))
 
      '(prop-end      "^[[:blank:]]*[Ee]nd +[Pp]roperty")
 
      `(class-start
        ,(concat
-         "^[[:blank:]]*" ;; leading whitespace
+         "^[[:blank:]]*"                                                 ;; leading whitespace
          "\\([Pp]ublic\\b\\(?: [Ss]hared\\)?\\(?: [Nn]ot[Ii]nheritable\\)?\\|"
          "[Pp]rivate\\b\\(?: [Ss]hared\\)?\\(?: [Nn]ot[Ii]nheritable\\)?\\|"
          "[Ss]tatic\\b\\|"
@@ -1146,8 +1195,8 @@ See `imenu-create-index-function' for more information.
          "[[:blank:]]*"
          "\\([Cc]lass\\)"
          "[[:blank:]]+"
-         "\\([^ \t\(\n]+\\)" ;; name of class
-         "[[:blank:]]*"))  ;; optional ws
+         vbnet--capturing-symbol-name-regexp
+         "[[:blank:]]*"))                                                ;; optional ws
 
      '(class-end      "^[[:blank:]]*[Ee]nd +[Cc]lass")
 
@@ -1161,8 +1210,8 @@ See `imenu-create-index-function' for more information.
          "[[:blank:]]+"
          "\\([Ss]tructure\\)"
          "[[:blank:]]+"
-         "\\([^ \t\(\n]+\\)" ;; name of struct
-         "[[:blank:]]*"))  ;; optional ws
+         vbnet--capturing-symbol-name-regexp
+         "[[:blank:]]*"))                                                ;; optional ws
 
      '(struct-end      "^[[:blank:]]*[Ee]nd +[Ss]tructure")
 
@@ -1175,9 +1224,9 @@ See `imenu-create-index-function' for more information.
          "[[:blank:]]+"
          "\\([Ee]num\\)"
          "[[:blank:]]+"
-         "\\([^ \t\(\n]+\\)" ;; name of enum
+         vbnet--capturing-symbol-name-regexp
          "\\(?:\\([[:blank:]]+[Aa]s\\)\\([[:blank:]]+[^ \t\(\n]+\\)\\)?" ;; optional base type
-         "[[:blank:]]*"))  ;; optional trailing ws
+         "[[:blank:]]*"))                                                ;; optional trailing ws
 
      '(enum-end      "^[[:blank:]]*[Ee]nd +[Ee]num")
 
@@ -1186,7 +1235,7 @@ See `imenu-create-index-function' for more information.
          "^[[:blank:]]*"
          "\\([Nn]amespace\\)"
          "[[:blank:]]+"
-         "\\([^ \t\(\n]+\\)" ;; name of ns
+         vbnet--capturing-symbol-name-regexp
          "[[:blank:]]*"))
 
      '(namespace-end   "^[[:blank:]]*[Ee]nd[[:blank:]]+[Nn]amespace\\b")
@@ -1216,8 +1265,8 @@ See `imenu-create-index-function' for more information.
      '(end-try         "^[[:blank:]]*[Ee]nd[[:blank:]]+[Tt]ry\\b")
      '(class           "^[[:blank:]]*[Cc]lass\\b")
      '(end-class       "^[[:blank:]]*[Ee]nd[[:blank:]]+[Cc]lass\\b")
-     '(module          "^[[:blank:]]*[Mm]odule\\b")
-     '(end-module      "^[[:blank:]]*[Ee]nd[[:blank:]]+[Mm]odule\\b")
+     ;;'(module          "^[[:blank:]]*[Mm]odule\\b")
+     ;;'(end-module      "^[[:blank:]]*[Ee]nd[[:blank:]]+[Mm]odule\\b")
      '(using           "^[[:blank:]]*\\([Uu]sing\\)\\b")
      '(end-using       "^[[:blank:]]*[Ee]nd[[:blank:]]+[Uu]sing\\b")
      '(blank           "^[[:blank:]]*$")
@@ -1242,62 +1291,87 @@ See `imenu-create-index-function' for more information.
      ;; its following typename to be fontified independently.
 
 
-     `(field         ;; Public foo As Integer
+     `(field                                         ;; Public foo As Integer
        ,(concat
          "\\(?:[Pp]ublic\\|[Pp]rivate\\|[Ff]riend\\)"
-         "[[:blank:]]+"                            ;; ws
-         "\\([^- \t\(]+\\)"                  ;; name of field
-         "[[:blank:]]+"                            ;; ws
+         "[[:blank:]]+"                              ;; ws
+         "\\([^- \t\(]+\\)"                          ;; name of field
+         "[[:blank:]]+"                              ;; ws
          "\\([Aa]s\\)\\([[:blank:]]+[^- \t\(\n]+\\)" ;; type decl
-         "[[:blank:]]*"                            ;; optional trailing ws
+         "[[:blank:]]*"                              ;; optional trailing ws
          ))
 
-     `(dim            ;; Dim X
+     `(dim                                           ;; Dim X
        ,(concat
          "^[[:blank:]]*"
-         "[Dd]im[[:blank:]]+"
-         "\\([[:alpha:]_][[:alnum:]_]+\\)"
-         "\\(?:([^)]*)\\)?"       ;; optional array dimension (no capture)
+         "[Dd]im"
+         "[[:blank:]]+"
+         vbnet--capturing-symbol-name-regexp         ;; variable name
+         "[[:blank:]]*"                              ;;
+         vbnet--optional-array-dimension-regexp      ;; optional array dimension
          ))
 
-     `(as             ;; As X  ||   As New X
-       ;; The As keyword may appear in a func/sub argument list or in a Dim
+     `(as                                            ;; As X  ||   As New X
+                                                     ;; The As keyword may appear in a func/sub argument list or in a Dim
        ,(concat
          "[[:blank:]]+[Aa]s"
-         "\\(?:[[:blank:]]+[Nn]ew\\)?"  ;; optional New keyword (no capture)
-         "[[:blank:]]+\\([-A-Za-z.0-9_]+\\)"))
+         "\\(?:[[:blank:]]+[Nn]ew\\)?"               ;; optional New keyword (no capture)
+         "[[:blank:]]+"
+         vbnet--capturing-symbol-name-regexp         ;; type name.  previous regex was: "\\([-A-Za-z.0-9_]+\\)"
+         ))
 
-     `(assign            ;; x = foo
-       ;; partial match, leave point after equals sign
+     `(assign                                        ;; x = foo
+                                                     ;; x(17) = foo
+                                                     ;; partial match, leave point after equals sign
        ,(concat
          "^[[:blank:]]*"
          "\\("
-         "[[:alpha:]_][[:alnum:]_.]+\\|" ;; variable name
-         "\\[[[:alpha:]_][[:alnum:]_.]+\\]" ;; var name in square brackets (for resvd words)
+         "[[:alpha:]_][[:alnum:]_.]*\\|"             ;; regular variable name
+         "\\[[[:alpha:]_][[:alnum:]_.]*\\]"          ;; name in square brackets (for resvd words)
          "\\)"
-         "[[:blank:]]*"                 ;; optional ws
-         "\\(?:([^)]*)\\)?"       ;; optional array dimension (no capture)
-         "[[:blank:]]*"                 ;; optional ws
+         "[[:blank:]]*"                              ;; optional ws
+         vbnet--optional-array-dimension-regexp      ;; optional array dimension
+         "[[:blank:]]*"                              ;; optional ws
          "="
-         "[[:blank:]]*"                 ;; optional white space
+         "[[:blank:]]*"                              ;; optional white space
          ))
 
-     `(using-simple       ;; Using x
-       ;; partial match on Using statement, up to and including the variable
+     `(using-simple                                  ;; Using x
+                                                     ;; partial match on Using statement, up to and including the variable
        ,(concat
          "^[[:blank:]]*"
          "[Uu]sing[[:blank:]]+"
-         "\\([[:alpha:]_][[:alnum:]_.]+\\)"  ;; variable name
+         vbnet--capturing-symbol-name-regexp         ;; variable name
          "[[:blank:]]*"))
 
-     `(new         ;; New foo()
+     `(new                                           ;; New foo()
        ,(concat
          "[[:blank:]]*"
-         "[Nn]ew[[:blank:]]+"                     ;; New keyword (no capture)
-         "\\([[:alpha:]_][[:alnum:]_.]+\\)" ;; constructor
+         "[Nn]ew[[:blank:]]+"                        ;; New keyword (no capture)
+         vbnet--capturing-symbol-name-regexp         ;; constructor
          ))
 
-     `(constant   "\\(\\b\\(?:[1-9][0-9.]*\\|[0-9]\\)\\b\\|&H[0-9A-F]+\\)")
+     `(rem-comment                                   ;; REM whatever
+       ,(concat
+         "[[:blank:]]*"
+         "\\("
+         "[Rr][Ee][Mm]"                              ;; REM keyword
+         "\\)"
+         "\\("                                       ;; everything that follows
+         "[[:blank:]]+"
+         ".*"
+         "\\)?"
+         ))
+
+     `(for-fragment                                  ;; For x [As Xxx] = start to end [ Step x ]
+       ,(concat
+         "^[[:blank:]]*"
+         "\\([Ff][Oo][Rr]\\)"
+         "[[:blank:]]+"
+         vbnet--capturing-symbol-name-regexp         ;; variable name
+         ))
+
+     `(constant   "\\(\\b\\(?:[1-9][0-9.]*\\|[0-9]\\)\\b\\|&H[0-9A-F]+\\|\\<[Tt][Rr][Uu][Ee]\\>\\|\\<[Ff][Aa][Ll][Ss][Ee]\\>\\)")
 
      )))
 
@@ -1400,6 +1474,10 @@ in VB.NET buffers.")
 (defvar vbnet-font-lock-keywords-1
   (eval-when-compile
     (list
+     (list (vbnet-regexp 'rem-comment)
+           '(1 font-lock-comment-face nil t)
+           '(2 font-lock-comment-face nil t))
+
      ;; constant numeric values
      (list (vbnet-regexp 'constant)
            '(1 font-lock-constant-face nil t))
@@ -1412,6 +1490,18 @@ in VB.NET buffers.")
      (list (vbnet-regexp 'new)
            '(1 font-lock-type-face))
 
+     ;; ;; for statements with As
+     ;; (list (vbnet-regexp 'for-loop-as)
+     ;;       '(1 font-lock-keyword-name-face )
+     ;;       '(2 font-lock-variable-name-face)
+     ;;       '(3 font-lock-keyword-name-face )
+     ;;       '(4 font-lock-type-face ))
+     ;;
+     ;; ;; for statements
+     ;; (list (vbnet-regexp 'for-loop)
+     ;;       '(1 font-lock-keyword-name-face )
+     ;;       '(2 font-lock-variable-name-face ))
+
      ;; Dim statements
      (list (vbnet-regexp 'dim)
            '(1 font-lock-variable-name-face)
@@ -1423,6 +1513,11 @@ in VB.NET buffers.")
            '(2 font-lock-keyword-face nil t)
            '(3 font-lock-type-face nil t))
 
+     ;; For fragment
+     (list (vbnet-regexp 'for-fragment)
+           '(1 font-lock-keyword-face )
+           '(2 font-lock-variable-name-face ))
+
      ;; As fragment
      (list (vbnet-regexp 'as)
            '(1 font-lock-type-face nil t))
@@ -1433,6 +1528,12 @@ in VB.NET buffers.")
 
      ;; function declarations
      (list (vbnet-regexp 'func-start)
+           '(1 font-lock-keyword-face nil t)
+           '(2 font-lock-keyword-face nil t)
+           '(3 font-lock-function-name-face))
+
+     ;; operator declarations
+     (list (vbnet-regexp 'operator-start)
            '(1 font-lock-keyword-face nil t)
            '(2 font-lock-keyword-face nil t)
            '(3 font-lock-function-name-face))
@@ -1468,6 +1569,12 @@ in VB.NET buffers.")
            '(1 font-lock-keyword-face nil t)
            '(2 vbnet-namespace-face))
 
+     ;; Any keywords you like.
+     (list (concat "\\<"
+                   (regexp-opt '("Dim" "If" "Then" "Else" "ElseIf" "End If") t)
+                   "\\>")
+           1 'font-lock-keyword-face)
+
      ;; function call - must be placed after the entries for using statements,
      ;; func decls, and sub decls
      (list (vbnet-regexp 'funcall)
@@ -1486,11 +1593,7 @@ in VB.NET buffers.")
      ;; String-valued cases get font-lock-string-face regardless.
      (list "^[[:blank:]]*case[[:blank:]]+\\([^'\n]+\\)" 1 'font-lock-keyword-face t)
 
-     ;; Any keywords you like.
-     (list (concat "\\<" (regexp-opt
-                          '("Dim" "If" "Then" "Else" "ElseIf" "End If") t)
-                   "\\>")
-           1 'font-lock-keyword-face))))
+     )))
 
 
 (defvar vbnet-font-lock-keywords-2
@@ -2319,7 +2422,7 @@ Indent continuation lines according to some rules.
                   (looking-at (vbnet-regexp 'namespace-start))
                   (looking-at (vbnet-regexp 'propget-start))
                   (looking-at (vbnet-regexp 'propset-start))
-                  (looking-at (vbnet-regexp 'module)))
+                  (looking-at (vbnet-regexp 'module-start)))
               (+ indent vbnet-mode-indent))
 
              ((and (or (looking-at (vbnet-regexp 'if))
