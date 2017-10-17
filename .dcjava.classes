@@ -223,3 +223,8 @@ java.util.stream.Collectors
 com.google.common.io.BaseEncoding
 java.util.zip.DataFormatException
 javax.xml.xpath.XPath
+javax.xml.validation.SchemaFactory
+javax.xml.validation.Validator
+javax.xml.validation.Schema
+javax.xml.XMLConstants
+java.util.TimeZone
