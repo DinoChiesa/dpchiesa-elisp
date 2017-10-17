@@ -7,7 +7,7 @@
 ;; Version    : 0.8.6
 ;; Keywords   : c# languages oop mode
 ;; X-URL      : http://code.google.com/p/csharpmode/
-;; Last-saved : <2017-May-17 11:29:28>
+;; Last-saved : <2017-October-13 16:50:52>
 
 ;;
 ;; This program is free software; you can redistribute it and/or modify
@@ -5382,10 +5382,11 @@ To run your own logic after csharp-mode starts, do this:
     (turn-on-font-lock)
     (turn-on-auto-revert-mode) ;; helpful when also using Visual Studio
     (setq indent-tabs-mode nil) ;; tabs are evil
-    (flymake-mode 1)
-    (yas/minor-mode-on)
-    (require 'rfringe)  ;; handy for flymake
-    (require 'flymake-cursor) ;; also handy for flymake
+    (require 'yasnippet)
+    (yas-minor-mode-on)
+    (require 'flycheck)
+    (flycheck-mode)
+    (flycheck-select-checker 'csharp)
     ....your own code here...
   )
   (add-hook  'csharp-mode-hook 'my-csharp-mode-fn t)
