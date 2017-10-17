@@ -54,11 +54,20 @@ the source file name."
 
 (eval-after-load "flycheck"
   '(progn
-     (flycheck-define-checker csharp
-       "A C# syntax checker for dotnet. By default, it uses the Mono
-compiler. If you would like to use a different compiler, see
+     (flycheck-define-checker csharp-dotnetcore
+       "A C# syntax checker for dotnet. By default, it uses the dotnet core tools. If you would like to use a different compiler, see
 `csharp-set-flycheck-command'."
-       :command ("mcs" "-target:module" source)
+       :command ("/usr/local/share/dotnet/dotnet" "build")
+       ;; :command ("mcs" "-target:module" source)
+       :error-patterns
+       ;; WinFormsHello.cs(17,9): error CS0246: The type or namespace name `derp' could not be found. Are you missing an assembly reference?
+       ((error line-start (file-name) "(" line "," column "): error " (message) line-end)
+        (warning line-start (file-name) "(" line "," column "): warning " (message) line-end))
+       :modes csharp-mode)
+     (flycheck-define-checker csharp-mono
+       "A C# syntax checker for dotnet. By default, it uses the Mono compiler. If you would like to use a different compiler, see
+`csharp-set-flycheck-command'."
+       :command ("/Library/Frameworks/Mono.framework/Versions/5.2.0/bin/mcs" "-target:module" source)
        :error-patterns
        ;; WinFormsHello.cs(17,9): error CS0246: The type or namespace name `derp' could not be found. Are you missing an assembly reference?
        ((error line-start (file-name) "(" line "," column "): error " (message) line-end)
