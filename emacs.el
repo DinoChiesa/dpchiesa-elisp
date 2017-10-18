@@ -1,8 +1,8 @@
-;;; emacs.el -- dino's em Dino's .emacs setup file.
+;;; emacs.el -- Dino's .emacs setup file.
 ;;
-;; Last saved: <2017-October-12 10:59:26>
+;; Last saved: <2017-October-18 12:06:33>
 ;;
-;; Works with v24.5 of emacs.
+;; Works with v24.5 and v25.1 of emacs.
 ;;
 
 ;;; Commentary:
