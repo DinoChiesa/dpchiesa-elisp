@@ -244,6 +244,42 @@ to determine if we need to rotate through various formats.")
 (defvar dino-timeofday--last-inserted-index -1
   "index of the time format last inserted. Used for rotation.")
 
+(defvar dino-time-punctuation-regex "[\\!\?\"\.'#$%&*+/;<=>@^`|~]"
+  "regexp for punctuation")
+
+(defvar dino-time-formats (list "%Y%m%d-%H%M"
+                            "%A, %e %B %Y, %H:%M"
+                            "%Y %B %e"
+                            "%H:%M:%S")
+  "A list of time formats to use in `dino-insert-timeofday' and `dino-maybe-delete-time-string-at-point' ")
+
+(defun dino-maybe-delete-time-string-at-point ()
+  "if point is on a time string, delete it."
+  (interactive)
+  (save-excursion
+    (save-match-data
+      (let ((result (re-search-backward dino-time-punctuation-regex (line-beginning-position) t)))
+        (if result
+            (progn
+              ;;(message "found it")
+              (forward-char)
+              (cond
+               ((looking-at "\\(19\\|20\\)[0-9]\\{6\\}-[0-9]\\{4\\}")
+                (delete-region (match-beginning 0) (match-end 0))
+                0)
+               ((looking-at "\\(Sunday\\|Monday\\|Tuesday\\|Wednesday\\|Thursday\\|Friday\\|Saturday\\), [ 0-9][0-9] [A-Za-z]\\{5,14\\} \\(19\\|20\\)[0-9]\\{2\\}, [0-9]\\{2\\}:[0-9]\\{2\\}")
+                (delete-region (match-beginning 0) (match-end 0))
+                1)
+               ((looking-at "\\(19\\|20\\)[0-9]\\{2\\} [A-Za-z]\\{5,14\\} [ 0-9][0-9]")
+                (delete-region (match-beginning 0) (match-end 0))
+                2)
+               ((looking-at "[0-9]\\{2\\}:[0-9]\\{2\\}:[0-9]\\{2\\}")
+                (delete-region (match-beginning 0) (match-end 0))
+                3)
+               (t 0)))
+          (progn
+            ;;(message "did not find it")
+            0))))))
 
 (defun dino-insert-timeofday ()
   "Insert a string representing the time of day at point. The
@@ -253,56 +289,49 @@ active or not.  If the minibuffer is active, or if the mode is
 
   20130820-0848
 
-This allows insertion of the time of day into filenames.
-Otherwise, the format is like this:
-
-  Tuesday, 20 August 2013, 08:48
-
 If you invoke this command repeatedly without moving point, it
-cycles through those formats as well as a simplified date format:
+cycles through the above format as well as these:
 
+   Tuesday, 20 August 2013, 08:48
    2013 August 20
 
 "
   (interactive)
-  (let ((time-formats (list "%Y%m%d-%H%M" "%A, %e %B %Y, %H:%M" "%Y %B %e"
-                            "%H:%M:%S"))
-        tf
-        ix)
+  (let ((ix
 
     ;; If the user has invoked this cmd twice in succession, then rotate
     ;; through the formats. Be careful though: Sometimes using colons in
     ;; the minibuffer causes emacs to go haywire for me.
     (if (and ;;(not (window-minibuffer-p))
-             (boundp 'dino-timeofday--last-inserted-index)
-             (> dino-timeofday--last-inserted-index -1)
-             (boundp 'dino-timeofday--last-inserted-string)
-             (stringp dino-timeofday--last-inserted-string)
-             (markerp dino-timeofday--last-inserted-marker)
-             (marker-position dino-timeofday--last-inserted-marker)
-             (eq (marker-buffer dino-timeofday--last-inserted-marker) (current-buffer))
-             (or (eq last-command 'this-command)
-                 (= (point) dino-timeofday--last-inserted-marker)))
+         (boundp 'dino-timeofday--last-inserted-index)
+         (> dino-timeofday--last-inserted-index -1)
+         (boundp 'dino-timeofday--last-inserted-string)
+         (stringp dino-timeofday--last-inserted-string)
+         (markerp dino-timeofday--last-inserted-marker)
+         (marker-position dino-timeofday--last-inserted-marker)
+         (eq (marker-buffer dino-timeofday--last-inserted-marker) (current-buffer))
+         (or (eq last-command 'this-command)
+             (= (point) dino-timeofday--last-inserted-marker)))
 
         (progn
-          ;; remove prior insertion
-          (backward-delete-char-untabify (length dino-timeofday--last-inserted-string))
-          ;; use "the next" format
-          (setq ix (1+ dino-timeofday--last-inserted-index))
-          (if (>= ix (length time-formats))
-              (setq ix 0)))
+          (dino-maybe-delete-time-string-at-point)
+          ;;(backward-delete-char-untabify (length dino-timeofday--last-inserted-string))
+          ;; cycle to the next format
+          (1+ dino-timeofday--last-inserted-index))
 
-      (setq ix (if (or (window-minibuffer-p) (equal major-mode 'wdired-mode))
-                 0 1)))
+      ;;(setq ix (if (or (window-minibuffer-p) (equal major-mode 'wdired-mode))
+      ;;             0 1))
+      (dino-maybe-delete-time-string-at-point))))
 
-    (setq tf (nth ix time-formats))
+    (if (>= ix (length dino-time-formats))
+        (setq ix 0))
 
     ;; examples:
     ;; 19960617-1252
     ;; Monday, 17 June 1996, 12:52
     ;; 1996 June 17
     ;; 12:52:43
-    (setq dino-timeofday--last-inserted-string (format-time-string tf)
+    (setq dino-timeofday--last-inserted-string (format-time-string (nth ix dino-time-formats))
           dino-timeofday--last-inserted-index ix)
     (insert dino-timeofday--last-inserted-string)
     (setq dino-timeofday--last-inserted-marker (point-marker))))
