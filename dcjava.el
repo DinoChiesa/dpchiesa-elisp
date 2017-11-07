@@ -11,7 +11,7 @@
 ;; Requires   : s.el
 ;; License    : Apache 2.0
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2017-August-03 10:39:39>
+;; Last-saved : <2017-November-06 16:36:41>
 ;;
 ;;; Commentary:
 ;;
@@ -132,11 +132,12 @@
   (interactive)
   (setq dcjava-helper-classname-alist nil
         dcjava-helper-classnames
-        (dcjava--filter
-         'dcjava--is-class-name
-         (with-temp-buffer
-           (insert-file-contents (dcjava-cache-filename))
-           (split-string (buffer-string) "\n" t)))))
+        (delete-dups
+         (dcjava--filter
+          'dcjava--is-class-name
+          (with-temp-buffer
+            (insert-file-contents (dcjava-cache-filename))
+            (split-string (buffer-string) "\n" t))))))
 
 
 (defun dcjava--list-from-fully-qualified-classname (class)
