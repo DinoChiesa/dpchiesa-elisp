@@ -244,6 +244,9 @@ to determine if we need to rotate through various formats.")
 (defvar dino-timeofday--last-inserted-index -1
   "index of the time format last inserted. Used for rotation.")
 
+(defvar dino-timeofday--prior-insert-time nil
+  "the time of the most recent insert")
+
 (defvar dino-time-punctuation-regex "[\\!\?\"\.'#$%&*+/;<=>@^`|~]"
   "regexp for punctuation")
 
@@ -281,6 +284,11 @@ to determine if we need to rotate through various formats.")
             ;;(message "did not find it")
             0))))))
 
+(defun dino-is-recent (the-time delta-seconds)
+  "Returns t if THE-TIME is less than DELTA-SECONDS ago."
+  (< (float-time (time-subtract (current-time) the-time)) delta-seconds))
+
+
 (defun dino-insert-timeofday ()
   "Insert a string representing the time of day at point. The
 format varies depending on the mode, or if the minibuffer is
@@ -311,7 +319,10 @@ cycles through the above format as well as these:
          (marker-position dino-timeofday--last-inserted-marker)
          (eq (marker-buffer dino-timeofday--last-inserted-marker) (current-buffer))
          (or (eq last-command 'this-command)
-             (= (point) dino-timeofday--last-inserted-marker)))
+             (and
+              (= (point) dino-timeofday--last-inserted-marker)
+              dino-timeofday--prior-insert-time
+              (dino-is-recent dino-timeofday--prior-insert-time 10))))
 
         (progn
           (dino-maybe-delete-time-string-at-point)
@@ -332,7 +343,8 @@ cycles through the above format as well as these:
     ;; 1996 June 17
     ;; 12:52:43
     (setq dino-timeofday--last-inserted-string (format-time-string (nth ix dino-time-formats))
-          dino-timeofday--last-inserted-index ix)
+          dino-timeofday--last-inserted-index ix
+          dino-timeofday--prior-insert-time (current-time))
     (insert dino-timeofday--last-inserted-string)
     (setq dino-timeofday--last-inserted-marker (point-marker))))
 
