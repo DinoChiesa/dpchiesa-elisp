@@ -233,3 +233,5 @@ org.xmlunit.builder.Input
 org.xmlunit.diff.Diff
 org.xmlunit.matchers.CompareMatcher
 org.xmlunit.util.Predicate
+com.apigee.beans.BeanUtil
+com.apigee.entities.ConfigurationContext
