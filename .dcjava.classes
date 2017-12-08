@@ -6,7 +6,6 @@ com.apigee.flow.execution.spi.Execution
 com.apigee.flow.message.FlowContext
 com.apigee.flow.message.MessageContext
 com.apigee.kernel.exceptions.spi.UncheckedException
-com.fasterxml.jackson.JsonNode
 com.fasterxml.jackson.databind.DeserializationFeature
 com.fasterxml.jackson.databind.ObjectMapper
 com.google.common.base.Joiner
@@ -235,3 +234,14 @@ org.xmlunit.matchers.CompareMatcher
 org.xmlunit.util.Predicate
 com.apigee.beans.BeanUtil
 com.apigee.entities.ConfigurationContext
+com.fasterxml.jackson.dataformat.xml.XmlMapper
+com.fasterxml.jackson.databind.SerializationFeature
+com.fasterxml.jackson.databind.deser.std.JsonNodeDeserializer
+com.fasterxml.jackson.databind.DeserializationContext
+com.fasterxml.jackson.core.JsonParser
+com.fasterxml.jackson.databind.JsonNode
+com.fasterxml.jackson.dataformat.xml.deser.FromXmlParser
+java.util.LinkedHashMap
+com.fasterxml.jackson.databind.JsonMappingException
+javax.xml.stream.util.StreamReaderDelegate
+com.fasterxml.jackson.databind.module.SimpleModule
