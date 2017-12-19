@@ -245,3 +245,5 @@ java.util.LinkedHashMap
 com.fasterxml.jackson.databind.JsonMappingException
 javax.xml.stream.util.StreamReaderDelegate
 com.fasterxml.jackson.databind.module.SimpleModule
+javax.xml.transform.ErrorListener
+java.util.function.Function
