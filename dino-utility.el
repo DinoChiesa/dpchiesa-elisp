@@ -480,7 +480,7 @@ appropriate string has been found and deleted. Else return nil."
 ;;     (insert dino-timeofday--last-inserted-string))
 ;;     (setq dino-timeofday--last-inserted-marker (point-marker))))
 
-(defun dino-insert-timeofday ()
+(defun dino-insert-timeofday (&optional arg)
   "Inserts a string representing the time of day at point.
 The format used is like this:
 
@@ -497,7 +497,13 @@ If you invoke this command repeatedly, it cycles through additional formats:
 
 Point is placed at the beginning of the newly inserted timestamp.
 "
-  (interactive)
+  (interactive "P")
+
+  (if arg
+      (let ((time-format (nth 1 dino-time-formats)))
+        (save-excursion
+          (insert (format-time-string (car time-format)))))
+
   (let ((ix (dino-maybe-delete-time-string-under-point)))
     (if (numberp ix)
         (let ((previous-time (funcall (cdr (nth ix dino-time-formats)) dino-timeofday--just-deleted-string)))
@@ -511,8 +517,7 @@ Point is placed at the beginning of the newly inserted timestamp.
         (setq ix 0))
 
     (save-excursion
-      (insert (format-time-string (car (nth ix dino-time-formats)))))))
-
+      (insert (format-time-string (car (nth ix dino-time-formats))))))))
 
 (defun dino-insert-current-time-millis ()
   "function to insert the value like java's currentTimeMillis."
@@ -1271,6 +1276,66 @@ The first line is indented with INDENT-STRING."
         (insert ?\n indent-string))
       (insert ?< ?/ (symbol-name (xml-node-name xml)) ?>))))
 
+
+(defun jshintrc ()
+    "create a .jshintrc file in the current working directory if one does not yet exist."
+  (interactive)
+  (or (file-exists-p ".jshintrc")
+      (progn
+        (with-temp-file ".jshintrc"
+          (insert (concat
+"{\n"
+"  \"node\": true,\n"
+"  \"browser\": true,\n"
+"  \"esversion\": 6, \n"
+"  \"esnext\": true,\n"
+"  \"bitwise\": true,\n"
+"  \"camelcase\": true,\n"
+"  \"curly\": true,\n"
+"  \"eqeqeq\": true,\n"
+"  \"immed\": true,\n"
+"  \"indent\": 2,\n"
+"  \"latedef\": true,\n"
+"  \"newcap\": true,\n"
+"  \"noarg\": true,\n"
+"  \"quotmark\": \"single\",\n"
+"  \"regexp\": true,\n"
+"  \"undef\": true,\n"
+"  \"unused\": true,\n"
+"  \"strict\": true,\n"
+"  \"trailing\": true,\n"
+"  \"smarttabs\": true,\n"
+"  \"predef\": [\n"
+"  \"Promise\"\n"
+"  ]\n"
+"}\n"
+
+                   ))))))
+
+
+;; (defun word-as-number-2x ()
+;;   "Convert word (As a number) at point to 2x"
+;;   (interactive)
+;;   (let ((bounds (if (use-region-p)
+;;                      (cons (region-beginning) (region-end))
+;;                   (bounds-of-thing-at-point 'symbol))))
+;;     (when bounds
+;;       (let* ((text (buffer-substring-no-properties (car bounds) (cdr bounds)))
+;;              (numeric (* 2 (string-to-int text))))
+;;         (delete-region (car bounds) (cdr bounds))
+;;         (insert (int-to-string numeric))))))
+;;
+;; (defun word-as-number-half ()
+;;   "Convert word (As a number) at point to 1/2"
+;;   (interactive)
+;;   (let ((bounds (if (use-region-p)
+;;                      (cons (region-beginning) (region-end))
+;;                   (bounds-of-thing-at-point 'symbol))))
+;;     (when bounds
+;;       (let* ((text (buffer-substring-no-properties (car bounds) (cdr bounds)))
+;;              (numeric (/ (string-to-int text) 2)))
+;;         (delete-region (car bounds) (cdr bounds))
+;;         (insert (int-to-string numeric))))))
 
 (provide 'dino-utility)
 
