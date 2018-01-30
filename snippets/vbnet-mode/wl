@@ -1,4 +1,0 @@
-#key : writeline
-#name : WriteLine (...) { ... }
-# --
-System.Console.WriteLine(${0://thing to do})

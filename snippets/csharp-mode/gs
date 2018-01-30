@@ -1,4 +1,0 @@
-# key : gs
-# name : getset
-# --
-  { get; set; }

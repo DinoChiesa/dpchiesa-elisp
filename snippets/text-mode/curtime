@@ -1,4 +1,0 @@
-# key : curtime
-# name : (current time)
-# --
-`(current-time-string)`
