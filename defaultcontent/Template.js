@@ -1,9 +1,9 @@
 // @BASEFILENAME@
 // ------------------------------------------------------------------
 //
-// Description goes here....
-//
 // created: @DATE@
-// last saved: <2013-November-03 08:14:16>
+// last saved: <2018-January-02 15:58:50>
+
+'use strict';
 
 @DOT@
