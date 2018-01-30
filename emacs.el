@@ -1,6 +1,6 @@
 ;;; emacs.el -- Dino's .emacs setup file.
 ;;
-;; Last saved: <2017-October-18 12:06:33>
+;; Last saved: <2018-January-25 13:10:04>
 ;;
 ;; Works with v24.5 and v25.1 of emacs.
 ;;
@@ -686,6 +686,17 @@ With a prefix argument, makes a private paste."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; yaml
 (require 'yaml-mode)
+(defun dino-yaml-mode-fn ()
+  "My hook for YAML mode"
+  (interactive)
+  (turn-on-font-lock)
+  (turn-on-auto-revert-mode)
+  (linum-on)
+  ;; "no tabs" -- use only spaces
+  ;;(make-local-variable 'indent-tabs-mode)
+  (setq indent-tabs-mode nil))
+
+(add-hook 'yaml-mode-hook 'dino-yaml-mode-fn)
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -902,9 +913,11 @@ With a prefix argument, makes a private paste."
   (flycheck-mode)
   (flycheck-select-checker 'css-csslint)
 
-  ;; (require 'flymake)
-  ;; (and (file-name-directory buffer-file-name)
-  ;;      (flymake-mode 1))
+  ;; display CSS colors in color
+  (require 'rainbow-mode)
+  (rainbow-mode)
+
+  (linum-on)
 
   ;; "no tabs" -- use only spaces
   ;;(make-local-variable 'indent-tabs-mode)
@@ -1106,13 +1119,12 @@ just auto-corrects on common mis-spellings by me. "
 ;; linum - line numbering
 ;; linum-ex - enhancements with coloring and delay (for performance)
 
-;;(require 'linum)
+;;(require 'linum-ex)
 (autoload 'linum-on "linum-ex" nil t)
 (autoload 'linum-mode "linum-ex" nil t)
 
 (eval-after-load "linum-ex"
   '(progn
-
     ;;(message "%s" (prin1-to-string (defined-colors))) ;; to list possible colors
      ;;(list-colors-display) to show a list of colors in a new buffer
     (set-face-foreground 'linum "SlateGray")
@@ -2359,6 +2371,11 @@ i.e M-x kmacro-set-counter."
 
 (defun dino-javascript-mode-fn ()
   (turn-on-font-lock)
+
+  ;; for syntax-checking, auto-complete, etc
+  (require 'tern)
+  (tern-mode t)
+
   (local-set-key "\M-\C-R"  'indent-region)
   (local-set-key "\M-#"     'dino-indent-buffer)
   (local-set-key "\C-c\C-c" 'comment-region)
@@ -2377,17 +2394,13 @@ i.e M-x kmacro-set-counter."
   ;; indent increment
   (set (make-local-variable 'js-indent-level) 2)
 
-  ;; for syntax-checking, auto-complete, etc
-  (require 'tern)
-  (tern-mode t)
-
   ;; interactive javascript shell
   ;;(local-set-key "\C-x\C-e" 'jsshell-send-last-sexp)
-  (local-set-key "\C-\M-x"  'jsshell-send-last-sexp-and-pop)
-  (local-set-key "\C-cb"    'jsshell-send-buffer)
-  (local-set-key "\C-c\C-b" 'jsshell-send-buffer-and-pop)
-  (local-set-key "\C-cl"    'jsshell-load-file-and-pop)
-  (local-set-key "\C-c\C-e" 'jsshell-send-region)
+  ;; (local-set-key "\C-\M-x"  'jsshell-send-last-sexp-and-pop)
+  ;; (local-set-key "\C-cb"    'jsshell-send-buffer)
+  ;; (local-set-key "\C-c\C-b" 'jsshell-send-buffer-and-pop)
+  ;; (local-set-key "\C-cl"    'jsshell-load-file-and-pop)
+  ;; (local-set-key "\C-c\C-e" 'jsshell-send-region)
 
   (linum-on)
 
@@ -2403,6 +2416,14 @@ i.e M-x kmacro-set-counter."
        (file-name-directory buffer-file-name)
        (flycheck-mode))
   (flycheck-select-checker 'javascript-jshint)
+
+  ;;(flycheck-select-checker 'javascript-eslint) ;; for more control?
+  ;;
+  ;; Tuesday,  2 January 2018, 15:36
+  ;; I tried eslint for emacs and found that it complained a lot about
+  ;; the indent style I prefer. Also I could not figure out how to get it to
+  ;; stop complaining. So I didn't use it, and still use jshint, which
+  ;; seems to work just fine.
 
   ;; turn on flymake
   ;; (require 'flymake)
@@ -2448,7 +2469,8 @@ i.e M-x kmacro-set-counter."
 
   (require 'smart-op) ;; for smart insertion of ++ and == and += etc
   (smart-op-mode)
-)
+  )
+
 (add-hook 'js-mode-hook   'dino-javascript-mode-fn)
 
 ;; ;; to allow jshint to work?
