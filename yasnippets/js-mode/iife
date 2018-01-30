@@ -1,9 +1,9 @@
 # -*- mode: snippet -*-
 # key : iife
-# name : (function (foo){}());
+# name : (function (){}());
 # --
-(function (${1:globalScope}){
+(function (){
   'use strict';
   $0
-}(${2:this}));
+}());
 

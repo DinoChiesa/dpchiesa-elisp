@@ -1,8 +1,8 @@
 # -*- mode: snippet -*-
 # key : curry
-# name : function curry ... { ... }
+# name : function curry(fn, arg1) ... { ... }
 # --
-function curry(fn) {
+function curry(fn, arg1) {
   // return a curried function with the left-most argument filled
   var args = Array.prototype.slice.call(arguments,1);
   return function() {
