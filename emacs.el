@@ -1,6 +1,6 @@
 ;;; emacs.el -- Dino's .emacs setup file.
 ;;
-;; Last saved: <2018-January-25 13:10:04>
+;; Last saved: <2018-March-05 17:44:59>
 ;;
 ;; Works with v24.5 and v25.1 of emacs.
 ;;
@@ -82,6 +82,8 @@
  'go-mode
  'go-autocomplete
  'flycheck
+ 'json-mode
+ 'typescript-mode
  'company
  'company-go
  'popup
@@ -545,11 +547,6 @@
 ;; equivalent unless there is a filename with a new line in it (not
 ;; likely).
 ;;
-;; (setq auto-mode-alist
-;;       (append
-;;        '(
-;;         ("\\.\\(php\\|module\\)$"            . php-mode)
-;;         ) auto-mode-alist ))
 
 (setq auto-mode-alist
       (append
@@ -576,6 +573,7 @@
          ;; ("\\.\\(js\\|jsi\\)$"                . espresso-mode)
          ;; ("\\.js$"                            . js2-mode)
          ("\\.\\(js\\|gs\\|jsi\\)$"           . js-mode)
+         ("\\.\\(json\\)$"                    . json-mode)
          ("\\.\\(avsc\\)$"                    . js-mode)            ;; avro schema
          ("\\.txt$"                           . text-mode)
          ("\\.asmx$"                          . csharp-mode)         ; likely, could be another language tho
@@ -698,6 +696,19 @@ With a prefix argument, makes a private paste."
 
 (add-hook 'yaml-mode-hook 'dino-yaml-mode-fn)
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Typescript
+(add-to-list 'auto-mode-alist '("\\.ts\\'" . typescript-mode))
+
+(defun dino-typescript-mode-fn ()
+  (turn-on-font-lock)
+  (local-set-key "\M-\C-R"  'indent-region)
+  (turn-on-auto-revert-mode)
+  (setq typescript-indent-level 2)
+  (linum-on)
+  (auto-fill-mode -1)
+  )
+(add-hook 'typescript-mode-hook 'dino-typescript-mode-fn)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Powershell
@@ -2479,7 +2490,23 @@ i.e M-x kmacro-set-counter."
 ;;     "/usr/bin"
 
 (require 'js-mode-fixups)
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; JSON
+(require 'json-mode)
 (require 'json-reformat)
+
+(autoload 'json-mode "json" nil t)
+
+
+(defun dino-json-mode-fn ()
+  (turn-on-font-lock)
+  (flycheck-mode 0)
+  )
+
+(add-hook 'json-mode-hook   'dino-json-mode-fn)
 
 ;; function alias
 (defalias 'json-prettify-region 'json-reformat-region)
@@ -2490,12 +2517,13 @@ i.e M-x kmacro-set-counter."
   (save-excursion
     (json-prettify-region (point-min) (point-max))))
 
+
+
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-
 ;;(require 'aspx-mode)
 (autoload  'aspx-mode "aspx-mode" nil t)
-
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
