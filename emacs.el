@@ -1,6 +1,6 @@
 ;;; emacs.el -- Dino's .emacs setup file.
 ;;
-;; Last saved: <2018-March-05 17:44:59>
+;; Last saved: <2018-March-05 19:42:42>
 ;;
 ;; Works with v24.5 and v25.1 of emacs.
 ;;
@@ -82,6 +82,7 @@
  'go-mode
  'go-autocomplete
  'flycheck
+ 'dash-functional
  'json-mode
  'typescript-mode
  'company
@@ -573,7 +574,6 @@
          ;; ("\\.\\(js\\|jsi\\)$"                . espresso-mode)
          ;; ("\\.js$"                            . js2-mode)
          ("\\.\\(js\\|gs\\|jsi\\)$"           . js-mode)
-         ("\\.\\(json\\)$"                    . json-mode)
          ("\\.\\(avsc\\)$"                    . js-mode)            ;; avro schema
          ("\\.txt$"                           . text-mode)
          ("\\.asmx$"                          . csharp-mode)         ; likely, could be another language tho
@@ -2380,7 +2380,7 @@ i.e M-x kmacro-set-counter."
 (autoload 'js-mode "js" nil t)
 ;;(autoload 'js2-mode "js2" nil t)
 
-(defun dino-javascript-mode-fn ()
+(defun dino-js-mode-fn ()
   (turn-on-font-lock)
 
   ;; for syntax-checking, auto-complete, etc
@@ -2422,11 +2422,18 @@ i.e M-x kmacro-set-counter."
       (progn (require 'autopair) (autopair-mode))
     (electric-pair-mode))
 
+
+  ;; json-mode is a child mode of js-mode. Select different checker
+  ;; based on the file extension.
   (require 'flycheck)
-  (and buffer-file-name
-       (file-name-directory buffer-file-name)
-       (flycheck-mode))
-  (flycheck-select-checker 'javascript-jshint)
+  (if (and buffer-file-name
+           (file-name-directory buffer-file-name))
+       (progn
+         (flycheck-mode)
+         (flycheck-select-checker
+          (if (string-suffix-p ".json" buffer-file-name)
+              'json-jsonlint
+            'javascript-jshint))))
 
   ;;(flycheck-select-checker 'javascript-eslint) ;; for more control?
   ;;
@@ -2454,13 +2461,6 @@ i.e M-x kmacro-set-counter."
   ;; ;;(setq flyjs-jslintwsh-location "c:\\users\\dino\\bin\\jslint-for-wsh.js")
   ;; (setq flyjs-jslintwsh-location "c:\\users\\dino\\bin\\jshint-for-wsh.js")
 
-  ;; (and buffer-file-name
-  ;;      (file-name-directory buffer-file-name)
-  ;;      (flymake-mode 1))
-
-  ;; ya-snippet
-  ;;(add-to-list 'yas/known-modes 'espresso-mode) ;; need this?
-  ;;(add-to-list 'yas/known-modes 'js-mode) ;; need this?
   (yas-minor-mode-on)
 
   ;; wtf? Does this no longer work?
@@ -2482,7 +2482,7 @@ i.e M-x kmacro-set-counter."
   (smart-op-mode)
   )
 
-(add-hook 'js-mode-hook   'dino-javascript-mode-fn)
+(add-hook 'js-mode-hook   'dino-js-mode-fn)
 
 ;; ;; to allow jshint to work?
 ;;(setenv "PATH" (concat "/usr/local/bin:" (getenv "PATH")))
@@ -2500,10 +2500,12 @@ i.e M-x kmacro-set-counter."
 
 (autoload 'json-mode "json" nil t)
 
+;; add a new element to the front of the list and it will shadow matches further down the list.
+(add-to-list 'auto-mode-alist '("\\.json\\'" . json-mode))
 
 (defun dino-json-mode-fn ()
-  (turn-on-font-lock)
-  (flycheck-mode 0)
+  ;;(turn-on-font-lock)
+  ;;(flycheck-mode 0)
   )
 
 (add-hook 'json-mode-hook   'dino-json-mode-fn)
