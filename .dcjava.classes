@@ -294,3 +294,14 @@ com.apigee.jsonparser.DefaultContentHandler
 org.mockito.stubbing.Answer
 org.mockito.invocation.InvocationOnMock
 com.apigee.flow.debug.DebugMaskDataMessageFlowUtil
+javax.crypto.KeyGenerator
+java.io.DataInputStream
+java.security.Security
+org.apache.wss4j.common.crypto.CertificateStore
+org.apache.wss4j.dom.SOAPConstants
+org.apache.wss4j.dom.validate.Credential
+org.apache.wss4j.dom.validate.SignatureTrustValidator
+org.xmlunit.diff.DefaultNodeMatcher
+org.xmlunit.diff.Comparison
+org.xmlunit.diff.DifferenceEvaluator
+org.w3c.dom.NamedNodeMap
