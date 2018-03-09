@@ -17,7 +17,7 @@
 ;;
 ;; This code is distributed under the New BSD License.
 ;;
-;; Copyright (c) 2013, Dino Chiesa
+;; Copyright (c) 2013-2018, Dino Chiesa
 ;; All rights reserved.
 ;;
 ;; Redistribution and use in source and binary forms, with or without
@@ -482,8 +482,10 @@ appropriate string has been found and deleted. Else return nil."
 
 (defun dino-insert-timeofday (&optional arg)
   "Inserts a string representing the time of day at point.
-The format used is like this:
+If the mode is txt-mode, then the format used is like this:
+  Tuesday, 20 August 2013, 08:48
 
+Otherwise, the format used is like this:
   20130820-0848
 
 If you invoke the command while point is on an \"old\" timestamp string, it
@@ -499,25 +501,28 @@ Point is placed at the beginning of the newly inserted timestamp.
 "
   (interactive "P")
 
-  (if arg
-      (let ((time-format (nth 1 dino-time-formats)))
-        (save-excursion
-          (insert (format-time-string (car time-format)))))
+  (cond
+   ((or (window-minibuffer-p) (equal major-mode 'wdired-mode) arg)
+    (let ((time-format (nth 1 dino-time-formats)))
+      (save-excursion
+        (insert (format-time-string (car time-format))))))
+   (t
+    (let ((ix (dino-maybe-delete-time-string-under-point)))
+      (if (numberp ix)
+          (let ((previous-time (funcall (cdr (nth ix dino-time-formats)) dino-timeofday--just-deleted-string)))
+            (if (and previous-time
+                     (not (dino-time-is-within-seconds previous-time 10))) ;; not recent
+                (setq ix (1- ix))))) ;; keep same format
 
-  (let ((ix (dino-maybe-delete-time-string-under-point)))
-    (if (numberp ix)
-        (let ((previous-time (funcall (cdr (nth ix dino-time-formats)) dino-timeofday--just-deleted-string)))
-          (if (and previous-time
-                   (not (dino-time-is-within-seconds previous-time 10))) ;; not recent
-              (setq ix (1- ix))))) ;; keep same format
+      (setq ix (if (numberp ix) (1+ ix)  ;; increment
+                 (if (equal major-mode 'text-mode) 1 0))) ;; start at reasonable defaults
 
-    (setq ix (if (numberp ix) (1+ ix) 0)) ;; increment
+      (if (>= ix (length dino-time-formats)) ;; roll-over
+          (setq ix 0))
 
-    (if (>= ix (length dino-time-formats)) ;; roll-over
-        (setq ix 0))
+      (save-excursion
+        (insert (format-time-string (car (nth ix dino-time-formats)))))))))
 
-    (save-excursion
-      (insert (format-time-string (car (nth ix dino-time-formats))))))))
 
 (defun dino-insert-current-time-millis ()
   "function to insert the value like java's currentTimeMillis."
