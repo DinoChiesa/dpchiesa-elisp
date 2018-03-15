@@ -1,7 +1,25 @@
 ;;; mvn-pom-mode.el --- A major mode for pom files
 
-;; 
+;; Copyright (c) 2018 Dino Chiesa and Google, Inc.
+;; Author     : Dino Chiesa
+;; URL: 
+;; License    : Apache 2.0
+;; Version    : 1.0.0
+;; Requires   : s.el dash.el
+;; Keywords   : maven, pom, xml
 
+;;; Commentary:
+
+;; this module defines a single public (interactive) elisp function that is handy when
+;; editing pom.xml files: `mvn-pom-add-dependency'
+;; It prompts the user for a search string, then presents a popup menu with
+;; search results, and allows the user to select a groupId and version. 
+;;
+;; It then inserts the dependency stanza into the pom.xml file. 
+;;
+;; Bugs:
+;; - It uses x-popup-menu, when it could use `ido-completing-read'
+;;
 
 ;;; Code:
 
@@ -18,10 +36,8 @@
 
 (defun mvn-pom--get-search-version-url (group artifact &optional output-format)
   "creates the search URL for mvn to search for versions of a specific group+artifact."
+  ;; curl -i "http://search.maven.org/solrsearch/select?q=g:%22com.auth0%22+AND+a:%22java-jwt%22&rows=20&core=gav&wt=xml"
   (format "%s/select?q=g:\"%s\"+AND+a:\"%s\"&rows=20&core=gav&wt=%s" mvn-pom-base-url group artifact (or output-format "xml")))
-
-;; curl -i "http://search.maven.org/solrsearch/select?q=g:%22com.auth0%22+AND+a:%22java-jwt%22&rows=20&core=gav&wt=xml"
-
 
 (defun mvn-pom--generate-menu (candidates &optional format heading)
   "Generate a menu suitable for use in `x-popup-menu' from the
@@ -53,14 +69,11 @@ The `x-popup-menu' will display the cadr of each of the choices.
 
 The result of the user choice is the cdr of the selected item. In this case, it
 will be something like (\"x.y.z.Class\") .
-
 "
-
   (let ((items (mapcar #'(lambda (elt) (list (funcall (or format 'identity) elt) elt))
                        candidates)))
     (setq items (cons "Ignored pane title" items))
     (list (or heading "Select a Choice...") items)))
-
 
 
 (defun mvn-pom--get-menu-position ()
@@ -72,11 +85,6 @@ will be something like (\"x.y.z.Class\") .
               (selected-window)))
     t))
 
-
-;; (defun avg-damp (n)
-;;   (lexical-let ((n n))
-;;     (lambda(x) (/ x n))))
-
 (defun mvn-pom--element-has-name (n)
   "returns a function that can be used as a predicate in the dash library.
 The lambda returns true when the element has a name attribute with the given value."
@@ -84,7 +92,6 @@ The lambda returns true when the element has a name attribute with the given val
     (lambda (elt)
       (let ((attrs (xml-node-attributes elt)))
         (equal n (cdr (assq 'name attrs)))))))
-
 
 (defun mvn-pom--parse-search-results-get-str-with-name (n)
   "returns a function that can be used in a mapcar against a document.
@@ -95,7 +102,6 @@ The lambda returns the first str child that has a name attribute with value N, a
             (-first
              (mvn-pom--element-has-name n)
              (xml-get-children doc 'str)))))))
-
 
 (defun mvn-pom--search-result-documents (url)
   "returns the parsed docs list from the mvn search response"
@@ -112,17 +118,15 @@ The lambda returns the first str child that has a name attribute with value N, a
 searching for \"java-jwt\" returns
 
 (\"com.auth0:java-jwt\" \"de.notizwerk:java-jwt\" \"nl.open:java-jwt-nodependencies\")
-
 "
   (let ((url (mvn-pom--get-search-url term "xml")))
     (mapcar
       (mvn-pom--parse-search-results-get-str-with-name "id")
       (mvn-pom--search-result-documents url))))
 
-
-
 (defun mvn-pom-moveto-dependency-insertion-point ()
   "Move the point to the plce to insert a new dependency stanza.
+Returns t if the insertion point was found, nil otherwise. 
 "
   (interactive)
   (goto-char (point-min))
@@ -137,15 +141,6 @@ searching for \"java-jwt\" returns
     (if found-eof nil
       (nxml-move-tag-backwards (line-beginning-position))
       t)))
-
-
-;; (defun maven-pom-add-dependency* (search-term &optional scope-flag)
-;;   (interactive "MSearch: \nP")
-;;   (let* ((gids (maven-pom-search-completing-groupIds search-term))
-;;          (vs (maven-pom-search-completing-versions gids)))
-;;     (maven-pom-insert-dependency-xml vs scope-flag)))
-
-
 
 (defun mvn-pom--present-selection (documents)
   "present a choice for a dependency stanza to add (groupId and artifactId)."
@@ -171,17 +166,16 @@ searching for \"java-jwt\" returns
             (list group-id artifact-id version-choice)
             ))))))
 
-
 (defun mvn-pom-add-dependency (search-term &optional scope-flag)
-  "Do search, then choose groupId, then choose version.  Search
-for artifact by search term and insert the dependency stanza.
+  "Do search, then choose groupId, then choose version. Search
+for artifact by search term, allow user to select groupId and version, then
+insert the dependency stanza.
 "
   (interactive "MSearch: \nP")
   (let ((dependency-options (mvn-pom--search-asset search-term)))
     (if dependency-options
         (let ((choice (mvn-pom--present-selection dependency-options)))
-          (when choice
-            (mvn-pom-moveto-dependency-insertion-point)
+          (when (and choice (mvn-pom-moveto-dependency-insertion-point))
             (let ((start-posn-of-new-dependency (point)))
               (insert "\n<dependency>\n")
               (insert (format "<groupId>%s</groupId>\n" (nth 0 choice)))
@@ -194,19 +188,11 @@ for artifact by search term and insert the dependency stanza.
               (recenter-top-bottom)
               ))))))
 
-
-
-  ;; (if (mvn-pom-moveto-dependency-insertion-point)
-  ;;     (progn
-  ;;       (maven-pom-add-dependency search-term scope-flag)
-  ;;       (indent-for-tab-command))))
-
 (defvar maven-pom-mode-map
   (let ((map (make-keymap)))
     (set-keymap-parent map nxml-mode-map)
     (define-key map  "\C-cd" 'mvn-pom-add-dependency)
          map))
-
 
 (add-to-list 'auto-mode-alist '("pom\\.xml\\'" . mvn-pom-mode))
 
@@ -218,3 +204,8 @@ for artifact by search term and insert the dependency stanza.
 "
   (use-local-map mvn-pom-mode-map)
   (run-mode-hooks 'mvn-pom-mode-hook))
+
+
+(provide 'mvn-pom-mode)
+
+;;; mvn-pom-mode.el ends here
