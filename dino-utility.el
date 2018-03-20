@@ -488,7 +488,7 @@ If the mode is txt-mode, then the format used is like this:
 Otherwise, the format used is like this:
   20130820-0848
 
-If you invoke the command while point is on an \"old\" timestamp string, it
+If you invoke the command while point is on a timestamp string, it
 will insert an updated stamp using the same format.
 
 If you invoke this command repeatedly, it cycles through additional formats:
@@ -503,7 +503,7 @@ Point is placed at the beginning of the newly inserted timestamp.
 
   (cond
    ((or (window-minibuffer-p) (equal major-mode 'wdired-mode) arg)
-    (let ((time-format (nth 1 dino-time-formats)))
+    (let ((time-format (nth 0 dino-time-formats)))
       (save-excursion
         (insert (format-time-string (car time-format))))))
    (t
