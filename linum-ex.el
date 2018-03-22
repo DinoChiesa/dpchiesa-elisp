@@ -6,7 +6,7 @@
 ;; modifications in linum-ex.el provided by: Dino Chiesa
 
 ;; Author: Markus Triska <markus.triska@gmx.at>
-;; Last saved: <2013-March-05 11:59:56>
+;; Last saved: <2018-March-22 11:40:00>
 ;;
 ;; Keywords: convenience
 
@@ -51,17 +51,20 @@
 ;; One idea for working around that is to use run-with-idle-timer, and
 ;; only update the line numbers when emacs is idle. One can set a single
 ;; timer, for, say 0.1s, and then when emacs goes idle for that period,
-;; the line numbers will be updated. Seems like the perfect fit,
-;; but there's a problem: a timer created via run-with-idle-timer
-;; gets canceled after being delayed 10 times.
+;; the line numbers will be updated.
 ;;
-;; So if the after-scroll event sets up a timer via run-with-idle-timer,
-;; only when no timer has been set, the timer may get canceled silently,
-;; by timer.el . Look at `timer-max-repeats'.
+;; Seems like the perfect fit, but there's a problem: a timer created
+;; via run-with-idle-timer gets canceled after being delayed 10 times.
+;; If the after-scroll event sets up a timer via run-with-idle-timer,
+;; only in the case when no timer has been set, the timer may get
+;; canceled silently, by timer.el . For more on this look at
+;; `timer-max-repeats'.
 ;;
-;; This happens if emacs is busy for 1s, as for example when the user is
-;; holding pgdn to continuously scroll through a large document.  If the
-;; timer doesn't fire, then the line numbers don't ever get updated.
+;; IF the base delay is 0.1s, then this cancellation would happen after
+;; 10 cycles, or if emacs is busy for 1s, which may occur for example
+;; when the user is holding pgdn to continuously scroll through a large
+;; document. If the timer gets cancelled, then the line numbers don't
+;; ever get updated.
 ;;
 ;; To avoid that pitfall, this code can set run-with-idle-timer for
 ;; every scroll event, and handle the delay explicitly, right here.  The
@@ -75,9 +78,9 @@
 ;;
 ;; The result is that timers fire constantly while the user is
 ;; continuously scrolling, but the line numbers get updated only after
-;; the user stops scrolling.  The user experiences no delay while
-;; scrolling, but (unfortunately) gets no line numbers either.  The user
-;; sees updated line numbers immediately when he stops.
+;; the user stops scrolling. The user experiences no delay while
+;; scrolling, but (unfortunately) gets no line numbers either. The user
+;; sees updated line numbers immediately when he stops scrolling.
 ;;
 ;; =======================================================
 
@@ -200,7 +203,6 @@ and you have to scroll or press C-l to update the numbers."
             linum--last-cmd nil
             linum--last-scroll nil))))
 
-
 (defun linum-update-window (win)
   "Update line numbers for the portion visible in window WIN."
   (goto-char (window-start win))
@@ -249,7 +251,7 @@ and you have to scroll or press C-l to update the numbers."
 
 (defun linum--after-scroll-fired ()
   (if linum--last-scroll
-      (let ((now  (current-time))
+      (let ((now (current-time))
             (one-moment-after-scroll (timer-relative-time linum--last-scroll linum--delay-time)))
         (if (time-less-p one-moment-after-scroll now)
             (linum-update linum--win)))))
@@ -262,10 +264,9 @@ and you have to scroll or press C-l to update the numbers."
         (run-with-idle-timer linum--delay-time nil 'linum--after-scroll-fired))
     (linum-update (window-buffer win))))
 
-
 (defun linum--post-command-fired ()
   (if linum--last-cmd
-      (let ((now  (current-time))
+      (let ((now (current-time))
             (one-moment-after-cmd (timer-relative-time linum--last-cmd linum--delay-time)))
         (if (time-less-p one-moment-after-cmd now)
             (linum-update-current)))))

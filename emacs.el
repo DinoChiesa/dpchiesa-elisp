@@ -1,6 +1,6 @@
 ;;; emacs.el -- Dino's .emacs setup file.
 ;;
-;; Last saved: <2018-March-05 19:42:42>
+;; Last saved: <2018-March-22 11:40:30>
 ;;
 ;; Works with v24.5 and v25.1 of emacs.
 ;;
@@ -1121,9 +1121,6 @@ just auto-corrects on common mis-spellings by me. "
   )
 
 (add-hook 'text-mode-hook 'dino-text-mode-hook-fn)
-
-
-
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
