@@ -305,3 +305,13 @@ org.xmlunit.diff.DefaultNodeMatcher
 org.xmlunit.diff.Comparison
 org.xmlunit.diff.DifferenceEvaluator
 org.w3c.dom.NamedNodeMap
+com.apigee.messaging.config.beans.PropertyBean
+com.apigee.messaging.runtime.StepDefinition
+com.auth0.jwt.JWTCreator
+com.auth0.jwt.JWT
+com.auth0.jwt.algorithms.Algorithm
+com.google.gson.reflect.TypeToken
+java.lang.reflect.Type
+com.auth0.jwt.interfaces.DecodedJWT
+com.auth0.jwt.interfaces.Claim
+java.time.Duration
