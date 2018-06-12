@@ -1,6 +1,6 @@
 ;;; emacs.el -- Dino's .emacs setup file.
 ;;
-;; Last saved: <2018-March-22 11:40:30>
+;; Last saved: <2018-May-31 16:56:11>
 ;;
 ;; Works with v24.5 and v25.1 of emacs.
 ;;
@@ -10,16 +10,15 @@
 ;;; Code:
 (message "Running emacs.el...")
 
-;; quiet, please! No dinging!
-(setq visible-bell nil)
+(setq inhibit-splash-screen t)
+(setq visible-bell nil) ;; quiet, please! No dinging!
 (setq ring-bell-function `(lambda ()
                             (set-face-background 'default "DodgerBlue")
                             (set-face-background 'default "black")))
 
-(setq inhibit-splash-screen t)
+(setq scroll-error-top-bottom t) ;; move cursor when scrolling not possible
 (if (fboundp 'tool-bar-mode) (tool-bar-mode -1)) ;; we don't need no steenking icons
 (setq user-mail-address "dpchiesa@hotmail.com")
-
 (setq comment-style 'indent) ;; see doc for variable comment-styles
 (setq Buffer-menu-name-width 40)
 
@@ -79,6 +78,8 @@
  'seq
  'magit
  'logito
+ 'js2-mode
+ 'js2-refactor
  'go-mode
  'go-autocomplete
  'flycheck
@@ -206,6 +207,8 @@
 
   (local-set-key "\M-\C-R"  'indent-region)
   (local-set-key "\M-#"     'dino-indent-buffer)
+
+  (linum-on)
 
   (require 'goflycheck)
   (flycheck-mode 1))
@@ -570,11 +573,10 @@
          ("\\.htm$"                           . web-mode)
          ("\\.md$"                            . fundamental-mode)  ;; markdown
          ("\\.el$"                            . emacs-lisp-mode)
-         ;; ("\\.\\(js\\|jsi\\)$"                . mode)
-         ;; ("\\.\\(js\\|jsi\\)$"                . espresso-mode)
-         ;; ("\\.js$"                            . js2-mode)
-         ("\\.\\(js\\|gs\\|jsi\\)$"           . js-mode)
-         ("\\.\\(avsc\\)$"                    . js-mode)            ;; avro schema
+         ("\\.js$"                            . js2-mode)
+         ("\\.gs$"                            . js2-mode)            ;; google script
+         ;;("\\.\\(js\\|gs\\|jsi\\)$"           . js2-mode)
+         ("\\.\\(avsc\\)$"                    . json-mode)           ;; avro schema
          ("\\.txt$"                           . text-mode)
          ("\\.asmx$"                          . csharp-mode)         ; likely, could be another language tho
          ("\\.\\(vb\\)$"                      . vbnet-mode)
@@ -997,7 +999,6 @@ With a prefix argument, makes a private paste."
 
 
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; configure external utilities
 
@@ -1006,7 +1007,7 @@ With a prefix argument, makes a private paste."
       (setq archive-zip-use-pkzip nil   ; i.e. use unzip instead
             archive-zip-extract '("/Users/Dino/bin/unzip.exe" "-"))))
 
-(setq-default grep-command "grep -i ")
+(setq-default grep-command "grep -i -n ")
 
 
 
@@ -1839,7 +1840,7 @@ again, I haven't see that as a problem."
 
          (require 'flycheck)
          (flycheck-mode)
-         (flycheck-select-checker 'csharp)
+;;         (flycheck-select-checker 'csharp)
 
          ;; for hide/show support
          (hs-minor-mode 1)
@@ -1879,8 +1880,11 @@ again, I haven't see that as a problem."
          ;;(local-set-key "\M-\\"   'cscomp-complete-at-point-menu)
          (local-set-key "\M-\."   'cscomp-complete-at-point-menu)
 
+         (linum-on)
+
          (require 'rfringe)
          (message "dino-csharp-mode-fn: done.")
+
          )))
 
 
@@ -2373,11 +2377,64 @@ i.e M-x kmacro-set-counter."
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; JavaScript
-(autoload 'js-mode "js" nil t)
-;;(autoload 'js2-mode "js2" nil t)
+;; JavaScript - js2-mode (new - 20180416-1511)
+(autoload 'js2-mode "js2-mode" nil t)
+(eval-after-load 'js2-mode '(require 'setup-js2-mode))
 
+;; xxx
+;;
+;; (defun dino-js2-mode-fn ()
+;;   (turn-on-font-lock)
+;;
+;;   (local-set-key "\M-\C-R"  'indent-region)
+;;   (local-set-key "\M-#"     'dino-indent-buffer)
+;;   (local-set-key "\C-c\C-c" 'comment-region)
+;;   (local-set-key (kbd "<C-tab>") 'yas-expand)
+;;
+;;   (set (make-local-variable 'indent-tabs-mode) nil)
+;;   ;; indent increment
+;;   (set (make-local-variable 'js-indent-level) 2)
+;;   (linum-on)
+;;
+;;   ;; use autopair for curlies, parens, square brackets.
+;;   ;; electric-pair-mode works better than autopair.el in 24.4,
+;;   ;; and is important for use with popup / auto-complete.
+;;   (if (or (not (fboundp 'version<)) (version< emacs-version "24.4"))
+;;       (progn (require 'autopair) (autopair-mode))
+;;     (electric-pair-mode))
+;;
+;;   ;; json-mode is a child mode of js-mode. Select different checker
+;;   ;; based on the file extension.
+;;   (require 'flycheck)
+;;   (if (and buffer-file-name
+;;            (file-name-directory buffer-file-name))
+;;        (progn
+;;          (flycheck-mode)
+;;          (flycheck-select-checker
+;;           (if (string-suffix-p ".json" buffer-file-name)
+;;               'json-jsonlint
+;;             'javascript-jshint))))
+;;
+;;   (yas-minor-mode-on)
+;;
+;;   (require 'smart-op) ;; for smart insertion of ++ and == and += etc
+;;   (smart-op-mode)
+;;   )
+;;
+;;
+;; (add-hook 'js2-mode-hook   'dino-js2-mode-fn)
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; JavaScript - js-mode (old)
+(autoload 'js-mode "js" nil t)
 (defun dino-js-mode-fn ()
+  ;; https://stackoverflow.com/a/15239704/48082
+  (set (make-local-variable 'font-lock-multiline) t)
+  ;; (add-hook 'font-lock-extend-region-functions
+  ;;           'js-fixup-font-lock-extend-region)
+
   (turn-on-font-lock)
 
   ;; for syntax-checking, auto-complete, etc
@@ -2410,15 +2467,12 @@ i.e M-x kmacro-set-counter."
   ;; (local-set-key "\C-cl"    'jsshell-load-file-and-pop)
   ;; (local-set-key "\C-c\C-e" 'jsshell-send-region)
 
-  (linum-on)
-
   ;; use autopair for curlies, parens, square brackets.
   ;; electric-pair-mode works better than autopair.el in 24.4,
   ;; and is important for use with popup / auto-complete.
   (if (or (not (fboundp 'version<)) (version< emacs-version "24.4"))
       (progn (require 'autopair) (autopair-mode))
     (electric-pair-mode))
-
 
   ;; json-mode is a child mode of js-mode. Select different checker
   ;; based on the file extension.
@@ -2477,6 +2531,8 @@ i.e M-x kmacro-set-counter."
 
   (require 'smart-op) ;; for smart insertion of ++ and == and += etc
   (smart-op-mode)
+
+  (linum-on)
   )
 
 (add-hook 'js-mode-hook   'dino-js-mode-fn)
@@ -2537,6 +2593,12 @@ i.e M-x kmacro-set-counter."
   (set (make-local-variable 'indent-tabs-mode) nil)
   (set (make-local-variable 'skeleton-pair) t)
   (local-set-key (kbd "{") 'skeleton-pair-insert-maybe)
+
+  (eval-after-load "smarter-compile"
+    '(progn
+       (add-to-list
+        'smart-compile-compile-command-in-comments-extension-list
+        ".java")))
 
   ;; some of my own java-mode helpers
   (require 'dcjava)
