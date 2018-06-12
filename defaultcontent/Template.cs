@@ -6,10 +6,10 @@
 // Author: @AUTHOR@
 // initialized on: @DATE@
 //
-// last saved: <2016-February-26 17:23:39>
+// last saved: <2018-May-02 13:40:55>
 // ------------------------------------------------------------------
 //
-@INSERTFILE(/Users/Dino/elisp/defaultcontent/Copyright.txt)@//
+@INSERTFILE(/Users/dchiesa/elisp/defaultcontent/Copyright.txt)@//
 // ------------------------------------------------------------------
 
 using System;
@@ -20,9 +20,9 @@ using System.Reflection;
 [assembly: AssemblyTitle("@BASEFILENAME@")]
 [assembly: AssemblyDescription("insert purpose here")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Dino Chiesa")]
+[assembly: AssemblyCompany("Google")]
 [assembly: AssemblyProduct("Tools")]
-[assembly: AssemblyCopyright("Copyright (c) Dino Chiesa 2016")]
+[assembly: AssemblyCopyright("Copyright (c) Google 2018")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 [assembly: AssemblyVersion("1.1.1.1")]
