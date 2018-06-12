@@ -120,6 +120,9 @@ sign follows one of these, there will be no space applied ")
 (defvar smart-op--compound-op-regexp nil
   "for internal use only.")
 
+(defvar smart-op--last-cmd-was-space nil
+  "for internal use only.")
+
 
 (defun smart-op--op-that-precedes-equals-regexp ()
   "Returns a string, suitable for use as a regexp that tests for
@@ -137,6 +140,19 @@ the same string on subsequent invocations.
              (regexp-quote
               (apply 'concat (mapcar 'string smart-op-operators-that-can-precede-equals)))
              "] ?"))))
+
+(defun smart-op--in-string-or-comment (text-props)
+  "returns boolean when TEXT-PROPS indicates a string or comment face.
+TEXT-PROPS is value returned from `text-properties-at'. "
+  (let ((face (or
+               (plist-get text-props 'face)
+               (plist-get text-props 'font-lock-face))))
+    (or (and (listp face)
+                 (or (memq 'font-lock-string-face face)
+                     (memq 'font-lock-comment-face face)))
+            (and (symbolp face)
+                 (or (eq 'font-lock-string-face face)
+                     (eq 'font-lock-comment-face face))))))
 
 
 (defun smart-op-self-insert ()
@@ -156,21 +172,14 @@ See also `smart-op-self-insert-helper'.
   (interactive)
   (setq smart-op--last-cmd-was-space nil)
   (let ((op last-command-event)
-        (face (plist-get (text-properties-at (point)) 'face)))
-    (if (or (and (listp face)
-                 (or (memq 'font-lock-string-face face)
-                     (memq 'font-lock-comment-face face)))
-            (and (symbolp face)
-                 (or (eq 'font-lock-string-face face)
-                     (eq 'font-lock-comment-face face))))
+        (text-props (text-properties-at (point))))
+    (if (smart-op--in-string-or-comment text-props)
         ;; special case double-slash comments
         (progn
-        (if (looking-back "/ ")
-            (backward-delete-char 1))
-        (insert (string op)))
-
+          (if (looking-back "/ " nil)
+              (backward-delete-char 1))
+          (insert (string op)))
       (smart-op-self-insert-helper op))))
-
 
 
 (defun smart-op-self-insert-helper (op)
@@ -278,9 +287,6 @@ inserted.
      (t
       (insert s-op)))))
 
-
-(defvar smart-op--last-cmd-was-space nil
-  "for internal use only.")
 
 
 (defun smart-op-maybe-insert-space ()
