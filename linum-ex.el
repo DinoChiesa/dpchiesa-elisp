@@ -6,7 +6,7 @@
 ;; modifications in linum-ex.el provided by: Dino Chiesa
 
 ;; Author: Markus Triska <markus.triska@gmx.at>
-;; Last saved: <2018-March-22 11:40:00>
+;; Last saved: <2018-April-16 13:08:22>
 ;;
 ;; Keywords: convenience
 
@@ -48,25 +48,25 @@
 ;; display when the user was continuously scrolling.  It also introduced
 ;; noticeable delays when scrolling only momentarily.
 ;;
-;; One idea for working around that is to use run-with-idle-timer, and
+;; One idea for working around that is to use `run-with-idle-timer', and
 ;; only update the line numbers when emacs is idle. One can set a single
 ;; timer, for, say 0.1s, and then when emacs goes idle for that period,
 ;; the line numbers will be updated.
 ;;
 ;; Seems like the perfect fit, but there's a problem: a timer created
-;; via run-with-idle-timer gets canceled after being delayed 10 times.
-;; If the after-scroll event sets up a timer via run-with-idle-timer,
+;; via `run-with-idle-timer' gets canceled after being delayed 10 times.
+;; If the after-scroll event sets up a timer via `run-with-idle-timer',
 ;; only in the case when no timer has been set, the timer may get
 ;; canceled silently, by timer.el . For more on this look at
 ;; `timer-max-repeats'.
 ;;
-;; IF the base delay is 0.1s, then this cancellation would happen after
+;; If the base delay is 0.1s, then this cancellation would happen after
 ;; 10 cycles, or if emacs is busy for 1s, which may occur for example
 ;; when the user is holding pgdn to continuously scroll through a large
 ;; document. If the timer gets cancelled, then the line numbers don't
 ;; ever get updated.
 ;;
-;; To avoid that pitfall, this code can set run-with-idle-timer for
+;; To avoid that pitfall, this code can set `run-with-idle-timer' for
 ;; every scroll event, and handle the delay explicitly, right here.  The
 ;; way to do it is, within the after-scroll event, store the "last
 ;; scrolled" time, and then call `run-with-idle-timer'. There may be
