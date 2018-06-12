@@ -271,7 +271,8 @@ for a given file or set of files. This function makes an intelligent guess."
              (ext (file-name-extension file))
              (initial
               (if (member ext '("png" "jpg" "gif"))
-                  (concat "open -a seashore " (car files))
+                  ;;(concat "open -a seashore " (car files))
+                  (concat "open -a preview " (car files))
                 "")))
         (read-shell-command prompt initial))
 
