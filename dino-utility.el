@@ -71,6 +71,12 @@
       (replace-match "" nil t))))
 
 
+(defun sort-lines-nocase ()
+  (interactive)
+  (let ((sort-fold-case t))
+    (call-interactively 'sort-lines)))
+
+
 (defun dino-ensure-package-installed (&rest packages)
   "For each package in the list of PACKAGES, check if it is installed. If not,
 ask for installation. Return the list of packages."
@@ -308,7 +314,7 @@ Otherwise, ARG is a string, and this function will parse it with that regex, and
 returns the time in emacs internal time format, eg (sec-high sec-low).
 "
   (let ((regex
-         "\\(Sunday\\|Monday\\|Tuesday\\|Wednesday\\|Thursday\\|Friday\\|Saturday\\), +\\([0-9]\\{1,2\\}\\) \\([A-Za-z]\\{5,14\\}\\) \\(\\(19\\|20\\)[0-9]\\{2\\}\\), \\([0-9]\\{2\\}\\):\\([0-9]\\{2\\}\\)")
+         "\\(Sunday\\|Monday\\|Tuesday\\|Wednesday\\|Thursday\\|Friday\\|Saturday\\), +\\([0-9]\\{1,2\\}\\) \\([A-Za-z]\\{3,14\\}\\) \\(\\(19\\|20\\)[0-9]\\{2\\}\\), \\([0-9]\\{2\\}\\):\\([0-9]\\{2\\}\\)")
         (dt (decode-time (current-time))))
     (if (booleanp arg)
         regex
