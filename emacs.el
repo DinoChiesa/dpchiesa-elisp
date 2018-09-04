@@ -1,6 +1,6 @@
 ;;; emacs.el -- Dino's .emacs setup file.
 ;;
-;; Last saved: <2018-May-31 16:56:11>
+;; Last saved: <2018-September-04 11:19:54>
 ;;
 ;; Works with v24.5 and v25.1 of emacs.
 ;;
@@ -52,7 +52,6 @@
 ;;
 (require 'package)
 (dolist (item (list
-              ;;'("marmalade" . "http://marmalade-repo.org/packages/")
               '("melpa"     . "https://stable.melpa.org/packages/")
               '("org"       . "http://orgmode.org/elpa/")))
   (add-to-list 'package-archives item))
@@ -92,7 +91,6 @@
 )
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-
 (setq magit-git-executable "/usr/local/git/current/bin/git")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -106,6 +104,7 @@
      ;; (setq flycheck-phpcs-standard "Drupal") ;; DinoChiesa
      (setq flycheck-phpcs-standard "/usr/local/share/pear/PHP/CodeSniffer/src/Standards/DinoChiesa")
      )) ;; DinoChiesa
+
 ;; $ pear config-get php_dir
 ;; will show the pear PHP config directory.  Eg /usr/local/share/pear
 ;; .. which means the phpcs dir is /usr/local/share/pear/PHP/CodeSniffer
@@ -214,17 +213,6 @@
   (flycheck-mode 1))
 
 (add-hook 'go-mode-hook 'dino-go-mode-fn)
-
-;; (add-to-list 'load-path "/Users/dino/dev/go/libs/src/github.com/dougm/goflymake")
-;;
-;; (defun dino-go-mode-fn ()
-;;   ;;(require 'flymake)
-;;   (require 'go-flycheck)
-;;   (and (file-name-directory buffer-file-name)
-;;        (progn
-;;          ;;(flymake-mode 1)
-;;        (setq goflymake-path "/Users/dino/dev/go/libs/bin/goflymake"))))
-
 
 
 
@@ -440,23 +428,23 @@
 (setq inhibit-eol-conversion nil)
 
 ;; turn on font-lock globally
+;; for fontification in emacs progmodes:
+(require 'font-lock)
+(setq font-lock-maximum-decoration t)
 (global-font-lock-mode 1) ;;  'ON
 
-(setq-default fill-column 72)
+(setq-default fill-column 80)
 (setq auto-save-interval 500)
 (setq case-fold-search nil)
 (setq comment-empty-lines t)
 
+;; fringe (between line numbers and buffer text)
+(setq-default left-fringe-width  10)
+(set-face-attribute 'fringe nil :background "black")
 
 ;; helpful for debugging lisp code:
 (setq messages-buffer-max-lines 2500)
-
-;; for fontification in emacs progmodes:
-(require 'font-lock)
-(setq font-lock-maximum-decoration t)
-
 (setq completion-auto-help nil)
-
 (put 'eval-expression 'disabled nil)
 
 ;; set truncation on side-by-side windows to nil.
@@ -478,11 +466,15 @@
         ;;(foreground-color . "White")
         ;;(background-color . "Black")
         (mouse-color . "sienna3")
+        ;; works with macos
+        (font . "-*-Menlo-normal-normal-normal-*-17-*-*-*-m-0-iso10646-1")
+        ;; works with windows
         ;;(font . "-*-Consolas-normal-normal-normal-*-11-*-*-*-m-0-iso10646-1")
         )
       )
 
-;(set-face-attribute 'default t :font "Consolas-11")
+;; works with Windows
+;;(set-face-attribute 'default t :font "Consolas-11")
 
 ;; (message (face-font 'tooltip))
 ;; (message (face-font 'default))
@@ -760,7 +752,9 @@ With a prefix argument, makes a private paste."
 (add-to-list 'auto-mode-alist '("\\.lua\\'" . lua-mode))
 (add-to-list 'interpreter-mode-alist '("lua" . lua-mode))
 
-(setq lua-default-application "c:\\tools\\lua\\lua52.exe")
+(if (eq system-type 'windows-nt)
+    (setq lua-default-application "c:\\tools\\lua\\lua52.exe")
+  )
 
 (eval-after-load "lua-mode"
   '(progn
@@ -809,8 +803,6 @@ With a prefix argument, makes a private paste."
 
 (add-to-list 'load-path (file-name-as-directory "~/elisp/cscomp"))
 
-
-;;(require 'csharp-completion)
 (autoload 'cscomp-complete-at-point      "csharp-completion"  "code-completion for C#" t)
 (autoload 'cscomp-complete-at-point-menu "csharp-completion"  "code-completion for C#" t)
 
@@ -863,9 +855,6 @@ With a prefix argument, makes a private paste."
   ;; for snippets support:
   (require 'yasnippet)
   (yas-minor-mode-on)
-
-  ;; (local-set-key "\C-c\C-n"  'flymake-goto-next-error)
-  ;; (local-set-key "\C-c\C-m"  'flymake-display-err-menu-for-current-line)
 
   ;; use autopair for curlies, parens, square brackets.
   ;; electric-pair-mode works better than autopair.el in 24.4,
@@ -921,7 +910,7 @@ With a prefix argument, makes a private paste."
   ;; make auto-complete start only after 2 chars
   (setq ac-auto-start 2)  ;;or 3?
 
-  (require 'csslint)
+  ;;(require 'csslint)
   (require 'flycheck)
   (flycheck-mode)
   (flycheck-select-checker 'css-csslint)
@@ -999,13 +988,16 @@ With a prefix argument, makes a private paste."
 
 
 
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; configure external utilities
 
-(if (file-exists-p "/Users/Dino/bin/unzip.exe")
-    (progn
-      (setq archive-zip-use-pkzip nil   ; i.e. use unzip instead
-            archive-zip-extract '("/Users/Dino/bin/unzip.exe" "-"))))
+(if (eq system-type 'windows-nt)
+    (if (file-exists-p "/Users/dpchiesa/bin/unzip.exe")
+        (progn
+          (setq archive-zip-use-pkzip nil   ; i.e. use unzip instead
+                archive-zip-extract '("/Users/dpchiesa/bin/unzip.exe" "-"))))
+  )
 
 (setq-default grep-command "grep -i -n ")
 
@@ -1125,13 +1117,11 @@ just auto-corrects on common mis-spellings by me. "
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; linum - line numbering
-;; linum-ex - enhancements with coloring and delay (for performance)
+;; linum-ex - linum-mode with enhancements for coloring and delay (for performance)
 
 ;;(require 'linum-ex)
 (autoload 'linum-on "linum-ex" nil t)
 (autoload 'linum-mode "linum-ex" nil t)
-
 (eval-after-load "linum-ex"
   '(progn
     ;;(message "%s" (prin1-to-string (defined-colors))) ;; to list possible colors
@@ -1238,9 +1228,6 @@ just auto-corrects on common mis-spellings by me. "
          (setq indent-region-function nil)
 
          (setq c-auto-newline nil)
-
-         ;; (require 'flymake)
-         ;; (flymake-mode 1)
 
          (set (make-local-variable 'comment-start) "// ")
          (set (make-local-variable 'comment-end) "")
@@ -1473,9 +1460,6 @@ just auto-corrects on common mis-spellings by me. "
          ;; for snippets support:
          (require 'yasnippet)
          (yas-minor-mode-on)
-
-         ;; for flymake support:
-         ;;(flymake-mode)
 
          ;; for hide/show support
          (hs-minor-mode 1)
@@ -1831,13 +1815,6 @@ again, I haven't see that as a problem."
          (show-paren-mode 1)
          (hl-line-mode 1)
 
-         ;; (require 'flymake)
-         ;; (and (file-name-directory buffer-file-name)
-         ;;      (flymake-mode 1))
-         ;;
-         ;; (local-set-key "\C-c\C-n"  'flymake-goto-next-error)
-         ;; (local-set-key "\C-c\C-m"  'flymake-display-err-menu-for-current-line)
-
          (require 'flycheck)
          (flycheck-mode)
 ;;         (flycheck-select-checker 'csharp)
@@ -2043,9 +2020,6 @@ Does not consider word syntax tables.
 
 (defun dino-php-mode-fn ()
   "Function to run when php-mode is initialized for a buffer."
-  ;; (require 'flymake)
-  ;; (and (file-name-directory buffer-file-name)
-  ;;      (flymake-mode 1))
 
   (require 'flycheck)
   (flycheck-mode)
@@ -2063,18 +2037,21 @@ Does not consider word syntax tables.
   (modify-syntax-entry ?\n "> b"  php-mode-syntax-table)
   (modify-syntax-entry ?\^m "> b" php-mode-syntax-table)
 
+  ;; why / how is the following getting overridden?
   (setq comment-multi-line nil ;; maybe
         comment-start "// "
         comment-end ""
         comment-style 'indent
-        comment-use-syntax t))
+        comment-use-syntax t)
 
+  )
+(add-hook 'php-mode-hook 'dino-php-mode-fn t)
 
 (eval-after-load "php-mode"
   '(progn
      (require 'compile)
-     ;;(require 'flymake)
-     (add-hook 'php-mode-hook 'dino-php-mode-fn t)))
+     ))
+
 
 
 (defvar dc-php-program "/usr/bin/php" "PHP interpreter")
@@ -2261,6 +2238,7 @@ Does not consider word syntax tables.
   (setq indent-tabs-mode nil)
   (hl-line-mode 1)
   (turn-on-auto-revert-mode)
+  (linum-on)
 
   ;; This write-contents-functions hook seems awesome except it wasn't
   ;; working for me.  It's possible that it was not working because of a
@@ -2309,37 +2287,9 @@ Does not consider word syntax tables.
   ;; ya-snippet
   (yas-minor-mode-on)
 
-  ;; ;; use flymake with pyflakes
-  ;; (require 'flymake)
-  ;; (and (file-name-directory buffer-file-name)
-  ;;      (flymake-mode 1))
-
-  ;; (local-set-key "\C-c\C-n"  'flymake-goto-next-error)
-  ;; (local-set-key "\C-c\C-m"  'flymake-display-err-menu-for-current-line)
-
   (show-paren-mode 1))
 
 (add-hook 'python-mode-hook 'dino-python-mode-fn)
-
-
-;; (eval-after-load "flymake"
-;;   '(progn
-;;      (defun dino-flymake-pyflakes-init ()
-;;        (let* ((temp-file (flymake-init-create-temp-buffer-copy
-;;                           'flymake-create-temp-inplace))
-;;               (local-file (file-relative-name
-;;                            temp-file
-;;                            (file-name-directory buffer-file-name))))
-;;
-;;          (list "c:\\Python27\\pyflakes.cmd" (list local-file))))
-;;
-;;      (let* ((key "\\.py\\'")
-;;             (pyentry (assoc key flymake-allowed-file-name-masks)))
-;;        (if pyentry
-;;            (setcdr pyentry '(dino-flymake-pyflakes-init))
-;;          (add-to-list
-;;           'flymake-allowed-file-name-masks
-;;           (list key 'dino-flymake-pyflakes-init))))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -2494,14 +2444,6 @@ i.e M-x kmacro-set-counter."
   ;; stop complaining. So I didn't use it, and still use jshint, which
   ;; seems to work just fine.
 
-  ;; turn on flymake
-  ;; (require 'flymake)
-  ;; (local-set-key "\C-c\C-n"  'flymake-goto-next-error)
-  ;; (local-set-key "\C-c\C-m"  'flymake-display-err-menu-for-current-line)
-
-  ;; (require 'flymake-for-jslint-for-wsh)
-  ;; ;;(setq flyjs-jslintwsh-location "c:\\users\\dino\\bin\\jslint-for-wsh.js")
-  ;; (setq flyjs-jslintwsh-location "c:\\users\\dino\\bin\\jshint-for-wsh.js")
 
   ;; (require
   ;;  (if (eq system-type 'windows-nt)
@@ -2589,6 +2531,8 @@ i.e M-x kmacro-set-counter."
   (turn-on-font-lock)
   (local-set-key "\M-\C-R" 'indent-region)
   (local-set-key "\M-#"     'dino-indent-buffer)
+
+  (modify-syntax-entry ?_ "w")
 
   (set (make-local-variable 'indent-tabs-mode) nil)
   (set (make-local-variable 'skeleton-pair) t)
@@ -3139,7 +3083,6 @@ i.e M-x kmacro-set-counter."
 (global-hl-line-mode)
 
 (custom-set-faces
- ;; '(flymake-errline              ((t (:inherit error :background "firebrick4"))))
  '(flycheck-error               ((t (:background "firebrick4"))))
  '(font-lock-comment-face       ((t (:foreground "PaleVioletRed3"))))
  '(font-lock-keyword-face       ((t (:foreground "CadetBlue2"))))
