@@ -1,6 +1,6 @@
 ;;; emacs.el -- Dino's .emacs setup file.
 ;;
-;; Last saved: <2018-September-04 11:19:54>
+;; Last saved: <2018-September-04 12:51:45>
 ;;
 ;; Works with v24.5 and v25.1 of emacs.
 ;;
@@ -2618,6 +2618,11 @@ i.e M-x kmacro-set-counter."
      ))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Github GraphQL mode
+(autoload 'gh-graphql-mode "gh-graphql")
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
