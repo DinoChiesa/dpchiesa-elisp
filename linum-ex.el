@@ -6,7 +6,7 @@
 ;; modifications in linum-ex.el provided by: Dino Chiesa
 
 ;; Author: Markus Triska <markus.triska@gmx.at>
-;; Last saved: <2018-April-16 13:08:22>
+;; Last saved: <2018-September-04 11:16:30>
 ;;
 ;; Keywords: convenience
 
@@ -239,7 +239,28 @@ and you have to scroll or press C-l to update the numbers."
             (overlay-put ov 'linum-str str))))
       (forward-line)
       (setq line (1+ line)))
-    (set-window-margins win width)))
+    (linumex-set-window-margin-width win width)
+    ;;(set-window-margins win width)
+    ))
+
+(defun linumex-set-window-margin-width (win width)
+  "Sets the window margin width. When scaling text font in the window,
+the linum font also scales. When the font becomes larger, in some
+cases the line number will be too wide to fit in the margin. This
+code updates the margin width used by linum when scaling."
+  ;; When there has been no previous scaling event in the window, the variables
+  ;; are not yet set.  Therefore we need to use default values.
+  (let* ((stepvar (or (and (boundp 'text-scale-mode-step) text-scale-mode-step) 1.2))
+         (amountvar (or (and (boundp 'text-scale-mode-amount) text-scale-mode-amount) 0))
+         (xstep (or (and stepvar amountvar (expt stepvar (+ 0.8 amountvar))) 1))
+         (net-width (ceiling (* xstep width))))
+    ;; (message "step(%s) amount(%s) xstep(%s) net-width(%s)"
+    ;;          (prin1-to-string stepvar)
+    ;;          (prin1-to-string amountvar)
+    ;;          (prin1-to-string xstep)
+    ;;          (prin1-to-string net-width))
+    (set-window-margins win net-width)))
+
 
 (defun linum-after-change (beg end len)
   ;; update overlays on deletions, and after newlines are inserted
