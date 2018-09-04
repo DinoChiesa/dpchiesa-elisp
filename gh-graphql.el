@@ -166,7 +166,8 @@ like Python's os.path.join."
   (if (not gh-graphql-auth-token)
       (let ((dat-file-path (gh-graphql--path-to-settings-file)))
         (if (file-exists-p dat-file-path)
-            (with-current-buffer (find-file-noselect dat-file-path)
+            (with-temp-buffer
+              (insert-file-contents dat-file-path)
               (save-excursion
                 (goto-char (point-min))
                 (let ((settings-data (read (current-buffer))))
@@ -177,13 +178,56 @@ like Python's os.path.join."
                            (cadr one-setting))
                           (set (intern setting-name) (cadr one-setting))))))))))))
 
+(defun gh-graphql-save-auth-token ()
+  "save `gh-graphql-auth-token' to the cache file."
+  (if gh-graphql-auth-token
+      (let ((dat-file-path (gh-graphql--path-to-settings-file))
+            (alist-to-write (list
+             (list "gh-graphql-auth-token" gh-graphql-auth-token))))
+    (with-temp-file dat-file-path
+      (goto-char (point-min))
+      (erase-buffer)
+      (insert ";; settings for gh-graphql.el")
+      (newline)
+      (insert (concat ";; Stored: " (current-time-string)))
+      (newline)
+      (let ((print-length nil)) ;; to avoid truncating
+        (pp alist-to-write (current-buffer)))))))
+
+
+(defun gh-graphql-y-or-n (raw-prompt &optional default-yes)
+  "displays PROMPT in the minibuffer, prompts for a y or n,
+    returns t or nil accordingly. If neither Y or N is entered, then
+    if DEFAULT-YES, returns t, else nil."
+  (let* ((options-string (if default-yes "Y or n" "y or N"))
+         (prompt (concat raw-prompt "(" options-string ")? "))
+         (cursor-in-echo-area t)
+         (key (read-key (propertize prompt 'face 'minibuffer-prompt)))
+         (isyes (or (eq key ?y) (eq key ?Y)))
+         (isno (or (eq key ?n) (eq key ?N))))
+    (if (not (or isyes isno))
+        default-yes
+      isyes)))
+
+(defun gh-graphql--authorization-header ()
+  "returns the authorization header for the GraphQL Github API."
+  (let ((token
+         (or gh-graphql-auth-token
+             (read-string "Github user token: " nil))))
+    (if (and token (not gh-graphql-auth-token))
+        (progn
+          (setq gh-graphql-auth-token token)
+          (if (gh-graphql-y-or-n "Save for next time ")
+                (gh-graphql-save-auth-token))))
+    (cons "Authorization" (concat "Bearer " token))))
+
 
 (defun gh-graphql--default-headers ()
-  "returns the Authorization header, or nil if no token is set."
-  (cons
+  "returns the default HTTP header for the Github GraphQL API."
+  (list
    '( "user-agent" . "gh-graphql.el")
-   (and gh-graphql-auth-token
-        (list (cons "Authorization" (concat "Bearer " gh-graphql-auth-token))))))
+   (gh-graphql--authorization-header)))
+
 
 (defun gh-graphql-http-do (method url headers entity &rest handle-args)
   "Send ENTITY and HEADERS to URL as a METHOD request."
