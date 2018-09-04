@@ -194,7 +194,6 @@ like Python's os.path.join."
       (let ((print-length nil)) ;; to avoid truncating
         (pp alist-to-write (current-buffer)))))))
 
-
 (defun gh-graphql-y-or-n (raw-prompt &optional default-yes)
   "displays PROMPT in the minibuffer, prompts for a y or n,
     returns t or nil accordingly. If neither Y or N is entered, then
@@ -399,7 +398,7 @@ The buffer contains the raw HTTP response sent by the server."
           decoded-http-response-buffer)))))
 
 (defconst gh-graphql-method-regexp
-  "^\\(POST\\)[:space:]*$")
+  "^\\(POST\\)[[:space:]]*$")
 
 (defconst gh-graphql-header-regexp
   "^\\([^ :]+\\): \\(.*\\)$")
@@ -578,11 +577,13 @@ Optional argument STAY-IN-WINDOW do not move focus to response buffer if t."
   (setq deactivate-mark nil))
 
 (defvar gh-graphql-mode-keywords
-  (list (list gh-graphql-method-regexp '(1 font-lock-keyword-face) '(2 font-lock-function-name-face))
-        (list gh-graphql-header-regexp '(1 font-lock-variable-name-face) '(2 font-lock-string-face))
-        (list gh-graphql-evar-regexp '(1 font-lock-preprocessor-face) '(2 font-lock-function-name-face))
-        (list gh-graphql-var-regexp '(1 font-lock-preprocessor-face) '(3 font-lock-string-face))
-        ))
+  (list
+   ;; (list gh-graphql-method-regexp '(1 font-lock-keyword-face) '(2 font-lock-function-name-face))
+   (list gh-graphql-method-regexp '(1 font-lock-keyword-face) )
+   (list gh-graphql-header-regexp '(1 font-lock-variable-name-face) '(2 font-lock-string-face))
+   (list gh-graphql-evar-regexp '(1 font-lock-preprocessor-face) '(2 font-lock-function-name-face))
+   (list gh-graphql-var-regexp '(1 font-lock-preprocessor-face) '(3 font-lock-string-face))
+   ))
 
 (defvar gh-graphql-mode-syntax-table
   (let ((table (make-syntax-table)))
