@@ -53,6 +53,7 @@
 ;;; Code:
 
 (require 'cl)
+(require 's)
 (require 'package)
 
 ;; when copying binary files into a clipboard buffer
@@ -1322,6 +1323,19 @@ The first line is indented with INDENT-STRING."
 "}\n"
 
                    ))))))
+
+
+(defun dino-buganizer-open ()
+  "Convert buganizer ticket to description"
+  (interactive)
+  (let ((bounds (if (use-region-p)
+                     (cons (region-beginning) (region-end))
+                  (bounds-of-thing-at-point 'word))))
+    (when bounds
+      (let* ((raw-text (buffer-substring-no-properties (car bounds) (cdr bounds)))
+             (ticket-id (s-chop-prefixes '("b" "b/") raw-text))
+             (url (concat "https://b.corp.google.com/issues/" ticket-id)))
+        (browse-url url)))))
 
 
 ;; (defun word-as-number-2x ()
