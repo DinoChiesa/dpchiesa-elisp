@@ -1,6 +1,6 @@
 ;;; emacs.el -- Dino's .emacs setup file.
 ;;
-;; Last saved: <2018-September-04 12:51:45>
+;; Last saved: <2018-September-20 13:26:34>
 ;;
 ;; Works with v24.5 and v25.1 of emacs.
 ;;
@@ -678,13 +678,14 @@ With a prefix argument, makes a private paste."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; yaml
 (require 'yaml-mode)
+(require 'yaml-pretty-mode)
 (defun dino-yaml-mode-fn ()
   "My hook for YAML mode"
   (interactive)
   (turn-on-font-lock)
   (turn-on-auto-revert-mode)
   (linum-on)
-  ;; "no tabs" -- use only spaces
+  (yaml-pretty-mode)
   ;;(make-local-variable 'indent-tabs-mode)
   (setq indent-tabs-mode nil))
 
