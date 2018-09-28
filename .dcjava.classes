@@ -365,3 +365,10 @@ javax.servlet.http.HttpServletResponse
 javax.servlet.http.HttpSession
 javax.servlet.http.HttpUpgradeHandler
 javax.servlet.http.Part
+com.google.common.base.Throwables
+java.util.Random
+java.util.TreeSet
+com.google.common.hash.HashFunction
+com.google.common.hash.Hashing
+java.security.spec.ECParameterSpec
+java.security.spec.InvalidParameterSpecException
