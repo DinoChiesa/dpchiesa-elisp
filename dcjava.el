@@ -11,7 +11,7 @@
 ;; Requires   : s.el
 ;; License    : Apache 2.0
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2018-September-27 17:13:44>
+;; Last-saved : <2018-September-28 10:28:18>
 ;;
 ;;; Commentary:
 ;;
@@ -113,6 +113,11 @@
 (defconst dcjava--package-stmt-regex (concat "package[\t ]+" dcjava--classname-regex
                                     "[\t ]*;")
   "a regex that matches a Java package statement")
+
+(defconst dcjava--edge-of-symbol-regex
+  "[ \t(,\\[=]"
+  "A regex that matches the leading edge of a java symbol or classname")
+
 
 ;; (defconst dcjava-classname-regex "\\([a-zA-Z_$][a-zA-Z\\d_$]*\\.\\)*[a-zA-Z_$][a-zA-Z\\d_$]*"
 ;;   "a regex that matches a Java classname")
@@ -295,7 +300,7 @@ will be something like (\"x.y.z.Class\") .
 (defun dcjava--classname-at-point ()
   "returns the fully-qualified classname under point"
   (save-excursion
-    (if (re-search-backward "[ \t]" (line-beginning-position) 1)
+    (if (re-search-backward dcjava--edge-of-symbol-regex (line-beginning-position) 1)
         (forward-char))
     (if (looking-at dcjava--classname-regex)
         ;;(replace-regexp-in-string
@@ -303,7 +308,7 @@ will be something like (\"x.y.z.Class\") .
         (buffer-substring-no-properties (match-beginning 0) (match-end 0)))))
 
 
-)(defun dcjava-auto-add-import ()
+(defun dcjava-auto-add-import ()
   "adds an import statement for the class or interface at point, if possible.
 If the class at point is fully-qualified, just adds an import for that. Otherwise,
 uses a cached list to lookup the package/class to import."
@@ -318,7 +323,7 @@ uses a cached list to lookup the package/class to import."
           (dcjava-add-one-import-statement classname nil t)
           ;; unqualify the classname under point
           (save-excursion
-            (if (re-search-backward "[ \t]" (line-beginning-position) 1)
+            (if (re-search-backward dcjava--edge-of-symbol-regex (line-beginning-position) 1)
                 (forward-char))
             (if (re-search-forward (regexp-quote classname))
                 ;; replace the fully-qualified classname with the basename
@@ -342,7 +347,7 @@ uses a cached list to lookup the package/class to import."
      )))
 
 
-(defun dcjava-learn-new-import ()
+)(defun dcjava-learn-new-import ()
   "learns a new import statement for the import statement at point, if possible."
   (interactive)
   (let ((import-stmt
