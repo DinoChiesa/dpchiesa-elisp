@@ -84,7 +84,7 @@
   :global t
 
   ;; Toggling the mode should clear the state variables.
-
+  ;; It should also remove the composition, but ... it doesn't currently.
   (font-lock-add-keywords nil yaml-pretty-flock-keywords)
 
   ;; re-fontify the entire buffer
