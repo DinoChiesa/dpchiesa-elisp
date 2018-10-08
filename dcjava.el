@@ -11,7 +11,7 @@
 ;; Requires   : s.el
 ;; License    : Apache 2.0
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2018-September-28 10:28:18>
+;; Last-saved : <2018-October-08 10:12:29>
 ;;
 ;;; Commentary:
 ;;
@@ -346,8 +346,7 @@ uses a cached list to lookup the package/class to import."
       (message "did not find a classname under point"))
      )))
 
-
-)(defun dcjava-learn-new-import ()
+(defun dcjava-learn-new-import ()
   "learns a new import statement for the import statement at point, if possible."
   (interactive)
   (let ((import-stmt
@@ -516,7 +515,6 @@ at the top of the file."
           (insert (concat "package " inferred-package-name ";"))
           (newline)
           ))))
-
 
 
 (provide 'dcjava)
