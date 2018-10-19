@@ -21,6 +21,7 @@
 (require 'url)
 (require 'json)
 (require 's)
+;;(require 'dash)
 
 (defgroup restclient nil
   "An interactive HTTP client for Emacs."
@@ -308,9 +309,12 @@ The buffer contains the raw HTTP response sent by the server."
 (defun restclient-replace-all-in-string (replacements s)
   (if replacements
       (replace-regexp-in-string (regexp-opt (mapcar 'car replacements))
-                                (lambda (key) (cdr (assoc key replacements)))
+                                (lambda (key)
+                                  (or (cdr (assoc key replacements))
+                                      key))
                                 s nil t)
     s))
+
 
 (defun restclient-replace-all-in-header (replacements header)
   (cons (car header)
@@ -318,6 +322,10 @@ The buffer contains the raw HTTP response sent by the server."
 
 (defun restclient-replace-all-in-headers (replacements headers)
   (mapcar (apply-partially 'restclient-replace-all-in-header replacements) headers))
+
+(defun restclient--unique-vars (vars)
+  (let ((unique-keys (delete-dups (mapcar 'car vars))))
+    (mapcar (lambda (key) (assoc key vars)) unique-keys)))
 
 (defun restclient-find-vars-before-point ()
   (let ((vars nil)
@@ -329,7 +337,7 @@ The buffer contains the raw HTTP response sent by the server."
               (should-eval (> (length (match-string 2)) 0))
               (value (buffer-substring-no-properties (match-beginning 3) (match-end 3))))
           (setq vars (cons (cons name (if should-eval (restclient-eval-var value) value)) vars))))
-      vars)))
+      (restclient--unique-vars vars))))
 
 ;; this function can be used to refer to a var, in an eval var decl,
 ;; eg, :basicauth := (base64-encode-string (concat (restclient-var ":username") ":" (restclient-var ":pwd"))
