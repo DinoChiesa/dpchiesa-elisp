@@ -527,8 +527,10 @@ Point is placed at the beginning of the newly inserted timestamp.
       (if (>= ix (length dino-time-formats)) ;; roll-over
           (setq ix 0))
 
-      (save-excursion
-        (insert (format-time-string (car (nth ix dino-time-formats)))))))))
+      (let ((orig-point (point)))
+        (insert (format-time-string (car (nth ix dino-time-formats))))
+        (push-mark)
+        (goto-char orig-point))))))
 
 
 (defun dino-insert-current-time-millis ()
