@@ -1,6 +1,6 @@
 ;;; emacs.el -- Dino's .emacs setup file.
 ;;
-;; Last saved: <2018-September-28 10:59:49>
+;; Last saved: <2018-October-11 11:01:36>
 ;;
 ;; Works with v24.5 and v25.1 of emacs.
 ;;
@@ -2563,7 +2563,7 @@ i.e M-x kmacro-set-counter."
 
 (c-add-style "myJavaStyle"
              '("Java"  ; this must be defined elsewhere - it is in cc-modes.el
-               (c-basic-offset . 2)
+               (c-basic-offset . 4)
                (c-echo-syntactic-information-p . t)
                (c-comment-only-line-offset . (0 . 0))
                (c-offsets-alist . (
