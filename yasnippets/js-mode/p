@@ -1,0 +1,6 @@
+# key : p
+# name : new Promise ... { ... }
+# --
+new Promise( (resolve, reject) => {
+  $0
+})
