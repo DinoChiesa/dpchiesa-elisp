@@ -72,7 +72,7 @@
       (replace-match "" nil t))))
 
 
-(defun sort-lines-nocase ()
+(defun dino-sort-lines-nocase ()
   (interactive)
   (let ((sort-fold-case t))
     (call-interactively 'sort-lines)))
@@ -965,19 +965,17 @@ Eg,
     (add-to-list 'dino-move-timer-list (list src targ x))))
 
 
-
-
-(defun dino-gtm-url (mtgid)
-  "Produce and put in killring a URL for a GoToMeeting"
-  (interactive "smtg id: ")
-  (if mtgid ;; eg 979-984-805 or 979984805
-      (let ((mtgid (replace-regexp-in-string "-" "" mtgid)))
-        (if (eq (length mtgid) 9)  ;; eg, 979984805
-            (let ((link (concat "https://global.gotomeeting.com/join/" mtgid)))
-              (kill-new link)
-              (message link))
-          (message "invalid meeting ID")))
-    (message "empty meeting ID")))
+;; (defun dino-gtm-url (mtgid)
+;;   "Produce and put in killring a URL for a GoToMeeting"
+;;   (interactive "smtg id: ")
+;;   (if mtgid ;; eg 979-984-805 or 979984805
+;;       (let ((mtgid (replace-regexp-in-string "-" "" mtgid)))
+;;         (if (eq (length mtgid) 9)  ;; eg, 979984805
+;;             (let ((link (concat "https://global.gotomeeting.com/join/" mtgid)))
+;;               (kill-new link)
+;;               (message link))
+;;           (message "invalid meeting ID")))
+;;     (message "empty meeting ID")))
 
 
   (defun dino-copy-value-from-key-into-killring (key)
@@ -1363,6 +1361,9 @@ The first line is indented with INDENT-STRING."
 ;;              (numeric (/ (string-to-int text) 2)))
 ;;         (delete-region (car bounds) (cdr bounds))
 ;;         (insert (int-to-string numeric))))))
+
+
+(global-set-key "\C-x7"     'dino-toggle-frame-split)
 
 (provide 'dino-utility)
 
