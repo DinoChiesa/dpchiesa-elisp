@@ -25,6 +25,7 @@
 ;;(js2r-add-keybindings-with-prefix "C-c RET")
 ;;(js2r-add-keybindings-with-prefix "C-c C-m")
 (add-hook 'js2-mode-hook #'js2-refactor-mode)
+;;https://github.com/magnars/js2-refactor.el
 (js2r-add-keybindings-with-prefix "C-c C-k")
 
 (require 'js2-imenu-extras)
