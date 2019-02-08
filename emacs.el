@@ -1,6 +1,6 @@
 ;;; emacs.el -- Dino's .emacs setup file.
 ;;
-;; Last saved: <2018-October-11 11:01:36>
+;; Last saved: <2019-February-06 11:31:17>
 ;;
 ;; Works with v24.5 and v25.1 of emacs.
 ;;
@@ -80,6 +80,7 @@
  'js2-mode
  'js2-refactor
  'go-mode
+ 'expand-region
  'go-autocomplete
  'flycheck
  'dash-functional
@@ -156,8 +157,18 @@
                             (?\{ . ?\})
                             ) )
 
-
-
+;;; Tips from https://www.youtube.com/watch?v=p3Te_a-AGqM
+;; for marking ever-larger regions iteratively
+(require 'expand-region)
+(global-set-key (kbd "C-=") 'er/expand-region)
+;; for visually editing similar things with one key sequence
+(require 'multiple-cursors)
+(global-set-key (kbd "C->") 'mc/mark-next-like-this)
+(global-set-key (kbd "C-<") 'mc/mark-previous-like-this)
+(global-set-key (kbd "C-c C-<") 'mc/mark-all-like-this)
+;; edit files in a grep output buffer
+(require 'wgrep)
+(global-set-key (kbd "C-c C-p") 'wgrep-change-to-wgrep-mode)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; stuff for Apigee Edge
@@ -391,7 +402,7 @@
 (global-set-key "\C-ck"     'global-set-key)
 (global-set-key "\C-cs"     'search-forward-regexp)
 (global-set-key "\C-cy"     'linum-mode)
-(global-set-key "\C-c\C-p"  'dino-copy-value-from-key-into-killring)
+;;(global-set-key "\C-c\C-p"  'dino-copy-value-from-key-into-killring)
 ;;(global-set-key "\C-cm"     'dino-gtm-url)
 (global-set-key "\C-cq"     'query-replace)
 (global-set-key "\C-cc"     'goto-char)
@@ -1155,7 +1166,8 @@ just auto-corrects on common mis-spellings by me. "
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; C mode  (common)
-;
+                                        ;
+(require 'dtrt-indent)
 (defun dino-c-mode-common-hook-fn ()
   (cond
    (window-system
@@ -1173,7 +1185,7 @@ just auto-corrects on common mis-spellings by me. "
     (local-set-key "\C-c\C-w"  'compare-windows)
 
     (hl-line-mode 1)
-
+    (dtrt-indent-mode t)
     ;; ;; allow fill-paragraph to work on xml code doc
     ;; (make-local-variable 'paragraph-separate)
 
@@ -2331,6 +2343,7 @@ i.e M-x kmacro-set-counter."
 ;; JavaScript - js2-mode (new - 20180416-1511)
 (autoload 'js2-mode "js2-mode" nil t)
 (eval-after-load 'js2-mode '(require 'setup-js2-mode))
+(js2r-add-keybindings-with-prefix "C-c C-m")
 
 ;; xxx
 ;;
@@ -2394,7 +2407,7 @@ i.e M-x kmacro-set-counter."
 
   (local-set-key "\M-\C-R"  'indent-region)
   (local-set-key "\M-#"     'dino-indent-buffer)
-  (local-set-key "\C-c\C-c" 'comment-region)
+  (local-set-key "\C-cc"    'comment-region)
   (local-set-key "\C-c."    'tern-ac-complete)
   ;;(local-set-key "\C-\."     'tern-ac-complete)
   (local-set-key (kbd "C-.")  'tern-ac-complete)
@@ -3068,6 +3081,15 @@ i.e M-x kmacro-set-counter."
               (lambda () (turn-on-auto-revert-mode)))
 
 
+;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; ;; google things
+;; (add-to-list 'load-path "~/elisp/site-lisp/emacs-google-config/devtools/editors/emacs")
+;; ;; (load-file
+;; ;;  "/usr/share/emacs/site-lisp/emacs-google-config/devtools/editors/emacs/google.el")
+;; (require 'google-java-format)
+
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; basic, default colors
 
@@ -3084,7 +3106,7 @@ i.e M-x kmacro-set-counter."
 (defadvice hl-line-mode (after
                          dino-advise-hl-line-mode
                          activate compile)
-  (set-face-background hl-line-face "gray13"))
+  (set-face-background hl-line-face "gray18"))
 
 (global-hl-line-mode)
 
