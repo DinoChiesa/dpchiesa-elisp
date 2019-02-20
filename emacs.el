@@ -1,6 +1,6 @@
 ;;; emacs.el -- Dino's .emacs setup file.
 ;;
-;; Last saved: <2019-February-06 11:31:17>
+;; Last saved: <2019-February-14 11:01:32>
 ;;
 ;; Works with v24.5 and v25.1 of emacs.
 ;;
@@ -52,8 +52,8 @@
 ;;
 (require 'package)
 (dolist (item (list
-              '("melpa"     . "https://stable.melpa.org/packages/")
-              '("org"       . "http://orgmode.org/elpa/")))
+              '("MELPA Stable"     . "https://stable.melpa.org/packages/")
+              '("org"              . "http://orgmode.org/elpa/")))
   (add-to-list 'package-archives item))
 
 (when (< emacs-major-version 24)
@@ -69,6 +69,8 @@
 (let ((default-directory "~/.emacs.d/elpa"))
   (normal-top-level-add-subdirs-to-load-path))
 
+;; maybe check out https://github.com/jwiegley/use-package?
+;; my own implementation is here.
 ;; simply add package names to the list
 (dino-ensure-package-installed
  's
@@ -1079,12 +1081,14 @@ With a prefix argument, makes a private paste."
 (defun dino-fix-abbrev-table ()
   "set up a custom abbrev table. The normal
 saving isn't allowed on my computer. Really these are
-just auto-corrects on common mis-spellings by me. "
+just auto-corrects on common mis-spellings by me."
 
   (define-abbrev-table 'text-mode-abbrev-table
     '(
       ("teh" "the" nil 1)
       ("somehting" "something" nil 1)
+      ("deprectaed" "deprecated" nil 0)
+      ("APigee" "Apigee" nil 1)
       ("hting" "thing" nil 1)
       ("rigueur" "rigeuer" nil 1)
       ("riguer" "rigeuer" nil 1)
@@ -1092,6 +1096,7 @@ just auto-corrects on common mis-spellings by me. "
       ("rwquest" "request" nil 1)
       ("hygeine" "hygiene" nil 0)
       ("laucnhed" "launched" nil 0)
+      ("supproted" "supported" nil 0)
       ("comittee" "committee" nil 0)
       ("machien" "machine" nil 0)
       ("siilar" "similar" nil 0)
