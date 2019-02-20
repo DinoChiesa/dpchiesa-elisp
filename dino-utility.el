@@ -155,7 +155,7 @@ to indicate a newline."
     (delete-trailing-whitespace)))
 
 
- (defvar dino-no-untabify-modes '(makefile-mode BSDmakefile)
+(defvar dino-no-untabify-modes '(makefile-mode BSDmakefile)
   "Normally my setup untabifies buffers before save. This list
 provides a set of modes for which no untabify is desired.")
 
@@ -270,8 +270,9 @@ to determine if we need to rotate through various formats.")
 (defconst dino-time-formats '(
                              ("%Y%m%d-%H%M"         . dino-parse-YYYYMMDDHHMM-time)
                              ("%A, %e %B %Y, %H:%M" . dino-parse-rfc822-time)
-                             ("%Y %B %e"            . dino-parse-ymd-time)
-                             ("%H:%M:%S"            . dino-parse-hms-time)
+                             ("%Y %B %e"            . dino-parse-YBe-time)
+                             ("%H:%M:%S"            . dino-parse-HMS-time)
+                             ("%Y-%m-%dT%H:%M:%S"   . dino-parse-YmdHMS-time)
                              )
   "A list of time formats with corresponding parse functions to use in `dino-insert-timeofday' and `dino-maybe-delete-time-string-looking-forward' ")
 
@@ -331,7 +332,7 @@ returns the time in emacs internal time format, eg (sec-high sec-low).
           (apply 'encode-time
                  (list seconds minute hour day month year tz)))))))
 
-(defun dino-parse-ymd-time (arg)
+(defun dino-parse-YBe-time (arg)
   "If ARG is a boolean, then return a regex to match a time string
 formatted like: \"2017 November 21\".
 Otherwise, ARG is a string, and this function will parse it with that regex, and
@@ -353,7 +354,7 @@ returns the time in emacs internal time format, eg (sec-high sec-low).
           (apply 'encode-time
                  (list seconds minute hour day month year tz)))))))
 
-(defun dino-parse-hms-time (arg)
+(defun dino-parse-HMS-time (arg)
   "If ARG is a boolean, then return a regex to match a time string
 formatted like: \"14:32:33\".
 Otherwise, ARG is a string, and this function will parse it with that regex, and
@@ -372,6 +373,28 @@ returns the time in emacs internal time format, eg (sec-high sec-low).
               (year (nth 5 dt))
               (month (nth 4 dt))
               (day (nth 3 dt))
+              tz)
+          (apply 'encode-time
+                 (list seconds minute hour day month year tz)))))))
+
+(defun dino-parse-YmdHMS-time (arg)
+  "If ARG is a boolean, then return a regex to match a time string
+formatted like: \"2019-02-12T14:32:33\".
+Otherwise, ARG is a string, and this function will parse it with that regex, and
+returns the time in emacs internal time format, eg (sec-high sec-low).
+"
+  (let ((regex "\\(\\(19\\|20\\)[0-9]\\{2\\}\\)-\\([0-9]\\{2\\}\\)-\\([0-9]\\{2\\}\\)T\\([0-9]\\{2\\}\\):\\([0-9]\\{2\\}\\):\\([0-9]\\{2\\}\\)" )
+        (dt (decode-time (current-time))))
+
+    (if (booleanp arg)
+        regex
+      (when (string-match regex arg 0)
+        (let ((year (string-to-number (match-string 1 arg)))
+              (month (string-to-number (match-string 2 arg)))
+              (day (string-to-number (match-string 3 arg)))
+              (hour (string-to-number (match-string 4 arg)))
+              (minute (string-to-number (match-string 5 arg)))
+              (seconds (string-to-number (match-string 6 arg)))
               tz)
           (apply 'encode-time
                  (list seconds minute hour day month year tz)))))))
@@ -503,6 +526,7 @@ If you invoke this command repeatedly, it cycles through additional formats:
    Tuesday, 20 August 2013, 08:48
    2013 August 20
    08:48:03
+   2019-02-12T08:48:03Z
 
 Point is placed at the beginning of the newly inserted timestamp.
 "
@@ -709,6 +733,25 @@ Like `replace-string' but for non-interactive use. "
                 (goto-char (point-min))
                 (dino-replace-s-non-interactively (cadr elt) (car elt)))
                 dino-html-escape-pairs))))
+
+
+(defvar dino-xml-escape-pairs '(("&" "&amp;")
+                            ("<" "&lt;")
+                             (">" "&gt;")
+                             ("'" "&apos;")
+                             ("\"" "&quot;"))
+    "a list of pairs of strings to swap when escaping and unescaping xml")
+
+(defun dino-unescape-xml-in-region (start end)
+  "replaces XML entities with their referents."
+  (interactive "r")
+  (save-excursion
+    (save-restriction
+      (narrow-to-region start end)
+      (mapcar (lambda (elt)
+                (goto-char (point-min))
+                (dino-replace-s-non-interactively (cadr elt) (car elt)))
+                dino-xml-escape-pairs))))
 
 
 (defun dino-urlencode-region (start end)
