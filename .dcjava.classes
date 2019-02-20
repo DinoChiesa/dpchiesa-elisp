@@ -453,3 +453,7 @@ com.apigee.configuration.deployments.DeploymentConfiguration
 b.SERVICE_NAME
 com.apigee.zookeeper.api.ZooKeeperService
 java.io.PrintWriter
+Collectors.joining
+org.bouncycastle.util.io.pem.PemWriter
+org.bouncycastle.util.io.pem.PemObject
+com.fasterxml.jackson.core.type.TypeReference
