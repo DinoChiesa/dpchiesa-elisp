@@ -118,14 +118,16 @@ This works only when the frame is split into exactly two windows."
 
 (defun dino-insert-filename (&optional arg)
   "inserts the name of the file behind the buffer, at point.
-When invoked with a prefix, include the full directory path."
+When invoked with a prefix, doesn't insert the file, but sets the
+filename including the full directory path into the kill ring."
   (interactive "P")
   (let ((fname
          (if arg
              (buffer-file-name)
            (file-name-nondirectory (buffer-file-name)))))
     (kill-new fname) ;; insert into kill-ring
-    (if (not buffer-read-only)
+    (if (and (not arg)
+             (not buffer-read-only))
         (insert fname)
       (message fname)
       )))
