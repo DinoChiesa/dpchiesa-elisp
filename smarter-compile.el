@@ -42,7 +42,7 @@
 ;; It chooses a compile command, and suggests it by invoking `compile'
 ;; interactively. It makes the choice according to the name of the
 ;; current buffer, and the items - think of them as rules - in the
-;; `smart-compile-alist'. By default, it performs the selection logic
+;; `smart-compile-alits'. By default, it performs the selection logic
 ;; just once per buffer. When you run `smarter-compile', it sets a
 ;; buffer-local flag and does not walk the rules again.  If you'd like
 ;; to force to walk through the rules, use C-u M-x smarter-compile.
@@ -117,6 +117,7 @@
 ;;       %F  absolute pathname            ( /usr/home/dev/Module.c )
 ;;       %f  file name without directory  ( Module.c )
 ;;       %n  file name without extension  ( Module )
+;;       %c  classname                    ( com.example.foo.Module )
 ;;       %e  extension of file name       ( c )
 ;;       %t  current time in 24-hr format ( 12:44:18 )
 ;;       %d  current date                 ( 2012-Mar-20 )
@@ -172,7 +173,7 @@
 
     (smart-compile-consider-makefile . nil)
     (smart-compile-consider-projfile . "msbuild.exe ")
-    (smart-compile-command-in-header-comments . nil)
+    (smart-compile-compile-command-in-header-comments . nil)
 
     ("\\.cs\\'"         . "csc /t:exe /debug+ %f")
     ("\\.vb\\'"         . "vbc /t:exe /debug+ %f")
@@ -285,7 +286,7 @@ COMMAND can be:
 (put 'smart-compile-expando-alist 'risky-local-variable t)
 
 
-(defvar smart-compile-wisdom-has-been-bestowed nil
+(defvar smart-compile-previously-suggested-p nil
   "Indicates whether smart-compile has made a suggestion
 for the current buffer.")
 
@@ -395,9 +396,9 @@ found.  The default LINE-LIMIT is
 For example, suppose the following string is found at the top of
 the buffer:
 
-     flymake: csc.exe /r:Hallo.dll
+     compile: csc.exe /r:Hallo.dll
 
-...then invoking this function with MARKER-STRING as \"flymake\" will
+...then invoking this function with MARKER-STRING as \"compile\" will
 return
 
      \"csc.exe /r:Hallo.dll\"
@@ -461,7 +462,20 @@ PREDICATE.
 ;;   (string-equal (substring buffer-file-name (- 0 (length ext))) ext))
 
 
-(defun smart-compile-command-in-header-comments ()
+(defun smart-compile-compile-command-in-header-comments ()
+  "function to be used as a test in the `smart-compile-alist'.
+If the file is a c-language-family module, and there's a
+comment that specifies the compile command, then it returns non-nil.
+"
+  (smart-compile-named-command-in-header-comments "compile"))
+
+
+(defun smart-compile-run-command-in-header-comments ()
+  "returns the run command, from the header comments."
+  (smart-compile-named-command-in-header-comments "run"))
+
+
+(defun smart-compile-named-command-in-header-comments (tagword)
   "function to be used as a test in the `smart-compile-alist'.
 If the file is a c-language-family module, and there's a
 comment that specifies the compile command, then it returns non-nil.
@@ -472,8 +486,8 @@ comment that specifies the compile command, then it returns non-nil.
    (member (file-name-extension buffer-file-name t)
          smart-compile-compile-command-in-comments-extension-list)
 
-   (smart-compile-get-value-from-comments
-    "compile")))
+   (smart-compile-get-value-from-comments tagword)))
+
 
 
 (defun smart-compile-consider-projfile ()
@@ -493,7 +507,7 @@ to test presence of a msbuild project file.
                 "nmake.exe " "make "))))
 
 
-(defun smart-compile-expand-compile-command (cmd)
+(defun smart-compile-expand-command (cmd)
   "Given a string, CMD, expand the opcodes within it
 to produce a command string suitable for `shell-command'.
 This expands %F to the fully qualified file name, and so on.
@@ -512,26 +526,21 @@ See the doc for `smart-compile-alist' for details.
   cmd)
 
 
-(defun smart-compile-choose-alist-item (cmd)
-  "Use the given CMD for compiling. It could be a
-string, which means to use that as a shell command. It
-could be a list of forms, which means to eval that list to get the string.
-It could also be a symbol name bound to a function, which means
-invoke that fn to get the string. In all cases the string is expanded through
-`smart-compile-expand-compile-command'
+(defun smart-compile-set-compile-command-to-resolved-value (cmd)
+  "Resolve the given CMD for compiling. It could be a string, which
+means to use that as a shell command. It could be a list of
+forms, which means to eval that list to get the string.  It could
+also be a symbol name bound to a function, which means invoke
+that fn to get the string. In all cases the string is expanded
+through `smart-compile-expand-command'
  "
   (set (make-local-variable 'compile-command)
-       (smart-compile-expand-compile-command
+       (smart-compile-expand-command
         (cond
-         ((stringp cmd)
-          cmd)
-
-         ((listp cmd)
-          (eval cmd))
-
+         ((stringp cmd) cmd)
+         ((listp cmd) (eval cmd))
          ((and (symbolp cmd) (fboundp cmd))
           (funcall cmd))
-
          (t
           (smart-compile-get-make-program))))))
 
@@ -580,7 +589,7 @@ It does not call `compile'.
                     (eval test)))
 
               (progn
-                (smart-compile-choose-alist-item (or cmd test))
+                (smart-compile-set-compile-command-to-resolved-value (or cmd test))
                 (setq not-done nil))))
 
         (setq alist (cdr alist))))
@@ -628,15 +637,30 @@ A good way to do things is to bind this function to \C-x\C-e.
 
        (not (local-variable-p 'compile-command))
 
-       (not (boundp 'smart-compile-wisdom-has-been-bestowed))
+       (not (boundp 'smart-compile-previously-suggested-p))
 
-       (not smart-compile-wisdom-has-been-bestowed))
+       (not smart-compile-previously-suggested-p))
 
     (smart-compile-select-compile-command)
-    (set (make-local-variable 'smart-compile-wisdom-has-been-bestowed) t))
+    (set (make-local-variable 'smart-compile-previously-suggested-p) t))
 
   ;; local compile command has now been set
   (call-interactively 'compile))
+
+(defun smarter-compile-run (&optional arg)
+    "An interactive function to wrap the `compile' function.
+This scans ther comments to look for a run: command and
+uses that for the compile command, and then
+invokes the `compile' function, interactively.
+"
+    (interactive)
+    (let ((run-header (smart-compile-run-command-in-header-comments)))
+      (if run-header
+          (let ((run-command (smart-compile-expand-command run-header)))
+            (set (make-local-variable 'compile-command) run-command)
+            (set (make-local-variable 'smart-compile-previously-suggested-p) nil)
+            (call-interactively 'compile)))))
+
 
 (provide 'smarter-compile)
 

@@ -1,6 +1,6 @@
 ;;; emacs.el -- Dino's .emacs setup file.
 ;;
-;; Last saved: <2019-February-14 11:01:32>
+;; Last saved: <2019-May-08 09:53:06>
 ;;
 ;; Works with v24.5 and v25.1 of emacs.
 ;;
@@ -393,6 +393,7 @@
 (global-set-key "\C-c\C-x\C-c"  'calendar)
 (global-set-key "\C-xn"     'other-window)
 (global-set-key "\C-x\C-e"  'smarter-compile)
+(global-set-key "\C-xE"     'smarter-compile-run)
 (global-set-key "\C-x\C-g"  'auto-fill-mode)
 (global-set-key "\C-x\C-n"  'next-error)
 ;(global-set-key "\C-xt"     'dino-toggle-truncation)
@@ -2041,7 +2042,8 @@ Does not consider word syntax tables.
 
   (require 'flycheck)
   (flycheck-mode)
-  (flycheck-select-checker 'php-phpcs)
+  ;;(flycheck-select-checker 'php-phpcs) ;; style and syntax
+  (flycheck-select-checker 'php) ;; syntax only
 
   (setq c-default-style "bsd"
         c-basic-offset 2)
@@ -2061,7 +2063,6 @@ Does not consider word syntax tables.
         comment-end ""
         comment-style 'indent
         comment-use-syntax t)
-
   )
 (add-hook 'php-mode-hook 'dino-php-mode-fn t)
 
@@ -2555,6 +2556,7 @@ i.e M-x kmacro-set-counter."
 
   (set (make-local-variable 'indent-tabs-mode) nil)
   (set (make-local-variable 'skeleton-pair) t)
+  (set (make-local-variable 'c-basic-offset) 2) ;; dino 20190418-1407
   (local-set-key (kbd "{") 'skeleton-pair-insert-maybe)
 
   (eval-after-load "smarter-compile"
@@ -2581,7 +2583,7 @@ i.e M-x kmacro-set-counter."
 
 (c-add-style "myJavaStyle"
              '("Java"  ; this must be defined elsewhere - it is in cc-modes.el
-               (c-basic-offset . 4)
+               (c-basic-offset . 2)
                (c-echo-syntactic-information-p . t)
                (c-comment-only-line-offset . (0 . 0))
                (c-offsets-alist . (
