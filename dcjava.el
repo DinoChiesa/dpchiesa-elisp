@@ -11,7 +11,7 @@
 ;; Requires   : s.el
 ;; License    : Apache 2.0
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2018-October-08 10:12:29>
+;; Last-saved : <2019-April-22 14:51:00>
 ;;
 ;;; Commentary:
 ;;
@@ -35,6 +35,9 @@
 ;;  - `dcjava-find-java-source-in-dir' finds a Java file in a dir
 ;;    tree based on its short name or fully-qualified name.
 ;;
+;;  - `dcjava-gformat-buffer' runs google-java-format on the current
+;;    buffer. This eliminates unnecessary imports and applies
+;;    an indent and bracing format.
 ;;
 ;; There are a few helper functions:
 ;;
@@ -47,8 +50,8 @@
 ;;
 ;; Sunday, 14 February 2016, 16:07
 ;;
-;; TODO: in `dcjava-auto-add-import', when there are multiple
-;; choices, present the choice intelligently. If the file already has an
+;; TODO: `dcjava-auto-add-import', when there are multiple
+;; choices, presents the choice intelligently. If the file already has an
 ;; import for jackson from codehaus, I don't want the chooser to ask me
 ;; if I wanna use jackson from fasterxml. It should automatically use
 ;; the one I am already using. Can use a simple heuristic.
@@ -91,6 +94,11 @@
 
 (require 's) ;; magnars' long lost string library
 
+(defcustom dcjava-location-of-gformat-jar
+  "~/dev/java/lib/google-java-format-1.7-all-deps.jar"
+  "Path to the google-java-format jar."
+  :group 'dcjava)
+
 (defvar dcjava--load-path (or load-file-name "~/elisp/dcjava.el")
   "For internal use only. ")
 
@@ -103,7 +111,7 @@
 (defconst dcjava--classname-regex "\\([a-zA-Z_$][a-zA-Z0-9_$]*\\.\\)*[a-zA-Z_$][a-zA-Z0-9_$]*"
   "a regex that matches a qualified or unqualified classname or package name")
 
-(defconst dcjava--qualified-classname-regex "\\([a-zA-Z_$][a-zA-Z0-9_$]*\\.\\)+[a-zA-Z_$][a-zA-Z0-9_$]*"
+(defconst dcjava--qualified-classname-regex "\\([a-zA-Z_$][a-zA-Z0-9_$]*\\.\\)+[A-Z_$][a-zA-Z0-9_$]*"
   "a regex that matches a qualified classname (with package prefix)")
 
 (defconst dcjava--import-stmt-regex (concat "import[\t ]+" dcjava--classname-regex
@@ -115,7 +123,7 @@
   "a regex that matches a Java package statement")
 
 (defconst dcjava--edge-of-symbol-regex
-  "[ \t(,\\[=]"
+  "[ \t(,\\<\\[=]"
   "A regex that matches the leading edge of a java symbol or classname")
 
 
@@ -297,7 +305,7 @@ will be something like (\"x.y.z.Class\") .
       (dcjava-add-one-import-statement (car chosen)))))
 
 
-(defun dcjava--classname-at-point ()
+(defun dcjava--class-or-qualified-member-name-at-point ()
   "returns the fully-qualified classname under point"
   (save-excursion
     (if (re-search-backward dcjava--edge-of-symbol-regex (line-beginning-position) 1)
@@ -307,39 +315,55 @@ will be something like (\"x.y.z.Class\") .
         ;;(regexp-quote ".") "/"
         (buffer-substring-no-properties (match-beginning 0) (match-end 0)))))
 
-
 (defun dcjava-auto-add-import ()
   "adds an import statement for the class or interface at point, if possible.
 If the class at point is fully-qualified, just adds an import for that. Otherwise,
 uses a cached list to lookup the package/class to import."
   (interactive)
-  (let ((classname (dcjava--classname-at-point)))
+  (let ((thingname (dcjava--class-or-qualified-member-name-at-point)))
     (cond
-     (classname
+     (thingname
       (cond
-       ((string-match dcjava--qualified-classname-regex classname)
-        (let* ((pair (dcjava--list-from-fully-qualified-classname classname))
-               (basename (car pair)))
-          (dcjava-add-one-import-statement classname nil t)
-          ;; unqualify the classname under point
-          (save-excursion
-            (if (re-search-backward dcjava--edge-of-symbol-regex (line-beginning-position) 1)
-                (forward-char))
-            (if (re-search-forward (regexp-quote classname))
-                ;; replace the fully-qualified classname with the basename
-                (replace-match basename)))))
-       (t
-        (let ((matching-pair (assoc classname (dcjava-get-helper-classname-alist))))
+       ;; uppercase first segment indicates an unqualified classname
+       ((string-match "^\\([A-Z_$][a-zA-Z0-9_$]*\\)\\.\\([a-zA-Z_$].*\\)+$" thingname)
+        (let* ((first-segment (match-string 1 thingname))
+               (matching-pair (assoc first-segment (dcjava-get-helper-classname-alist))))
           (cond
            (matching-pair
             (let* ((package-names (cdr matching-pair))
                    (num-pkgs (length package-names)))
               (if (= num-pkgs 1)
                   ;; add the import statement
-                  (dcjava-add-one-import-statement (car package-names) classname)
-                (dcjava-add-import-statement-from-choice package-names classname))))
+                  (dcjava-add-one-import-statement (car package-names) first-segment)
+                (dcjava-add-import-statement-from-choice package-names first-segment))))
            (t
-            (message "did not find class %s" classname)))
+            (message "did not find class for %s" thingname)))))
+
+       ;; lowercase first segment indicates fully qualified classname
+       ((string-match dcjava--qualified-classname-regex thingname)
+        (let* ((pair (dcjava--list-from-fully-qualified-classname thingname))
+               (basename (car pair)))
+          (dcjava-add-one-import-statement thingname nil t)
+          ;; unqualify the classname under point
+          (save-excursion
+            (if (re-search-backward dcjava--edge-of-symbol-regex (line-beginning-position) 1)
+                (forward-char))
+            (if (re-search-forward (regexp-quote thingname))
+                ;; replace the fully-qualified classname with the basename
+                (replace-match basename)))))
+       (t
+        ;; not sure what this case is?
+        (let ((matching-pair (assoc thingname (dcjava-get-helper-classname-alist))))
+          (cond
+           (matching-pair
+            (let* ((package-names (cdr matching-pair))
+                   (num-pkgs (length package-names)))
+              (if (= num-pkgs 1)
+                  ;; add the import statement
+                  (dcjava-add-one-import-statement (car package-names) thingname)
+                (dcjava-add-import-statement-from-choice package-names thingname))))
+           (t
+            (message "did not find class %s" thingname)))
           )
         )))
      (t
@@ -484,7 +508,7 @@ select from.
   (interactive)
   (let* ((classname
           (or
-           (dcjava--classname-at-point)
+           (dcjava--class-or-qualified-member-name-at-point)
            (let ((thing (thing-at-point 'word)))
              (if thing (substring-no-properties thing)))
            (read-string "Class to find: " nil)))
@@ -516,6 +540,21 @@ at the top of the file."
           (newline)
           ))))
 
+(defun dcjava-shell-command-on-buffer (command)
+  (let ((output-goes-to-current-buffer t)
+        (output-replaces-current-content t))
+    (shell-command-on-region (point-min)
+                             (point-max)
+                             command
+                             output-goes-to-current-buffer
+                             output-replaces-current-content)))
+
+(defun dcjava-gformat-buffer ()
+  "runs google-java-format on the current buffer"
+  (interactive)
+  (let ((command (concat "java -jar " dcjava-location-of-gformat-jar " -")))
+    (dcjava-shell-command-on-buffer command))
+  )
 
 (provide 'dcjava)
 
