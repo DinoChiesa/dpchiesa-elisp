@@ -11,7 +11,7 @@
 ;; Requires   : s.el
 ;; License    : Apache 2.0
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2019-April-22 14:51:00>
+;; Last-saved : <2019-May-11 12:41:36>
 ;;
 ;;; Commentary:
 ;;
@@ -140,7 +140,8 @@
 
 (defun dcjava--is-class-name (str)
   "returns true if the string appears to be formed like a java class name"
-  (string-match dcjava--classname-regex str))
+  (let ((case-fold-search nil))
+    (string-match dcjava--classname-regex str)))
 
 
 (defun dcjava-reload-classlist ()
@@ -308,19 +309,22 @@ will be something like (\"x.y.z.Class\") .
 (defun dcjava--class-or-qualified-member-name-at-point ()
   "returns the fully-qualified classname under point"
   (save-excursion
-    (if (re-search-backward dcjava--edge-of-symbol-regex (line-beginning-position) 1)
-        (forward-char))
-    (if (looking-at dcjava--classname-regex)
-        ;;(replace-regexp-in-string
-        ;;(regexp-quote ".") "/"
-        (buffer-substring-no-properties (match-beginning 0) (match-end 0)))))
+    (let ((case-fold-search nil))
+      (if (re-search-backward dcjava--edge-of-symbol-regex (line-beginning-position) 1)
+          (forward-char))
+      (if (looking-at dcjava--classname-regex)
+          ;;(replace-regexp-in-string
+          ;;(regexp-quote ".") "/"
+          (buffer-substring-no-properties (match-beginning 0) (match-end 0))))))
+
 
 (defun dcjava-auto-add-import ()
   "adds an import statement for the class or interface at point, if possible.
 If the class at point is fully-qualified, just adds an import for that. Otherwise,
 uses a cached list to lookup the package/class to import."
   (interactive)
-  (let ((thingname (dcjava--class-or-qualified-member-name-at-point)))
+  (let ((thingname (dcjava--class-or-qualified-member-name-at-point))
+        (case-fold-search nil))
     (cond
      (thingname
       (cond
