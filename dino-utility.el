@@ -1159,7 +1159,6 @@ insert a pair, and backup one character."
       (self-insert-command (prefix-numeric-value arg)))))
 
 
-
 ;;; Thursday, 12 October 2017, 13:18
 ;;; replace xml-parse-tag-1 to not skip comments.
 ;;; This modified version of the fn returns a cons of (nil . "<!-- string -->")
