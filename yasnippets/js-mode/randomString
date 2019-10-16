@@ -1,27 +1,9 @@
 # key : randomString
-# name : function generateRandomString(...)
+# name : function randomString(...)
 # --
-function generateRandomString(maxlen, minlen) {
-  function c() {
-    var m = Math.floor(Math.random() * 26),
-        a = (Math.floor(Math.random() * 2) * 32);
-    return String.fromCharCode(65 + m + a);
-  }
-  function getRandomInRange(min, max) {
-      return Math.random() * (max - min) + min;
-  }
-
-  var L = Math.floor(Math.random() * 7) + 8,
-      actualLen,
-      i,
-      word = '';
-  maxlen = maxlen || L;
-  if (maxlen <=0) { maxlen = L;}
-  if (maxlen > 1024) { maxlen = L;}
-  minlen = minlen || maxlen;
-  actualLen = getRandomInRange(minlen, maxlen);
-  for (i=0; i<actualLen; i++) {
-    word += c();
-  }
-  return word;
+function randomString(L){
+  L = L || 18;
+  let s = '';
+  do {s += Math.random().toString(36).substring(2, 15); } while (s.length < L);
+  return s.substring(0,L);
 }
