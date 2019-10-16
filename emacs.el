@@ -1,6 +1,6 @@
 ;;; emacs.el -- Dino's .emacs setup file.
 ;;
-;; Last saved: <2019-May-08 09:53:06>
+;; Last saved: <2019-October-15 18:41:20>
 ;;
 ;; Works with v24.5 and v25.1 of emacs.
 ;;
@@ -83,15 +83,25 @@
  'js2-refactor
  'go-mode
  'expand-region
+ 'default-text-scale
  'go-autocomplete
  'flycheck
  'dash-functional
  'json-mode
  'typescript-mode
+ 'markdown-mode
  'company
  'company-go
  'popup
-)
+ )
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(require 'default-text-scale)
+
+(default-text-scale-mode)
+(global-set-key (kbd "C-=") 'default-text-scale-increase)
+(global-set-key (kbd "C--") 'default-text-scale-decrease)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (setq magit-git-executable "/usr/local/git/current/bin/git")
@@ -156,6 +166,7 @@
 ;; for all modes
 (setq electric-pair-pairs '(
                             (?\" . ?\")
+                            (?\< . ?\>)
                             (?\{ . ?\})
                             ) )
 
@@ -568,6 +579,7 @@
          ("\\.css$"                           . css-mode)
          ("\\.proto$"                         . protobuf-mode)
          ("\\.\\(php\\|module\\)$"            . php-mode)
+         ("\\.md$"                            . markdown-mode)
          ("\\.cs$"                            . csharp-mode)
          ("\\.asp$"                           . html-mode)
          ;;("\\.aspx$"                        . html-helper-mode)
@@ -1251,6 +1263,7 @@ just auto-corrects on common mis-spellings by me."
          (set (make-local-variable 'comment-start) "// ")
          (set (make-local-variable 'comment-end) "")
 
+         (local-set-key (kbd "\"") 'skeleton-pair-insert-maybe)
          (local-set-key (kbd "{") 'skeleton-pair-insert-maybe)
          (set (make-local-variable 'skeleton-pair) t)
 
@@ -2231,7 +2244,7 @@ Does not consider word syntax tables.
 (defun dino-enable-highlight-trailing-ws-based-on-extension ()
   "turns on highlighting of trailing whitespace based on file extension"
   (let ((extension (file-name-extension buffer-file-name))
-        (extensions-that-get-highlighting '("md") ))
+        (extensions-that-get-highlighting '("md" "css" "java" "js") ))
     (while extensions-that-get-highlighting
       (if (string= (car extensions-that-get-highlighting) extension)
           (hc-highlight-trailing-whitespace))
@@ -2555,9 +2568,15 @@ i.e M-x kmacro-set-counter."
   (modify-syntax-entry ?_ "w")
 
   (set (make-local-variable 'indent-tabs-mode) nil)
-  (set (make-local-variable 'skeleton-pair) t)
   (set (make-local-variable 'c-basic-offset) 2) ;; dino 20190418-1407
-  (local-set-key (kbd "{") 'skeleton-pair-insert-maybe)
+
+  ;; 20191015-1837 - better than autopair or skeleton pair
+  (electric-pair-mode)
+
+  ;;(set (make-local-variable 'skeleton-pair) t)
+  ;;(local-set-key (kbd "{") 'skeleton-pair-insert-maybe)
+  ;;(local-set-key (kbd "\"") 'skeleton-pair-insert-maybe)
+  ;; ;;(local-set-key (kbd "\"") 'dino-skeleton-pair-end)
 
   (eval-after-load "smarter-compile"
     '(progn
@@ -2574,6 +2593,7 @@ i.e M-x kmacro-set-counter."
   (local-set-key "\C-c\C-f"  'dcjava-find-wacapps-java-source-for-class-at-point)
   (local-set-key "\C-c\C-r"  'dcjava-reload-classlist)
   (local-set-key "\C-c\C-s"  'dcjava-sort-import-statements)
+  (local-set-key "\C-c\C-g"  'dcjava-gformat-buffer)
   (dino-enable-delete-trailing-whitespace)
   (linum-on)
   )
