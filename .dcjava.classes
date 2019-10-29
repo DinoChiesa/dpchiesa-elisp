@@ -541,3 +541,14 @@ javax.mail.Session
 javax.mail.Transport
 javax.mail.internet.InternetAddress
 javax.mail.internet.MimeMessage
+javax.json.JsonValue
+javax.json.JsonValue.ValueType
+javax.json.Json
+java.lang.reflect.ParameterizedType
+java.util.Locale
+java.beans.Introspector
+java.lang.reflect.Array
+java.beans.PropertyDescriptor
+org.bouncycastle.crypto.CryptoException
+java.security.interfaces.RSAPrivateCrtKey
+java.util.AbstractMap
