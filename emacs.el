@@ -1,6 +1,6 @@
 ;;; emacs.el -- Dino's .emacs setup file.
 ;;
-;; Last saved: <2019-October-15 18:41:20>
+;; Last saved: <2019-October-28 16:38:43>
 ;;
 ;; Works with v24.5 and v25.1 of emacs.
 ;;
@@ -166,7 +166,6 @@
 ;; for all modes
 (setq electric-pair-pairs '(
                             (?\" . ?\")
-                            (?\< . ?\>)
                             (?\{ . ?\})
                             ) )
 
@@ -2244,11 +2243,9 @@ Does not consider word syntax tables.
 (defun dino-enable-highlight-trailing-ws-based-on-extension ()
   "turns on highlighting of trailing whitespace based on file extension"
   (let ((extension (file-name-extension buffer-file-name))
-        (extensions-that-get-highlighting '("md" "css" "java" "js") ))
-    (while extensions-that-get-highlighting
-      (if (string= (car extensions-that-get-highlighting) extension)
-          (hc-highlight-trailing-whitespace))
-      (setq extensions-that-get-highlighting (cdr extensions-that-get-highlighting)))))
+        (extensions-that-get-highlighting '("md" "css" "java" "js" "go") ))
+    (if (member "go" extensions-that-get-highlighting)
+          (hc-highlight-trailing-whitespace))))
 
 (add-hook 'find-file-hook 'dino-enable-highlight-trailing-ws-based-on-extension)
 
@@ -2657,8 +2654,10 @@ i.e M-x kmacro-set-counter."
      ;;(setq-default compile-command (concat nmake.exe " "))
      (setq-default compile-command "make ")
      ))
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; salted files
+(require 'salted)
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
