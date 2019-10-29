@@ -1,6 +1,6 @@
 ;;; emacs.el -- Dino's .emacs setup file.
 ;;
-;; Last saved: <2019-October-28 16:38:43>
+;; Last saved: <2019-October-29 09:40:23>
 ;;
 ;; Works with v24.5 and v25.1 of emacs.
 ;;
@@ -2658,7 +2658,7 @@ i.e M-x kmacro-set-counter."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; salted files
 (require 'salted)
-
+(setq salted--salt-file-utility "~/dev/go/src/github.com/DinoChiesa/salted/salt_file")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Github GraphQL mode
