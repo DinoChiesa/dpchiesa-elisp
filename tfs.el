@@ -5,7 +5,7 @@
 ;; X-URL      : http://cheeso.members.winisp.net/srcview.aspx?dir=emacs&file=tfs.el
 ;; URL        : http://www.emacswiki.org/emacs/tfs.el
 ;; License    : MS-PL
-;; Last saved : <2012-July-07 11:15:12>
+;; Last saved : <2019-November-15 08:25:54>
 ;;
 ;; Copyright 2009-2012 Dino Chiesa
 
@@ -148,13 +148,13 @@ Used by tfs-mode.el")
               flymake-mode)))
     ;; disable
     (if is-flymake-enabled
-        (flymake-mode-off))
+        (flymake-mode 0))
 
     ;; get the checked-out version - read from the disk file
     (revert-buffer t t)
 
     (if is-flymake-enabled
-        (flymake-mode-on))))
+        (flymake-mode 1))))
 
 
 (defun tfs/determine-file (filename prompt)
