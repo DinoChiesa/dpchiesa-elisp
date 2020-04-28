@@ -56,6 +56,13 @@
 (require 's)
 (require 'package)
 
+(defconst dino--short-filename-regex "[A-Za-z]\\S+\\.[-A-Za-z0-9_]+"
+  "regexp for a filename")
+
+(defconst dino--short-filename-no-extension-regex "[A-Za-z][-A-Za-z0-9_-]+"
+  "regexp for a filename without extension")
+
+
 ;; when copying binary files into a clipboard buffer
 (fset 'dinoch-b64-copy
       [escape ?  escape ?> escape ?x ?b ?a ?s ?e ?6 ?4 ?- ?e ?n ?c tab return ?\C-w ?\C-y])
@@ -70,7 +77,6 @@
   (save-excursion
     (while (search-forward "\xd" nil t)
       (replace-match "" nil t))))
-
 
 (defun dino-sort-lines-nocase ()
   (interactive)
@@ -116,6 +122,7 @@ This works only when the frame is split into exactly two windows."
       (split-window-vertically)) ; gives us a split with the other window twice
     (switch-to-buffer nil))) ; restore the original window in this part of the frame
 
+
 (defun dino-insert-filename (&optional arg)
   "inserts the name of the file behind the buffer, at point.
 When invoked with a prefix, doesn't insert the file, but sets the
@@ -131,6 +138,45 @@ filename including the full directory path into the kill ring."
         (insert fname)
       (message fname)
       )))
+
+(defun dino--maybe-delete-file-name-looking-forward (no-extension)
+  "if point is on a filename, delete it."
+  (let ((found
+         (if no-extension
+             (looking-at dino--short-filename-no-extension-regex)
+             (looking-at dino--short-filename-regex) )))
+    (if found
+        (progn
+          (setq found (buffer-substring-no-properties (match-beginning 0) (match-end 0)))
+          (delete-region (match-beginning 0) (match-end 0))))
+    found))
+
+
+(defun dino-replace-filename (&optional arg)
+  "inserts the name of the file behind the buffer, at point, replacing
+any other filename at point. Optional prefix says to replace base filename
+(no extension). See also `dino-replace-filename-no-extension'"
+  (interactive "P")
+  (let ((no-extension arg))
+    (let* ((full-fname
+            (file-name-nondirectory (buffer-file-name)))
+           (fname
+            (if no-extension
+                (file-name-sans-extension full-fname)
+              full-fname)))
+      (kill-new fname) ;; insert into kill-ring
+
+      (and (re-search-backward dino-time-punctuation-regex (line-beginning-position) t)
+           (progn (forward-char)
+                  (dino--maybe-delete-file-name-looking-forward no-extension)))
+      (insert fname))))
+
+(defun dino-replace-filename-no-extension ()
+  "inserts the base name of the file behind the buffer, at point,
+replacing any other base filename at point."
+  (interactive)
+  (dino-replace-filename t))
+
 
 (defun dino-indent-buffer ()
   "Dino's function to re-indent an entire buffer; helpful in progmodes
@@ -400,6 +446,7 @@ returns the time in emacs internal time format, eg (sec-high sec-low).
               tz)
           (apply 'encode-time
                  (list seconds minute hour day month year tz)))))))
+
 
 
 (defun dino-maybe-delete-time-string-looking-forward ()
@@ -771,7 +818,7 @@ Like `replace-string' but for non-interactive use. "
           "~~" "%27"
           (shell-command-to-string
            (concat
-            "/usr/local/bin/node -e \"console.log(encodeURIComponent('"
+            "node -e \"console.log(encodeURIComponent('"
             (replace-regexp-in-string
              "'" "~~"
              (replace-regexp-in-string "\n" "" str))
