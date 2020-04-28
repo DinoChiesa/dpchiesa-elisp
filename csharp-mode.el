@@ -7,7 +7,7 @@
 ;; Version    : 0.8.6
 ;; Keywords   : c# languages oop mode
 ;; X-URL      : http://code.google.com/p/csharpmode/
-;; Last-saved : <2017-October-13 16:50:52>
+;; Last-saved : <2019-November-21 11:13:34>
 
 ;;
 ;; This program is free software; you can redistribute it and/or modify
@@ -1321,7 +1321,7 @@ wrote this alternative.
                                                       'c-decl-id-start)
                                  (c-forward-syntactic-ws))
                                (save-match-data
-                                 (c-font-lock-declarators limit t nil))
+                                 (c-font-lock-declarators limit t nil nil))
                                (goto-char (match-end 0))
                                )
                              )))
@@ -2653,7 +2653,8 @@ This fn does these things:
 ;; Need to temporarily turn off flymake while reverting.
 ;; There' some kind of race-condition where flymake is trying
 ;; to compile while the buffer is being changed, and that
-;; causes flymake to choke.
+;; causes flymake to choke. (Really we shouldn't use
+;; flymake anyway, as flycheck is much better.
 (defadvice revert-buffer (around
                           csharp-advise-revert-buffer
                           activate compile)
@@ -2662,14 +2663,14 @@ This fn does these things:
               flymake-mode)))
     ;; disable
     (if is-flymake-enabled
-        (flymake-mode-off))
+        (flymake-mode 0))
 
     ;; revert
     ad-do-it
 
     ;; enable
     (if is-flymake-enabled
-        (flymake-mode-on))))
+        (flymake-mode 1))))
 
 ;; ++++++++++++++++++++++
 
@@ -5041,11 +5042,18 @@ The return value is meaningless, and is ignored by cc-mode.
 
         res))))
 
+(advice-add 'c-inside-bracelist-p
+            :around 'csharp-inside-bracelist-or-c-inside-bracelist-p)
+
+(defun csharp-inside-bracelist-or-c-inside-bracelist-p (command &rest args)
+  "Run `csharp-inside-bracelist-p' if in `csharp-mode'.
+Otherwise run `c-inside-bracelist-p'."
+  (if (eq major-mode 'csharp-mode)
+      (csharp-inside-bracelist-p (nth 0 args) (nth 1 args))
+    (apply command args)))
 
 
-
-
-(defun c-inside-bracelist-p (containing-sexp paren-state)
+(defun csharp-inside-bracelist-p (containing-sexp paren-state)
   ;; return the buffer position of the beginning of the brace list
   ;; statement if we're inside a brace list, otherwise return nil.
   ;; CONTAINING-SEXP is the buffer pos of the innermost containing
