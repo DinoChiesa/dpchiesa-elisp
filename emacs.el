@@ -1,6 +1,6 @@
 ;;; emacs.el -- Dino's .emacs setup file.
 ;;
-;; Last saved: <2019-October-29 09:40:23>
+;; Last saved: <2020-April-27 17:55:01>
 ;;
 ;; Works with v24.5 and v25.1 of emacs.
 ;;
@@ -69,31 +69,44 @@
 (let ((default-directory "~/.emacs.d/elpa"))
   (normal-top-level-add-subdirs-to-load-path))
 
-;; maybe check out https://github.com/jwiegley/use-package?
-;; my own implementation is here.
-;; simply add package names to the list
+;; Maybe check out https://github.com/jwiegley/use-package?
+;; My own implementation is used here.
+;; Simply add package names to the list.
 (dino-ensure-package-installed
- 's
- 'yasnippet
- 'yaxception
- 'seq
- 'magit
- 'logito
- 'js2-mode
- 'js2-refactor
- 'go-mode
- 'expand-region
- 'default-text-scale
- 'go-autocomplete
- 'flycheck
- 'dash-functional
- 'json-mode
- 'typescript-mode
- 'markdown-mode
  'company
  'company-go
+ 'dash-functional
+ 'default-text-scale
+ 'expand-region
+ 'flycheck
+ 'go-autocomplete
+ 'go-mode
+ 'js2-mode
+ 'js2-refactor
+ 'json-mode
+ 'logito
+ 'magit
+ 'markdown-mode
+ 'path-helper
  'popup
+ 's
+ 'seq
+ 'typescript-mode
+ 'yasnippet
+ 'yaxception
  )
+
+
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    ;; set path correctly on MacOS, based on /etc/paths
+    (if (memq window-system '(ns mac))
+      (path-helper-setenv "PATH"))
+
+
+;;(setenv "PATH" (concat "/usr/local/bin:" (getenv "PATH")))
+;;(setq exec-path (split-string (getenv "PATH") ":"))
+;;(add-to-list 'exec-path "/usr/local/bin")
+;;     "/usr/bin"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (require 'default-text-scale)
@@ -169,15 +182,19 @@
                             (?\{ . ?\})
                             ) )
 
+(global-set-key (kbd "C-c d") 'delete-trailing-whitespace)
+
 ;;; Tips from https://www.youtube.com/watch?v=p3Te_a-AGqM
 ;; for marking ever-larger regions iteratively
 (require 'expand-region)
 (global-set-key (kbd "C-=") 'er/expand-region)
+
 ;; for visually editing similar things with one key sequence
 (require 'multiple-cursors)
 (global-set-key (kbd "C->") 'mc/mark-next-like-this)
 (global-set-key (kbd "C-<") 'mc/mark-previous-like-this)
 (global-set-key (kbd "C-c C-<") 'mc/mark-all-like-this)
+
 ;; edit files in a grep output buffer
 (require 'wgrep)
 (global-set-key (kbd "C-c C-p") 'wgrep-change-to-wgrep-mode)
@@ -233,7 +250,12 @@
   (linum-on)
 
   (require 'goflycheck)
-  (flycheck-mode 1))
+  (flycheck-mode 1)
+  (add-hook 'local-write-file-hooks
+            '(lambda ()
+               (save-excursion
+                 (delete-trailing-whitespace))))
+  )
 
 (add-hook 'go-mode-hook 'dino-go-mode-fn)
 
@@ -242,15 +264,15 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; org mode, including html5 presentations from .org documents
 ;;
-(require 'org)
+;;  (require 'org)
 
-(org-babel-do-load-languages
- 'org-babel-load-languages
- '(
-   (sh . t)
-   (python . t)
-   (perl . t)
-   ))
+;; (org-babel-do-load-languages
+;;  'org-babel-load-languages
+;;  '(
+;;    (sh . t)
+;;    (python . t)
+;;    (perl . t)
+;;    ))
 (defun my-org-confirm-babel-evaluate (lang body)
   (not  ; don't ask for any of the following languages
    (or
@@ -491,7 +513,7 @@
         ;;(background-color . "Black")
         (mouse-color . "sienna3")
         ;; works with macos
-        (font . "-*-Menlo-normal-normal-normal-*-17-*-*-*-m-0-iso10646-1")
+        (font . "-*-Menlo-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1")
         ;; works with windows
         ;;(font . "-*-Consolas-normal-normal-normal-*-11-*-*-*-m-0-iso10646-1")
         )
@@ -2162,6 +2184,7 @@ Does not consider word syntax tables.
   (local-set-key "\M-\C-R"  'indent-region)
   (local-set-key "\C-cn"    'sgml-name-char) ;; inserts entity ref of pressed char
   (local-set-key "\M-#"     'dino-xml-pretty-print-buffer)
+  (local-set-key "\C-cf"    'dino-replace-filename-no-extension)
 
   (local-set-key (kbd "C-<")  'nxml-backward-element)
   (local-set-key (kbd "C->")  'nxml-forward-element)
@@ -2509,10 +2532,8 @@ i.e M-x kmacro-set-counter."
 
 (add-hook 'js-mode-hook   'dino-js-mode-fn)
 
-;; ;; to allow jshint to work?
-;;(setenv "PATH" (concat "/usr/local/bin:" (getenv "PATH")))
-(add-to-list 'exec-path "/usr/local/bin")
-;;     "/usr/bin"
+;; for {jshint, jslint, flycheck javascript-jshint} to work,
+;; the path m ust have been previously set correctly.
 
 (require 'js-mode-fixups)
 
