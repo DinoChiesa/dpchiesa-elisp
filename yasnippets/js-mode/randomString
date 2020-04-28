@@ -1,5 +1,5 @@
 # key : randomString
-# name : function randomString(...)
+# name : randomString
 # --
 function randomString(L){
   L = L || 18;

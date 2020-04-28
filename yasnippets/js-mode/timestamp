@@ -1,5 +1,5 @@
 # key : timestamp
-# name : function timestamp() {...}
+# name : timestamp() {...}
 # --
 function timestamp() {
   function padLeft(number) {

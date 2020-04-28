@@ -1,5 +1,5 @@
 # key : rand
-# name : function rand(..){...}
+# name : rand(min,max)
 # --
 function rand(min, max) {
   var delta = max - min + 1;

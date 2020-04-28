@@ -1,6 +1,6 @@
 # -*- mode: snippet -*-
 # key : curry
-# name : function curry(fn, arg1) ... { ... }
+# name : curry(fn, arg1) ... { ... }
 # --
 function curry(fn, arg1) {
   // return a curried function with the left-most argument filled

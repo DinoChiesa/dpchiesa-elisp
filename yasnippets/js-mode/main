@@ -1,5 +1,5 @@
 # key : main
-# name : function main(args){...}
+# name : main
 # --
 function main(args) {
     var i = 0;

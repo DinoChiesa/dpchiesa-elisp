@@ -1,6 +1,0 @@
-# key : move
-# name : fso.MoveFile
-# --
-fso.MoveFile(${1:source},${2:destination});
-
-

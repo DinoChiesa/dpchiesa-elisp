@@ -1,6 +1,6 @@
 # -*- mode: snippet -*-
 # key : join
-# name : function joinPathElements() {...}
+# name : joinPathElements()
 # --
 function joinPathElements() {
   var re1 = new RegExp('^\\/|\\/$', 'g'),
