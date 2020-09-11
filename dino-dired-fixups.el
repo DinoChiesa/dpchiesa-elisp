@@ -246,13 +246,19 @@ and quit.
    #'(lambda (win)
        (with-selected-window win
          (when (eq major-mode 'dired-mode)
-           (let ((mod (gethash default-directory dired-file-modification-hash)))
-             (unless (and mod
-                          (equal mod (nth 5 (file-attributes
-                                             default-directory))))
-               (setq mod (nth 5 (file-attributes default-directory)))
-               (puthash default-directory mod dired-file-modification-hash)
-               (dired-revert))))))
+           (if (file-attributes default-directory)
+               ;; there are attributes, the dir exists
+               (let ((mod (gethash default-directory dired-file-modification-hash)))
+                 (unless (and mod
+                              (equal mod (nth 5 (file-attributes
+                                                 default-directory))))
+                   (setq mod (nth 5 (file-attributes default-directory)))
+                   (puthash default-directory mod dired-file-modification-hash)
+                   (dired-revert)))
+             ;; else, the dired buffer points to a dir that no longer exists
+             (let ((zombie-buffer (window-buffer win)))
+               (kill-buffer zombie-buffer))))))
+               ;;(condition-case nil (delete-window win) (error nil)))))))
    'no-mini 'all-frames))
 
 (run-with-idle-timer 1 t 'maybe-revert-dired-buffers)
