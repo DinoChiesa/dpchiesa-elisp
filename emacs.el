@@ -1,6 +1,6 @@
 ;;; emacs.el -- Dino's .emacs setup file.
 ;;
-;; Last saved: <2020-April-27 17:55:01>
+;; Last saved: <2020-July-30 09:32:56>
 ;;
 ;; Works with v24.5 and v25.1 of emacs.
 ;;
@@ -46,6 +46,11 @@
 ;; a bunch of random utility functions
 ;;
 (require 'dino-utility)
+
+(add-hook 'before-save-hook 'dino-untabify-maybe)
+(global-set-key "\C-x7"     'dino-toggle-frame-split)
+
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; package manager
@@ -206,7 +211,7 @@
 ;; (setq apigee-apiproxies-home "~/dev/apiproxies/")
 
 (add-to-list 'load-path "~/elisp/apigee")
-(require 'apigee-edge)
+(require 'apigee)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; golang
@@ -251,10 +256,12 @@
 
   (require 'goflycheck)
   (flycheck-mode 1)
-  (add-hook 'local-write-file-hooks
+
+  (add-hook 'before-save-hook
             '(lambda ()
                (save-excursion
-                 (delete-trailing-whitespace))))
+                 (delete-trailing-whitespace)))
+            nil 'local)
   )
 
 (add-hook 'go-mode-hook 'dino-go-mode-fn)
@@ -579,6 +586,18 @@
   (auto-fill-mode -1))
 
 (add-hook 'web-mode-hook 'dino-web-mode-fn)
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; markdown
+
+(require 'markdown-mode)
+(defun dino-markdown-mode-fn ()
+  "My hook for markdown mode"
+  (modify-syntax-entry ?_ "w")
+  (auto-fill-mode -1))
+
+(add-hook 'markdown-mode-hook 'dino-markdown-mode-fn)
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1196,11 +1215,11 @@ just auto-corrects on common mis-spellings by me."
     ;; remove trailing whitespace in C files
     ;; http://stackoverflow.com/questions/1931784
     ;;(add-hook 'write-contents-functions 'dino-delete-trailing-whitespace)
-    (add-hook 'local-write-file-hooks
-              '(lambda ()
-                 (save-excursion
-                   (delete-trailing-whitespace)))))
-
+  (add-hook 'before-save-hook
+            '(lambda ()
+               (save-excursion
+                 (delete-trailing-whitespace)))
+            nil 'local))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1239,10 +1258,11 @@ just auto-corrects on common mis-spellings by me."
     ;; remove trailing whitespace in C files
     ;; http://stackoverflow.com/questions/1931784
     ;;(add-hook 'write-contents-functions 'dino-delete-trailing-whitespace)
-    (add-hook 'local-write-file-hooks
+    (add-hook 'before-save-hook
               '(lambda ()
                  (save-excursion
-                   (delete-trailing-whitespace))))
+                   (delete-trailing-whitespace)))
+              nil 'local)
 
     (message "dino-c-mode-common-hook-fn: done."))))
 
@@ -2208,12 +2228,11 @@ Does not consider word syntax tables.
       (modify-syntax-entry ?\' "\"" sgml-mode-syntax-table)
     (modify-syntax-entry ?\' ".")) ;; . = punctuation
 
-  ;; http://stackoverflow.com/questions/1931784
-  ;;(add-hook 'write-contents-functions 'dino-delete-trailing-whitespace)
-  (add-hook 'local-write-file-hooks
+  (add-hook 'before-save-hook
             '(lambda ()
                (save-excursion
-                 (delete-trailing-whitespace))))
+                 (delete-trailing-whitespace)))
+            nil 'local)
 
   ;; when `nxml-slash-auto-complete-flag' is non-nil, get completion
   (setq nxml-slash-auto-complete-flag t)
@@ -2292,18 +2311,12 @@ Does not consider word syntax tables.
   (turn-on-auto-revert-mode)
   (linum-on)
 
-  ;; This write-contents-functions hook seems awesome except it wasn't
-  ;; working for me.  It's possible that it was not working because of a
-  ;; side-effect of the markdown fn (dino-do-markdown), which I created
-  ;; to prevent the deletion of trailing whitespace in markdown
-  ;; buffers. I don't have time for all this nonsense.
-
-  ;;(add-hook 'write-contents-functions 'dino-delete-trailing-whitespace)
-  (add-hook 'local-write-file-hooks
+  (add-hook 'before-save-hook
             '(lambda ()
                (save-excursion
-                 (delete-trailing-whitespace))))
-  )
+                 (delete-trailing-whitespace)))
+            nil 'local)
+)
 
 
 (add-hook 'emacs-lisp-mode-hook 'dino-elisp-mode-fn)
@@ -2509,14 +2522,14 @@ i.e M-x kmacro-set-counter."
 
   (yas-minor-mode-on)
 
-  ;; wtf? Does this no longer work?
-  (add-hook 'local-write-file-hooks
-              '(lambda ()
-                 (save-excursion
-                   (delete-trailing-whitespace))))
+  ;; always delete trailing whitespace
+  (add-hook 'before-save-hook
+            '(lambda ()
+               (save-excursion
+                 (delete-trailing-whitespace)))
+            nil 'local)
 
-  ;; trying to force delete trailing whitespace
-  (dino-enable-delete-trailing-whitespace)
+  ;;(dino-enable-delete-trailing-whitespace)
 
   (require 'imenu)
   (imenu-add-menubar-index)
@@ -2564,8 +2577,6 @@ i.e M-x kmacro-set-counter."
   (interactive)
   (save-excursion
     (json-prettify-region (point-min) (point-max))))
-
-
 
 
 
