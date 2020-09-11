@@ -62,14 +62,16 @@
 (defconst dino--short-filename-no-extension-regex "[A-Za-z][-A-Za-z0-9_-]+"
   "regexp for a filename without extension")
 
+(defconst dino--filename-edge-regex "[ \\!\?\"\.'#$%&*+/;<=>@^`|~]"
+  "regexp for filename start")
 
-;; when copying binary files into a clipboard buffer
-(fset 'dinoch-b64-copy
-      [escape ?  escape ?> escape ?x ?b ?a ?s ?e ?6 ?4 ?- ?e ?n ?c tab return ?\C-w ?\C-y])
-
-;; when pasting the base64 stuff from binary files
-(fset 'dinoch-b64-paste
-      [escape ?x ?r backspace ?e ?r ?a ?s ?e ?- ?b ?u tab return ?\C-y escape ?x ?b ?a ?s ?e ?6 ?4 ?- ?d ?e ?c ?o tab return ?\C-x ?\C-s])
+;; ;; when copying binary files into a clipboard buffer
+;; (fset 'dinoch-b64-copy
+;;       [escape ?  escape ?> escape ?x ?b ?a ?s ?e ?6 ?4 ?- ?e ?n ?c tab return ?\C-w ?\C-y])
+;;
+;; ;; when pasting the base64 stuff from binary files
+;; (fset 'dinoch-b64-paste
+;;       [escape ?x ?r backspace ?e ?r ?a ?s ?e ?- ?b ?u tab return ?\C-y escape ?x ?b ?a ?s ?e ?6 ?4 ?- ?d ?e ?c ?o tab return ?\C-x ?\C-s])
 
 (defun dino-fixup-linefeeds ()
   "Dino's function to replace the CR-LF of a DOS ASCII file to a LF for Unix."
@@ -106,7 +108,6 @@ and is not already present on the path."
              (and (not (member path path-elts))
                   (setenv "PATH" (concat (getenv "PATH") ":" path)))
              (add-to-list 'exec-path path))))))
-
 
 
 (defun dino-toggle-frame-split ()
@@ -166,9 +167,11 @@ any other filename at point. Optional prefix says to replace base filename
               full-fname)))
       (kill-new fname) ;; insert into kill-ring
 
-      (and (re-search-backward dino-time-punctuation-regex (line-beginning-position) t)
+      ;; maybe delete an existing filename
+      (and (re-search-backward dino--filename-edge-regex (line-beginning-position) t)
            (progn (forward-char)
                   (dino--maybe-delete-file-name-looking-forward no-extension)))
+      ;; definitely insert the new filename
       (insert fname))))
 
 (defun dino-replace-filename-no-extension ()
@@ -176,7 +179,6 @@ any other filename at point. Optional prefix says to replace base filename
 replacing any other base filename at point."
   (interactive)
   (dino-replace-filename t))
-
 
 (defun dino-indent-buffer ()
   "Dino's function to re-indent an entire buffer; helpful in progmodes
@@ -197,11 +199,9 @@ to indicate a newline."
   ;; see http://stackoverflow.com/questions/1931784
   (remove-hook 'write-contents-functions 'dino-delete-trailing-whitespace))
 
-
 (defun dino-delete-trailing-whitespace ()
   (save-excursion
     (delete-trailing-whitespace)))
-
 
 (defvar dino-no-untabify-modes '(makefile-mode BSDmakefile salted-file-mode)
   "Normally my setup untabifies buffers before save. This list
@@ -229,12 +229,10 @@ in the list `dino-no-untabify-modes'
   (interactive)
   (untabify (point-min) (point-max)))
 
-(add-hook 'before-save-hook 'dino-untabify-maybe)
 
-
-;; put an href around the url at point.
-(fset 'dino-href-url
-      [?< ?  backspace ?a ?  ?h ?r ?e ?f ?= ?\" ?\C-s ?  ?\C-b ?\" ?> ?\C-r ?/ ?\C-f escape ?  ?\C-s ?\" ?\C-b ?\C-w ?\C-y ?\C-f ?\C-f ?\C-y ?< ?/ ?a ?> ?< ?b ?r ?> return])
+;; ;; put an href around the url at point.
+;; (fset 'dino-href-url
+;;       [?< ?  backspace ?a ?  ?h ?r ?e ?f ?= ?\" ?\C-s ?  ?\C-b ?\" ?> ?\C-r ?/ ?\C-f escape ?  ?\C-s ?\" ?\C-b ?\C-w ?\C-y ?\C-f ?\C-f ?\C-y ?< ?/ ?a ?> ?< ?b ?r ?> return])
 
 
 (defun revert-buffer-unconditionally ()
@@ -248,9 +246,8 @@ in the list `dino-no-untabify-modes'
   (set-frame-height (selected-frame) 68)
   (set-frame-width (selected-frame) 128))
 
-
 (defun dino-toggle-truncation ()
-  "Joe's function to toggle the state of the truncate-lines variable"
+  "toggle the state of the truncate-lines variable"
   (interactive)
   (setq truncate-lines (not truncate-lines))
   (redraw-display))
@@ -496,68 +493,6 @@ appropriate string has been found and deleted. Else return nil."
   (< (float-time (time-subtract (current-time) the-time)) delta-seconds))
 
 
-;; (defun dino-insert-timeofday ()
-;;   "Insert a string representing the time of day at point. The
-;; format varies depending on the mode, or if the minibuffer is
-;; active or not.  If the minibuffer is active, or if the mode is
-;; `wdired-mode', then the format used is like this:
-;;
-;;   20130820-0848
-;;
-;; Point remains where it was, with the timestamp string following.
-;;
-;; If you invoke this command repeatedly without moving point, it
-;; cycles through the above format as well as these:
-;;
-;;    Tuesday, 20 August 2013, 08:48
-;;    2013 August 20
-;;    08:48:03
-;;
-;; "
-;;   (interactive)
-;;   (let ((ix
-;;
-;;     ;; If the user has invoked this cmd twice in succession, then rotate
-;;     ;; through the formats. Be careful though: Sometimes using colons in
-;;     ;; the minibuffer causes emacs to go haywire for me.
-;;     (if (and ;;(not (window-minibuffer-p))
-;;          (boundp 'dino-timeofday--last-inserted-index)
-;;          (> dino-timeofday--last-inserted-index -1)
-;;          (boundp 'dino-timeofday--last-inserted-string)
-;;          (stringp dino-timeofday--last-inserted-string)
-;;          (markerp dino-timeofday--last-inserted-marker)
-;;          (marker-position dino-timeofday--last-inserted-marker)
-;;          (eq (marker-buffer dino-timeofday--last-inserted-marker) (current-buffer))
-;;          (or (eq last-command 'this-command)
-;;              (and
-;;               (= (point) dino-timeofday--last-inserted-marker)
-;;               dino-timeofday--prior-insert-time
-;;               (dino-is-recent dino-timeofday--prior-insert-time 10))))
-;;
-;;         (progn
-;;           (dino-maybe-delete-time-string-under-point)
-;;           ;;(backward-delete-char-untabify (length dino-timeofday--last-inserted-string))
-;;           ;; cycle to the next format
-;;           (1+ dino-timeofday--last-inserted-index))
-;;
-;;       ;;(setq ix (if (or (window-minibuffer-p) (equal major-mode 'wdired-mode))
-;;       ;;             0 1))
-;;       (dino-maybe-delete-time-string-under-point))))
-;;
-;;     (if (>= ix (length dino-time-formats))
-;;         (setq ix 0))
-;;
-;;     ;; examples:
-;;     ;; 19960617-1252
-;;     ;; Monday, 17 June 1996, 12:52
-;;     ;; 1996 June 17
-;;     ;; 12:52:43
-;;     (setq dino-timeofday--last-inserted-string (format-time-string (car (nth ix dino-time-formats)))
-;;           dino-timeofday--last-inserted-index ix
-;;           dino-timeofday--prior-insert-time (current-time))
-;;     (save-excursion
-;;     (insert dino-timeofday--last-inserted-string))
-;;     (setq dino-timeofday--last-inserted-marker (point-marker))))
 
 (defun dino-insert-timeofday (&optional arg)
   "Inserts a string representing the time of day at point.
@@ -616,7 +551,7 @@ Point is placed at the beginning of the newly inserted timestamp.
 
 (defvar dino-uuidgen-prog
   (if (eq system-type 'windows-nt)
-      "c:/users/Dino/bin/uuidgen.exe"
+      "c:/users/dpchi/bin/uuidgen.exe"
     "/usr/bin/uuidgen")
   "Program to generate one uuid and emit it to stdout.")
 
@@ -639,12 +574,10 @@ Point is placed at the beginning of the newly inserted timestamp.
     (kill-new uuid) ;; forcibly insert into kill-ring
     (insert uuid)))
 
-
 (defun dino-base64-encode-file (filename)
   "function to get base64 encoding of a given file, and return it."
   (let ((command (concat dino-base64-prog " " filename)))
       (shell-command-to-string command)))
-
 
 ;; c:/sw/VS2010ImageLibrary/Actions/png_format/Office and VS/Animate.png
 (defun dino-base64-insert-file (filename)
@@ -693,12 +626,10 @@ Handy for editing .resx files within emacs.
     (insert-file-contents filename)
     (buffer-substring-no-properties (point-min) (point-max))))
 
-
 (defun dino-time ()
   "returns the time of day as a string.  Used in the `dino-log' function."
   ;;(substring (current-time-string) 11 19) ;24-hr time
   (format-time-string "%H:%M:%S"))
-
 
 (defun dino-log (label text &rest args)
   "Log a message, using `message'.
@@ -707,7 +638,6 @@ TEXT is a format control string, and the remaining arguments ARGS
 are the string substitutions (see `format')."
   (let* ((msg (apply 'format text args)))
         (message "%s %s %s" label (dino-time) msg)))
-
 
 (defun dino-set-alist-entry (alist key value-cdr)
   "like `add-to-list' but works whether the key exists or not.
@@ -782,7 +712,6 @@ Like `replace-string' but for non-interactive use. "
                 (goto-char (point-min))
                 (dino-replace-s-non-interactively (cadr elt) (car elt)))
                 dino-html-escape-pairs))))
-
 
 (defvar dino-xml-escape-pairs '(("&" "&amp;")
                             ("<" "&lt;")
@@ -1097,8 +1026,6 @@ Eg,
       (kill-new "xx")
       (message "no file"))))
 
-
-
 (defun dino-rename-file-and-buffer (new-name)
   "Renames both current buffer and file it's visiting to NEW-NAME."
   (interactive "sNew name: ")
@@ -1118,7 +1045,7 @@ Eg,
 (eval-after-load "nxml-mode"
   '(progn
      (defun nxml-where ()
-       "Display the hierarchy of XML elements the point is on as a path."
+       "Display the hierarchy of XML elements the point is on, as a path."
        (interactive)
        (let ((path nil))
          (save-excursion
@@ -1453,8 +1380,6 @@ The first line is indented with INDENT-STRING."
 ;;         (delete-region (car bounds) (cdr bounds))
 ;;         (insert (int-to-string numeric))))))
 
-
-(global-set-key "\C-x7"     'dino-toggle-frame-split)
 
 (provide 'dino-utility)
 
