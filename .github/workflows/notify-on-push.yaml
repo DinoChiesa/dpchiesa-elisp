@@ -22,7 +22,7 @@ jobs:
       -  uses: Co-qn/google-chat-notification@v1
          with:
            # job name.
-           name: PR
+           name: Push
            # google chat webhook url.
            url: https://chat.googleapis.com/v1/spaces/AAAAra-BjYE/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=6kZEXnYj9msuEt7wCQU6ChsY3WQAk-isjdzMoLxH9gY%3D
            # job status.
