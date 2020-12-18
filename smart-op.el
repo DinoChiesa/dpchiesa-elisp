@@ -228,9 +228,8 @@ inserted.
                 (backward-char 1)
                 ;; javascript uses !== and ===
                 (if (and (not (looking-back " "))
-                         (or (not (eq major-mode 'js-mode))
-                             (and (not (looking-back "!"))
-                                  (not (looking-back "=")))))
+                         (or (not (memq major-mode '(js-mode js2-mode)))
+                             (not (looking-back "[!=]"))))
                  (insert " ")))
 
               ;; insert the operator and maybe a space
