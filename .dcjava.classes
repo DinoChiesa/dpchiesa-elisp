@@ -606,3 +606,5 @@ com.jayway.restassured.response.ValidatableResponse
 com.jayway.restassured.response.Response
 com.jayway.restassured.response.Header
 com.apigee.util.ResourceURL
+com.google.gson.GsonBuilder
+com.apigee.beans.BeanMarshaller
