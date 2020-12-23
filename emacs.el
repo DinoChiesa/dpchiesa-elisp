@@ -1,6 +1,6 @@
 ;;; emacs.el -- Dino's .emacs setup file.
 ;;
-;; Last saved: <2020-July-30 09:32:56>
+;; Last saved: <2020-December-22 17:16:03>
 ;;
 ;; Works with v24.5 and v25.1 of emacs.
 ;;
@@ -942,7 +942,6 @@ With a prefix argument, makes a private paste."
 
 
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CSS mode
 
@@ -980,7 +979,14 @@ With a prefix argument, makes a private paste."
   ;;(require 'csslint)
   (require 'flycheck)
   (flycheck-mode)
-  (flycheck-select-checker 'css-csslint)
+  (flycheck-select-checker
+   (if (string= mode-name "SCSS") 'scss-lint 'css-csslint))
+
+  (add-hook 'before-save-hook
+            '(lambda ()
+               (save-excursion
+                 (delete-trailing-whitespace)))
+            nil 'local)
 
   ;; display CSS colors in color
   (require 'rainbow-mode)
