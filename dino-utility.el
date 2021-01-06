@@ -17,7 +17,7 @@
 ;;
 ;; This code is distributed under the New BSD License.
 ;;
-;; Copyright (c) 2013-2018, Dino Chiesa
+;; Copyright (c) 2013-2020, Dino Chiesa
 ;; All rights reserved.
 ;;
 ;; Redistribution and use in source and binary forms, with or without
@@ -561,6 +561,24 @@ Point is placed at the beginning of the newly inserted timestamp.
     "openssl base64 < ")
   "command to generate base64 encoding for a given file, emit to stdout.")
 ;; see also `base64-encode-region'
+
+(defun dino-googleapis-project-id (json-keyfile)
+  "parse the json keyfile and extract the project id"
+  (and
+     (file-exists-p json-keyfile)
+     (cdr (assoc 'project_id (json-read-file json-keyfile)))))
+
+(defun dino-googleapis-token (json-keyfile)
+  "generate and return a new OAuth token for googleapis.com"
+  (let ((project-id (dino-googleapis-project-id json-keyfile)))
+  (and
+   project-id
+     (let* ((command-string
+             (format "node ~/dev/apigee-edge-js-examples/getToken.js -G -J %s -o %s -v" json-keyfile project-id))
+            (output (replace-regexp-in-string "\n$" "" (shell-command-to-string command-string)))
+            (lines (split-string output "\n")))
+       (car (last lines))))))
+
 
 (defun dino-uuid-gen ()
   "function to generate a new UUID and return it."
