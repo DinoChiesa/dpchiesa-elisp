@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# name: gson.toJson(...)
+# key: gson
+# --
+Gson gson = new GsonBuilder().setPrettyPrinting().create();
+System.out.printf("%s\n", gson.toJson(map));
