@@ -196,6 +196,35 @@
                        " *, *" t))
                 ))))
 
+;; Dino 20210127-1304
+;;
+;; js2-mode does its own syntax checking, does not use flymake, flycheck, tern or anything else.
+;; Those checkers can be enabled in addition to the js2-mode checking, but not necessary.
+;; There's a variable called js2-additional-externs that holds "externs", which refers to
+;; functions or variables defined external to the current js module. Adding symbol-names to this
+;; avoids messages like "Undeclared variable or function ’process’".
+;;
+;; By default js2 finds comments within a module like /* global process */ , and
+;; adds the listed symbols to js2-additional-externs.  But js2 does not look in .jshintrc or
+;; .jslintrc etc.  The following from https://gist.github.com/UnwashedMeme/9167d7ad7421c0d34609
+;; locates the .jshintrc file, extracts the globals, and adds those to the js2-additional-externs
+;; list.
+
+(defun um-js-additional-externs ()
+  (let ((jshintrc (expand-file-name ".jshintrc"
+                                    (locate-dominating-file
+                                     default-directory ".jshintrc"))))
+    (when (file-readable-p jshintrc)
+      (message "Using jshintrc file: %s" jshintrc)
+      (let ((jshintrc-data (json-read-file jshintrc)))
+        (setq js2-additional-externs
+              (union js2-additional-externs
+                      (mapcar #'symbol-name
+                              (mapcar #'car
+                                      (cdr (assq 'globals jshintrc-data))))))))))
+
+(add-hook 'js2-mode-hook 'um-js-additional-externs)
+
 ;;(require 'json)
 
 

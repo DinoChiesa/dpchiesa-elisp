@@ -1,6 +1,6 @@
 ;;; emacs.el -- Dino's .emacs setup file.
 ;;
-;; Last saved: <2020-December-22 17:16:03>
+;; Last saved: <2021-January-27 12:59:36>
 ;;
 ;; Works with v24.5 and v25.1 of emacs.
 ;;
@@ -1090,11 +1090,11 @@ With a prefix argument, makes a private paste."
   time-stamp-active t          ; do enable time-stamps
   ;; time-stamp-line-limit 34     ; check first N buffer lines for Time-stamp: <>
   ;; example: Tuesday, July 15, 2008  10:59:09  (by dinoch)
-  ;;time-stamp-format "%:a, %:b %02d, %04y  %02H:%02M:%02S %Z (by %u)") ; date format
-  ;;time-stamp-format "%04y-%:b-%02d %02H:%02M:%02S" ; date format
-  time-stamp-pattern "34/\\(\\(L\\|l\\)ast\\( \\|-\\)\\(\\(S\\|s\\)aved\\|\\(M\\|m\\)odified\\|\\(U\\|u\\)pdated\\)\\|Time-stamp\\) *: <%04y-%:b-%02d %02H:%02M:%02S>")
+  ;;time-stamp-format "%:a, %:b %02d, %Y  %02H:%02M:%02S %Z (by %u)") ; date format
+  ;;time-stamp-format "%Y-%:b-%02d %02H:%02M:%02S" ; date format
+  time-stamp-pattern "34/\\(\\(L\\|l\\)ast\\( \\|-\\)\\(\\(S\\|s\\)aved\\|\\(M\\|m\\)odified\\|\\(U\\|u\\)pdated\\)\\|Time-stamp\\) *: <%Y-%:b-%02d %02H:%02M:%02S>")
 
-;; can also add this to source code: // (set-variable time-stamp-format "%04y-%:b-%02d %02H:%02M:%02S")
+;; can also add this to source code: // (set-variable time-stamp-format "%Y-%:b-%02d %02H:%02M:%02S")
 
 (add-hook 'before-save-hook 'time-stamp)  ; update time stamps when saving
 
@@ -2459,9 +2459,11 @@ i.e M-x kmacro-set-counter."
 
   (turn-on-font-lock)
 
-  ;; for syntax-checking, auto-complete, etc
-  (require 'tern)
-  (tern-mode t)
+  ;; Dino 20210127-1259 - trying to diagnose checker errors
+  ;;
+  ;; ;; for syntax-checking, auto-complete, etc
+  ;; (require 'tern)
+  ;; (tern-mode t)
 
   (local-set-key "\M-\C-R"  'indent-region)
   (local-set-key "\M-#"     'dino-indent-buffer)
@@ -2496,17 +2498,19 @@ i.e M-x kmacro-set-counter."
       (progn (require 'autopair) (autopair-mode))
     (electric-pair-mode))
 
-  ;; json-mode is a child mode of js-mode. Select different checker
-  ;; based on the file extension.
-  (require 'flycheck)
-  (if (and buffer-file-name
-           (file-name-directory buffer-file-name))
-       (progn
-         (flycheck-mode)
-         (flycheck-select-checker
-          (if (string-suffix-p ".json" buffer-file-name)
-              'json-jsonlint
-            'javascript-jshint))))
+  ;; Dino 20210127-1259 - trying to diagnose checker errors
+  ;;
+  ;; ;; json-mode is a child mode of js-mode. Select different checker
+  ;; ;; based on the file extension.
+  ;; (require 'flycheck)
+  ;; (if (and buffer-file-name
+  ;;          (file-name-directory buffer-file-name))
+  ;;      (progn
+  ;;        (flycheck-mode)
+  ;;        (flycheck-select-checker
+  ;;         (if (string-suffix-p ".json" buffer-file-name)
+  ;;             'json-jsonlint
+  ;;           'javascript-jshint))))
 
   ;;(flycheck-select-checker 'javascript-eslint) ;; for more control?
   ;;
