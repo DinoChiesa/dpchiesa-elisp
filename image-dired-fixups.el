@@ -1,9 +1,15 @@
 ;; image-dired-fixups.el
 ;;
-;; image dired did not work in MacOS for me.
+;; image-dired.el did not work in MacOS for me.
 ;; So I added these fixups to get it to work.
-
-
+;;
+;; The intent of image-dired is.... to
+;; "Make a preview buffer for all images in DIR and display it."
+;; ...and also to be able to create thumbnails, and maybe other ostuff.
+;; As with anything in emacs, check the source for details.
+;; My main interest was creating thumbnails.
+;;
+;; FYI: image-dired requires ImageMagick for the convert and mogrify programs.
 ;;
 ;; (defun image-dired-fixup-check-convert ()
 ;;   "checks the existence of the ImageMagick convert program"
