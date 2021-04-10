@@ -11,7 +11,7 @@
 ;; Requires   : s.el
 ;; License    : Apache 2.0
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2019-May-11 12:41:36>
+;; Last-saved : <2021-April-09 18:29:53>
 ;;
 ;;; Commentary:
 ;;
@@ -520,11 +520,9 @@ select from.
     (dcjava-find-wacapps-java-source-for-class classname)))
 
 
-(defun dcjava-insert-inferred-package-name ()
-  "infers the package name from the directory structure, then inserts the package statement
-at the top of the file."
-  (interactive)
-  (let ((elts (delq "" (reverse (split-string (file-name-directory default-directory) "/"))))
+(defun dcjava-infer-package-name ()
+  "returns the inferred package name from the directory structure"
+  (let ((elts (remove "" (reverse (split-string (file-name-directory default-directory) "/"))))
         (package-root-dir-names '("org" "com" "io" "net"))
         dir-stack
         inferred-package-name)
@@ -533,6 +531,14 @@ at the top of the file."
           (setq inferred-package-name (mapconcat 'identity (push (car elts) dir-stack) "."))
         (push (car elts) dir-stack)
         (setq elts (cdr elts))))
+    inferred-package-name))
+
+
+(defun dcjava-insert-inferred-package-name ()
+  "inserts a package statement with an inferred package name
+at the top of the source file."
+  (interactive)
+  (let ((inferred-package-name (dcjava-infer-package-name)))
     (if inferred-package-name
         (save-excursion
           (beginning-of-buffer)
