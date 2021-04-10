@@ -608,3 +608,15 @@ com.jayway.restassured.response.Header
 com.apigee.util.ResourceURL
 com.google.gson.GsonBuilder
 com.apigee.beans.BeanMarshaller
+java.lang.reflect.InvocationTargetException
+java.security.AccessController
+java.security.PrivilegedAction
+javax.xml.crypto.OctetStreamData
+java.io.FilenameFilter
+com.nimbusds.jose.crypto.ECDHEncrypter
+java.io.FileOutputStream
+javax.xml.bind.annotation.XmlElementWrapper
+java.util.function.BiFunction
+java.util.function.IntSupplier
+java.util.zip.GZIPOutputStream
+java.nio.file.Paths.get
