@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# key : unhandledRejection
+# name : process.on(...)
+# --
+process.on('unhandledRejection',
+            r => console.log('\n*** unhandled promise rejection: ' + util.format(r)));

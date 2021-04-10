@@ -1,0 +1,18 @@
+# key : resolveTilde
+# name : function resolveTilde(x) {...}
+# --
+function resolveTilde(srcPath) {
+  const os = require('os');
+  if (srcPath.startsWith('~/') || srcPath === '~') {
+    return srcPath.replace('~', os.homedir());
+  }
+  if (srcPath.startsWith('~')) {
+  const path = require('path');
+    return path.resolve(os.homedir() + '/../' + srcPath.slice(1));
+  }
+  return srcPath;
+}
+
+
+
+

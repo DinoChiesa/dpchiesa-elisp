@@ -1,6 +1,6 @@
 # -*- mode: snippet -*-
-# key : quant
-# name : quant(q,term) ... { ... }
+# key : quantify
+# name : quantify(q,term) ... { ... }
 # --
 function quantify(quantity, term) {
   let termIsPlural = term.endsWith('s');

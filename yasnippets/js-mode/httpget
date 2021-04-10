@@ -1,0 +1,23 @@
+# key : httpget
+# name : httpget
+# --
+new Promise((resolve, reject) => {
+    let uri = `https://example.com/v1/foo/${config.project_id}?q=298`,
+        parsed = url.parse(uri),
+        options = {
+          host: parsed.host,
+          path: parsed.path,  // includes search
+          method : 'GET',
+          headers : {
+            accept : 'application/json',
+            authorization: `Bearer ${access_token}`
+          }
+        },
+        request = https.request(options, function(res) {
+          let payload = '';
+          res.on('data', chunk => payload += chunk);
+          res.on('end', () => resolve(JSON.parse(payload)));
+          res.on('error', e => reject(e));
+        });
+    request.end();
+  })
