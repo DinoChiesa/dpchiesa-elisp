@@ -1,6 +1,6 @@
 ;;; emacs.el -- Dino's .emacs setup file.
 ;;
-;; Last saved: <2021-January-27 12:59:36>
+;; Last saved: <2021-March-29 14:56:18>
 ;;
 ;; Works with v24.5 and v25.1 of emacs.
 ;;
@@ -735,10 +735,19 @@ With a prefix argument, makes a private paste."
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
+;; image-dired
 (eval-after-load "image-dired"
   '(progn
      (require 'image-dired-fixups)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; image-mode
+(defun dino-image-mode-fn ()
+  "My hook for image-mode"
+  (local-set-key "h"  'image-transform-fit-to-height)
+  (local-set-key "w"  'image-transform-fit-to-width))
+
+(add-hook 'image-mode-hook 'dino-image-mode-fn)
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
