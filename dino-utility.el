@@ -562,6 +562,21 @@ Point is placed at the beginning of the newly inserted timestamp.
   "command to generate base64 encoding for a given file, emit to stdout.")
 ;; see also `base64-encode-region'
 
+(defun dino-get-apigee-edge-cached-token (cache-file username &optional mgmt-endpt login-endpt)
+  "parse the json CACHE-FILE and extract the token"
+  (let ((cache-file (expand-file-name cache-file)))
+    (and
+     (file-exists-p cache-file)
+     (let* ((mgmt-endpt (or mgmt-endpt "https://api.enterprise.apigee.com"))
+            (login-endpt (or login-endpt "https://login.apigee.com"))
+            (jsonkey (concat username "##" mgmt-endpt "##" login-endpt )))
+       (let ((json (json-read-file cache-file)))
+         (cdr
+          (assoc 'access_token
+                 (cdr (assoc (intern jsonkey) json))))
+         ))
+     )))
+
 (defun dino-googleapis-project-id (json-keyfile)
   "parse the json keyfile and extract the project id"
   (and
@@ -574,7 +589,7 @@ Point is placed at the beginning of the newly inserted timestamp.
   (and
    project-id
      (let* ((command-string
-             (format "node ~/dev/apigee-edge-js-examples/getToken.js -G -J %s -o %s -v" json-keyfile project-id))
+             (format "node ~/dev/apigee-edge-js-examples/getToken.js -J %s -o %s -v" json-keyfile project-id))
             (output (replace-regexp-in-string "\n$" "" (shell-command-to-string command-string)))
             (lines (split-string output "\n")))
        (car (last lines))))))
