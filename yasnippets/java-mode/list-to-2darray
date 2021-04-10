@@ -1,0 +1,9 @@
+# -*- mode: snippet -*-
+# name: list-to-2d-array
+# key: lto2d
+# --
+  return list
+      .stream()
+      .map(tc -> new TestCase[] {tc})
+      .toArray(Object[][]::new);
+
