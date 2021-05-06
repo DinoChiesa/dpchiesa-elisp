@@ -577,6 +577,19 @@ Point is placed at the beginning of the newly inserted timestamp.
          ))
      )))
 
+(defun dino-fetch-latest (path &optional match)
+  "return the latest file in directory PATH, optionally the latest
+file with filename matching regex MATCH. The return value is a concatenated
+filename."
+  (let ((entries (directory-files-and-attributes path nil match t))
+        (dc-mtime (lambda (entry) (nth 5 (cdr entry)))))
+    (concat
+     (file-name-as-directory path)
+     (car
+      (car (sort entries (lambda (a b)
+                           (not (time-less-p (funcall dc-mtime a)
+                                             (funcall dc-mtime b))))))))))
+
 (defun dino-googleapis-project-id (json-keyfile)
   "parse the json keyfile and extract the project id"
   (and
@@ -593,7 +606,6 @@ Point is placed at the beginning of the newly inserted timestamp.
             (output (replace-regexp-in-string "\n$" "" (shell-command-to-string command-string)))
             (lines (split-string output "\n")))
        (car (last lines))))))
-
 
 (defun dino-uuid-gen ()
   "function to generate a new UUID and return it."
