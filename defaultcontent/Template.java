@@ -6,11 +6,11 @@
 // Author: @AUTHOR@
 // Created @DATE@
 //
-// Last saved: <2017-December-05 12:42:31>
+// Last saved: <2021-July-07 14:35:41>
 // ------------------------------------------------------------------
 //
 
-package com.ionic.whatever;
+@LISP((dcjava-inferred-package-statement))@
 
 import java.util.Hashtable;
 import java.util.Enumeration;
