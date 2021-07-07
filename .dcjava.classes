@@ -620,3 +620,12 @@ java.util.function.BiFunction
 java.util.function.IntSupplier
 java.util.zip.GZIPOutputStream
 java.nio.file.Paths.get
+javax.crypto.spec.DESedeKeySpec
+com.apigee.logging.Logger
+com.apigee.logging.LoggerFactory
+java.net.HttpURLConnection
+java.io.DataOutputStream
+net.oneandone.sushi.util.NetRc
+mockit.Expectations
+com.nimbusds.jose.jwk.KeyUse
+com.nimbusds.jose.jwk.KeyType
