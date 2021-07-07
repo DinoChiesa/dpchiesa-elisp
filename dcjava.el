@@ -11,7 +11,7 @@
 ;; Requires   : s.el
 ;; License    : Apache 2.0
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2021-April-09 18:29:53>
+;; Last-saved : <2021-July-07 14:35:13>
 ;;
 ;;; Commentary:
 ;;
@@ -520,8 +520,9 @@ select from.
     (dcjava-find-wacapps-java-source-for-class classname)))
 
 
-(defun dcjava-infer-package-name ()
-  "returns the inferred package name from the directory structure"
+(defun dcjava-inferred-package-name ()
+  "returns the inferred package name from the directory structure,
+or nil if there is none."
   (let ((elts (remove "" (reverse (split-string (file-name-directory default-directory) "/"))))
         (package-root-dir-names '("org" "com" "io" "net"))
         dir-stack
@@ -533,22 +534,32 @@ select from.
         (setq elts (cdr elts))))
     inferred-package-name))
 
+(defun dcjava-inferred-package-statement ()
+  "returns the package statement with the inferred package name, or
+blank if there is none."
+  (let ((inferred-package-name (dcjava-inferred-package-name)))
+    (if inferred-package-name
+        (concat "package " inferred-package-name ";")
+      "")))
 
 (defun dcjava-insert-inferred-package-name ()
   "inserts a package statement with an inferred package name
 at the top of the source file."
   (interactive)
-  (let ((inferred-package-name (dcjava-infer-package-name)))
-    (if inferred-package-name
+  (let ((inferred-package-statement (dcjava-inferred-package-statement)))
+    (if (and inferred-package-statement
+             (not (string= "" inferred-package-statement)))
         (save-excursion
           (beginning-of-buffer)
           ;; naively skip-comments. this breaks if you use /*
           (while (looking-at "^//")
             (forward-line))
           (newline)
-          (insert (concat "package " inferred-package-name ";"))
+          (insert inferred-package-statement)
           (newline)
           ))))
+
+
 
 (defun dcjava-shell-command-on-buffer (command)
   (let ((output-goes-to-current-buffer t)
