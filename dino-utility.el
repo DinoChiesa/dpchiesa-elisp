@@ -596,8 +596,20 @@ filename."
      (file-exists-p json-keyfile)
      (cdr (assoc 'project_id (json-read-file json-keyfile)))))
 
-(defun dino-googleapis-token (json-keyfile)
-  "generate and return a new OAuth token for googleapis.com"
+(defun dino-gcloud-auth-print-access-token ()
+  "return output of $(gcloud auth print-access-token)"
+  (let* ((gcloud-pgm "~/Downloads/google-cloud-sdk/bin/gcloud")
+         (command-string (concat gcloud-pgm " auth print-access-token"))
+         (output (replace-regexp-in-string "\n$" "" (shell-command-to-string command-string)))
+         (lines (split-string output "\n")))
+       (car (last lines))))
+
+
+(defun dino-googleapis-token-for-sa (json-keyfile)
+  "generate and return a new OAuth token for googleapis.com for a service account"
+  ;; There is some problem with emacs and TLS v1.3
+  ;; So we try turning it off.
+  (setq gnutls-algorithm-priority "NORMAL:-VERS-TLS1.3")
   (let ((project-id (dino-googleapis-project-id json-keyfile)))
   (and
    project-id
