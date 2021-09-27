@@ -8,10 +8,10 @@
 ;; Modified   : February 2016
 ;; Version    : 1.4
 ;; Keywords   : apigee
-;; Requires   : s.el
+;; Requires   : s.el dash.el
 ;; License    : Apache 2.0
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2021-July-07 14:35:13>
+;; Last-saved : <2021-September-27 16:00:59>
 ;;
 ;;; Commentary:
 ;;
@@ -91,8 +91,8 @@
 ;;; Code:
 ;;
 
-
 (require 's) ;; magnars' long lost string library
+(require 'dash) ;; magnars' functional lib
 
 (defcustom dcjava-location-of-gformat-jar
   "~/dev/java/lib/google-java-format-1.7-all-deps.jar"
@@ -519,7 +519,6 @@ select from.
          )
     (dcjava-find-wacapps-java-source-for-class classname)))
 
-
 (defun dcjava-inferred-package-name ()
   "returns the inferred package name from the directory structure,
 or nil if there is none."
@@ -528,10 +527,17 @@ or nil if there is none."
         dir-stack
         inferred-package-name)
     (while (and elts (not inferred-package-name))
-      (if (member (car elts) package-root-dir-names)
-          (setq inferred-package-name (mapconcat 'identity (push (car elts) dir-stack) "."))
-        (push (car elts) dir-stack)
-        (setq elts (cdr elts))))
+      (let ((current-dir-name (car elts)))
+      (cond
+       ((member current-dir-name package-root-dir-names)
+        (setq inferred-package-name (mapconcat 'identity (push current-dir-name dir-stack) ".")))
+       ((s-equals? current-dir-name "java")
+        (setq inferred-package-name (mapconcat 'identity dir-stack ".")))
+       (t
+        (progn
+          (push (car elts) dir-stack)
+          (setq elts (cdr elts))))
+       )))
     inferred-package-name))
 
 (defun dcjava-inferred-package-statement ()
