@@ -629,3 +629,14 @@ net.oneandone.sushi.util.NetRc
 mockit.Expectations
 com.nimbusds.jose.jwk.KeyUse
 com.nimbusds.jose.jwk.KeyType
+mockit.Mock
+mockit.MockUp
+java.util.Base64.Encoder
+javax.xml.crypto.dsig.spec.ExcC14NParameterSpec
+express.http.HttpRequestHandler
+io.grpc.stub.StreamObserver
+org.lognet.springboot.grpc.GRpcService
+com.google.apigee.proto.ExternalCallout
+com.google.apigee.proto.ExternalCallout.MessageContext
+com.google.apigee.proto.ExternalCalloutServiceGrpc
+com.google.apigee.proto.ExternalCallout.FlowVariable
