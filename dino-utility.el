@@ -52,7 +52,7 @@
 
 ;;; Code:
 
-(require 'cl)
+;;(require 'cl) ; for incf
 (require 's)
 (require 'package)
 
@@ -719,16 +719,17 @@ are the string substitutions (see `format')."
     ;; split <foo><bar> or </foo><bar>, but not <foo></foo>
     (goto-char begin)
     (while (search-forward-regexp ">[ \t]*<[^/]" end t)
-      (backward-char 2) (insert "\n") (incf end))
+      (backward-char 2) (insert "\n") (setq end (+ end 1)))
     ;; split <foo/></foo> and </foo></foo>
     (goto-char begin)
     (while (search-forward-regexp "<.*?/.*?>[ \t]*<" end t)
-      (backward-char) (insert "\n") (incf end))
+      (backward-char) (insert "\n") (setq end (+ end 1)))
     ;; put xml namespace decls on newline
     (goto-char begin)
     (while (search-forward-regexp "\\(<\\([a-zA-Z][-:A-Za-z0-9]*\\)\\|['\"]\\) \\(xmlns[=:]\\)" end t)
       (goto-char (match-end 0))
-      (backward-char 6) (insert "\n") (incf end))
+      (backward-char 6) (insert "\n")
+      (setq end (+ end 1)))
     (indent-region begin end nil)
     (normal-mode))
   (message "All indented!"))
@@ -1178,7 +1179,7 @@ insert a pair, and backup one character."
   '((?\) . ?\()
     (?\> . ?\<)
     (?\] . ?\[)
-    (?" . ?")))
+    (?\" . ?\")))
 
 (defun dino-skeleton-pair-end (arg)
   "Skip the char if it is an ending, otherwise insert it."

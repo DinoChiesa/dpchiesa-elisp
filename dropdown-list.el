@@ -124,7 +124,7 @@
           (t nil))))
 
 (defun dropdown-list-move-to-start-line (candidate-count)
-  (decf candidate-count)
+  (cl-decf candidate-count)
   (let ((above-line-count (save-excursion (- (vertical-motion (- candidate-count)))))
         (below-line-count (save-excursion (vertical-motion candidate-count))))
     (cond ((= below-line-count candidate-count)
@@ -150,7 +150,7 @@
                                                (concat candidate (make-string diff ? ))
                                              (substring candidate 0 max-length))
                                            (format "%3d" (+ 2 i)))
-                                   'face (if (eql (incf i) selidx)
+                                   'face (if (eql (cl-incf i) selidx)
                                              'dropdown-list-selection-face
                                            'dropdown-list-face))))
                               candidates
@@ -158,7 +158,7 @@
     (save-excursion
       (and start
            (dropdown-list-move-to-start-line (length candidates))
-           (loop initially (vertical-motion 0)
+           (cl-loop initially (vertical-motion 0)
               for candidate in candidates
               do (dropdown-list-line (+ (current-column) start) candidate)
               while (/= (vertical-motion 1) 0)

@@ -31,7 +31,7 @@
 (require 'js2-imenu-extras)
 (js2-imenu-extras-setup)
 
-;; Set up wrapping of pairs, with the possiblity of semicolons thrown into the mix
+;; Set up wrapping of pairs, with the possiblity of semicolons thrown into the mix
 
 ;; (defun js2r--setup-wrapping-pair (open close)
 ;;   (define-key js2-mode-map (read-kbd-macro open) (λ (js2r--self-insert-wrapping open close)))

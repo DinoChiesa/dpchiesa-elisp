@@ -1,6 +1,6 @@
 ;;; emacs.el -- Dino's .emacs setup file.
 ;;
-;; Last saved: <2021-March-29 14:56:18>
+;; Last saved: <2022-April-26 20:24:24>
 ;;
 ;; Works with v24.5 and v25.1 of emacs.
 ;;
@@ -742,8 +742,28 @@ With a prefix argument, makes a private paste."
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; image-mode
+
+(defun dino/image-transform-fit-to-window()
+  "Resize the image to fit the width or height based on the image and window ratios."
+  (interactive)
+  (let* ( (img-size (image-display-size (image-get-display-property) t))
+          (img-width (car img-size))
+          (img-height (cdr img-size))
+          (img-h/w-ratio (/ (float img-height) (float img-width)))
+          (win-width (- (nth 2 (window-inside-pixel-edges))
+                        (nth 0 (window-inside-pixel-edges))))
+          (win-height (- (nth 3 (window-inside-pixel-edges))
+                         (nth 1 (window-inside-pixel-edges))))
+          (win-h/w-ratio (/ (float win-height) (float win-width))))
+    ;; Fit image by width if the h/w ratio of window is > h/w ratio of the image
+    (if (> win-h/w-ratio img-h/w-ratio)
+        (image-transform-fit-to-width)
+      ;; Else fit by height
+      (image-transform-fit-to-height))))
+
 (defun dino-image-mode-fn ()
   "My hook for image-mode"
+  (dino/image-transform-fit-to-window)
   (local-set-key "h"  'image-transform-fit-to-height)
   (local-set-key "w"  'image-transform-fit-to-width))
 
@@ -2409,10 +2429,18 @@ i.e M-x kmacro-set-counter."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; JavaScript - js2-mode (new - 20180416-1511)
 (autoload 'js2-mode "js2-mode" nil t)
-(eval-after-load 'js2-mode '(require 'setup-js2-mode))
+;;(eval-after-load 'js2-mode '(require 'setup-js2-mode))
+;; Better imenu
+(add-hook 'js2-mode-hook #'js2-imenu-extras-mode)
+(defun dino-js2-mode-fn ()
+  (tern-mode)
+  )
+
+(add-hook 'js2-mode-hook #'dino-js2-mode-fn)
+
 (js2r-add-keybindings-with-prefix "C-c C-m")
 
-;; xxx
+;; xxx WHY have I deleted this?
 ;;
 ;; (defun dino-js2-mode-fn ()
 ;;   (turn-on-font-lock)
@@ -2458,8 +2486,8 @@ i.e M-x kmacro-set-counter."
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; JavaScript - js-mode (old)
-(autoload 'js-mode "js" nil t)
+;; JavaScript - js-mode (old?)
+;;(autoload 'js-mode "js" nil t)  ;; 20220426-2016
 (defun dino-js-mode-fn ()
   ;; https://stackoverflow.com/a/15239704/48082
   (set (make-local-variable 'font-lock-multiline) t)
@@ -2563,6 +2591,7 @@ i.e M-x kmacro-set-counter."
   )
 
 (add-hook 'js-mode-hook   'dino-js-mode-fn)
+;;(add-hook 'js2-mode-hook   'dino-js-mode-fn)
 
 ;; for {jshint, jslint, flycheck javascript-jshint} to work,
 ;; the path m ust have been previously set correctly.
@@ -3079,7 +3108,8 @@ i.e M-x kmacro-set-counter."
   (interactive)
   (let* ((all-files recentf-list)
          (tocpl (mapcar (function
-                         (lambda (x) (cons (file-name-nondirectory x) x))) all-files))
+                         (lambda (x) (cons (file-name-nondirectory x) x)))
+                        all-files))
          (prompt (append '("File name: ") tocpl))
          (fname (completing-read (car prompt) (cdr prompt) nil nil)))
     (find-file (cdr (assoc-string fname tocpl)))))
@@ -3094,8 +3124,13 @@ i.e M-x kmacro-set-counter."
 ;;
 (require 'thesaurus)
 (thesaurus-set-bhl-api-key-from-file "~/BigHugeLabs.apikey.txt")
-;;(define-key global-map (kbd "C-x t") 'thesaurus-choose-synonym-and-replace)
 (global-set-key "\C-ct"     'thesaurus-choose-synonym-and-replace)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; dictionary
+;;
+(require 'dictionary)
+(global-set-key "\C-c\C-d"     'dictionary-get-definition)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
