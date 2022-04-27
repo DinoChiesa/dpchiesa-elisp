@@ -1,0 +1,9 @@
+# key : partition
+# name : part
+# --
+function partition(array, predicate) {
+    // usage: let [patterns, prefixes] = partition(indications, pf => pf.startsWith('^'));
+    return array.reduce((acc, item) => predicate(item)
+        ? (acc[0].push(item), acc)
+        : (acc[1].push(item), acc), [[], []]);
+}

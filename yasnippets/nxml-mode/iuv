@@ -1,0 +1,4 @@
+#key : iuv
+#name : <IgnoreUnresolvedVariables...>
+# --
+<IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>

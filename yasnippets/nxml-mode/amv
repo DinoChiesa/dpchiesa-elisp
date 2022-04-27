@@ -1,0 +1,10 @@
+# -*- mode: snippet -*-
+# name: <AssignMessage...>
+# key: amv
+# --
+<AssignMessage name='AM-$1'>
+  <AssignVariable>
+    <Name>target.url</Name>
+    <Template>https://{domain.name}/</Template>
+  </AssignVariable>
+</AssignMessage>
