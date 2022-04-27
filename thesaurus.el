@@ -255,7 +255,7 @@ This is used within `thesaurus.el' in only one case: to notify
 the user that he needs to register for an API key.
 
 "
-  (let (rris)
+  (let ((rris))
     (fset 'rris 'replace-regexp-in-string)
     (let* ((msg (format format-string args))
            (ps-cmd
@@ -336,9 +336,6 @@ headers and the beginning of the message content.
       (delete-char 1))
     (delete-char 1)
     (if (> clength 0) clength (point-max))))
-
-
-
 
 (defun thesaurus-parse-one-line ()
   "Parse one line in the buffer created by `url-retrieve-synchronously'.
@@ -428,14 +425,11 @@ The output is a list like this:
     (setq items (cons "Ignored pane title" items))
     (list "Replace with..." items)))
 
-
-
 (defun thesaurus-prompt-user-with-choices (candidates)
   "Prompt the user with the available replacement choices.
 In this context the list of choices is the list of synonyms.
 
 See `thesaurus-prompt-mechanism'.
-
 "
   (cond
    ((not candidates)
@@ -485,7 +479,6 @@ service, and prompt the user with a list of possible
 replacements.  If the user chooses a replacement, the original
 word in the buffer will be removed and the replacement will be
 inserted in its place.
-
 "
   (interactive (list (read-string "Get synonyms for word: " (thesaurus-word-at-point))))
   (let ((chosen (thesaurus-prompt-user-with-choices
@@ -516,15 +509,12 @@ BHL during registration.
                 (insert-file-contents filename)
                 (buffer-substring-no-properties (point-min) (point-max)))))))
 
-
-
 (defun thesaurus-install ()
   "install `thesaurus.el'"
   (setq thesaurus-cache
         (if (file-exists-p (thesaurus-cache-filename))
             (thesaurus-cache-load)
           (thesaurus-cache-initialize))))
-
 
 (eval-when-compile (require 'dropdown-list nil t))
 
