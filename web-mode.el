@@ -1,11 +1,11 @@
 ;;; web-mode.el --- major mode for editing html templates
 ;;; -*- coding: utf-8 -*-
 
-;; Copyright 2011-2014 François-Xavier Bois
+;; Copyright 2011-2014 Francois-Xavier Bois
 
 ;; Version: 8.0.1
-;; Author: François-Xavier Bois <fxbois AT Google Mail Service>
-;; Maintainer: François-Xavier Bois
+;; Author: Francois-Xavier Bois <fxbois AT Google Mail Service>
+;; Maintainer: Francois-Xavier Bois
 ;; Created: July 2011
 ;; Keywords: html template php javascript js css web
 ;;           django jsp asp erb twig jinja blade dust closure
@@ -43,7 +43,7 @@
 ;;todo : passer les content-types en symboles
 ;;todo : tester shortcut A -> pour pomme
 ;;todo : commentaire d'une ligne ruby ou d'une ligne asp
-;;todo : créer tag-token pour différentier de part-token : tag-token=attr,comment ???
+;;todo : croer tag-token pour differentier de part-token : tag-token=attr,comment ???
 
 (defconst web-mode-version "8.0.1"
   "Web Mode version.")
@@ -135,7 +135,8 @@ See web-mode-part-face."
   :group 'web-mode)
 
 (defcustom web-mode-enable-heredoc-fontification nil
-  "Enable heredoc fontification. The identifier should contain JS, JAVASCRIPT or HTML."
+  "Enable heredoc fontification. The identifier should contain JS, JAVASCRIPT
+or HTML."
   :type 'boolean
   :group 'web-mode)
 
@@ -627,7 +628,7 @@ Must be used in conjunction with web-mode-enable-block-face."
   "Engine file extensions.")
 
 (defvar web-mode-smart-quotes
-  '("«" . "»")
+  '("‚Äú" . "‚Äù")
   "Preferred smart quotes")
 
 (defvar web-mode-xml-chars
@@ -1848,7 +1849,7 @@ Must be used in conjunction with web-mode-enable-block-face."
   (add-hook 'after-change-functions 'web-mode-on-after-change t t)
 
   (add-hook 'after-save-hook
-            '(lambda ()
+            (lambda ()
                (when web-mode-is-scratch
                  (web-mode-guess-engine-and-content-type)
                  (web-mode-scan-buffer)
@@ -2888,7 +2889,7 @@ Must be used in conjunction with web-mode-enable-block-face."
       )
     ))
 
-;; todo : parsing plus compliqué: {$obj->values[3]->name}
+;; todo : parsing plus complique: {$obj->values[3]->name}
 (defun web-mode-interpolate-string (beg end)
   "Interpolate php/erb strings."
   (save-excursion
@@ -3103,7 +3104,7 @@ Must be used in conjunction with web-mode-enable-block-face."
 
       )))
 
-;; todo : il serait préférable d'identifier les tokens et ensuite de fontifier
+;; todo : il serait preferable d'identifier les tokens et ensuite de fontifier
 (defun web-mode-scan-part (part-beg part-end content-type)
   "Scan client part (e.g. javascript, json, css)."
   (save-excursion
@@ -3928,7 +3929,7 @@ Must be used in conjunction with web-mode-enable-block-face."
         );while
       )))
 
-;; todo : passer de règle en règle et mettre un \n à la fin
+;; todo : passer de rugle en rugle et mettre un \n (quote?) la fin
 (defun web-mode-css-indent ()
   "Indent CSS parts"
   (interactive)
@@ -4111,7 +4112,7 @@ Must be used in conjunction with web-mode-enable-block-face."
     (current-column)
     ))
 
-;; doit-on considérer que '=' est un bloc ouvrant avec ';' comme char de fin ?
+;; doit-on considerer que '=' est un bloc ouvrant avec ';' comme char de fin ?
 (defun web-mode-point-context (pos)
   "POS should be at the beginning of the indentation.
    Return ctx = plist containing
@@ -4921,7 +4922,7 @@ Must be used in conjunction with web-mode-enable-block-face."
           (setq continue nil))
         )
       (if (<= (point) limit)
-          ;;todo : affiner (le + 3 n est pas générique cf. <?php <% <%- etc.)
+          ;;todo : affiner (le + 3 n est pas generique cf. <?php <% <%- etc.)
           (setq beg (if (< (+ limit 3) end) (+ limit 3) end))
         (setq beg (line-beginning-position))
         );if
@@ -5232,7 +5233,7 @@ Must be used in conjunction with web-mode-enable-block-face."
      ((and (eq (get-text-property pos 'part-token) 'attr)
            (not (string= web-mode-expand-previous-state "html-attr")))
 
-      ;; todo: tester que le car précédent n'est pas un
+      ;; todo: tester que le car precedent n'est pas un
       (when (eq (get-text-property pos 'part-token) (get-text-property (1- pos) 'part-token))
         (setq beg (previous-single-property-change pos 'part-token)))
       (when (eq (get-text-property pos 'part-token) (get-text-property (1+ pos) 'part-token))
@@ -7182,7 +7183,7 @@ Must be used in conjunction with web-mode-enable-block-face."
        )
       )))
 
-;; todo : gestion du remove-text-properties (ne pas toucher à pas mal de properties : block-beg, part-side etc.)
+;; todo : gestion du remove-text-properties (ne pas toucher ' pas mal de properties : block-beg, part-side etc.)
 (defun web-mode-invalidate-asp-region (pos-beg pos-end)
   "Invalidate asp region."
   (save-excursion
@@ -7205,7 +7206,7 @@ Must be used in conjunction with web-mode-enable-block-face."
       )))
 
 (defun web-mode-dom-apostrophes-replace ()
-  "Replace ' with ’."
+  "Replace ' with ‚Äô."
   (interactive)
   (save-excursion
     (let ((min (point-min)) (max (point-max)))
@@ -7215,12 +7216,12 @@ Must be used in conjunction with web-mode-enable-block-face."
         (deactivate-mark))
       (goto-char min)
       (while (web-mode-rsf-content "\\([[:alpha:]]\\)'\\([[:alpha:]]\\)" max)
-        (replace-match "\\1’\\2")
+        (replace-match "\\1‚Äô\\2")
         );while
       )))
 
 (defun web-mode-dom-entities-encode ()
-  "Replace special chars with HTML entities (e.g. é becomes &eacute;)"
+  "Replace special chars with HTML entities (e.g.  &eacute;)"
   (save-excursion
     (let (regexp ms pair elt (min (point-min)) (max (point-max)))
       (when mark-active
@@ -7244,7 +7245,7 @@ Must be used in conjunction with web-mode-enable-block-face."
 
 ;; ? &frac12; &#189; &#x00BD;
 (defun web-mode-dom-entities-replace ()
-  "Replace HTML entities e.g. entities &eacute; &#233; &#x00E9; become é"
+  "Replace HTML entities e.g. entities &eacute; &#233; &#x00E9; become ?"
   (interactive)
   (save-excursion
     (let (ms pair elt (min (point-min)) (max (point-max)))
@@ -8368,7 +8369,7 @@ Must be used in conjunction with web-mode-enable-block-face."
     (when trace
       (when (null web-mode-time) (setq web-mode-time (current-time)))
       (setq sub (time-subtract (current-time) web-mode-time))
-      (message "%18s: time elapsed = %Ss %9Sµs" msg (nth 1 sub) (nth 2 sub))
+      (message "%18s: time elapsed = %Ss %9SŒºs" msg (nth 1 sub) (nth 2 sub))
       )))
 
 (defun web-mode-debug ()

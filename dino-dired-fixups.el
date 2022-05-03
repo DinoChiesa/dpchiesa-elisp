@@ -20,7 +20,6 @@
 ;; (require 'dino-dired-fixups)
 ;;
 
-
 (require 'cl)
 (require 'dired)
 (require 'dired-aux)
@@ -49,7 +48,7 @@ which is up to 10gb.  Some files are larger than that.
   (if (or (not human-readable) (< f-size 1024))
       (format (if (floatp f-size) " %11.0f" " %11d") f-size)
     (let (post-fixes)
-      (do ((f-size (/ f-size 1024.0) (/ f-size 1024.0))
+      (cl-do ((f-size (/ f-size 1024.0) (/ f-size 1024.0))
            ;; kilo, mega, giga, tera, peta, exa
            (post-fixes (list "k" "M" "G" "T" "P" "E") (cdr post-fixes)))
           ((< f-size 1024) (format " %10.0f%s"  f-size (car post-fixes)))))))

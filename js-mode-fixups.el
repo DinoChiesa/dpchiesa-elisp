@@ -3,7 +3,7 @@
 ;; Author: Dino Chiesa
 ;; Version: 0.1
 ;; Created: Sat, 31 Mar 2012  09:48
-;; Last Updated: <2022-April-26 19:58:55>
+;; Last Updated: <2022-May-03 11:28:34>
 
 ;; (defun dino-js-varify (start end)
 ;;   "Turn the selection into a string var declaration terminated with a semicolon."
@@ -29,6 +29,7 @@
 ;;             font-lock-end (js--fixup-end-of-var-decl)))))
 
 ;;(eval-when-compile (require 'cl)) ; for incf
+(require 'cl)
 
 (defvar js--fixup-highlight-delay-time 0.07
   "Delay time before applying highlights of var decls.")
@@ -181,7 +182,7 @@ to schedule the calls to `font-lock-apply-highlight'.
 
            (cond
             ((memq pitem-type '(function macro))
-             (assert (integerp (js--pitem-h-begin pitem)))
+             (cl-assert (integerp (js--pitem-h-begin pitem)))
 
              ;; check for children (nested fnc defns)
              (cond
@@ -229,7 +230,7 @@ to schedule the calls to `font-lock-apply-highlight'.
                           imenu-items))
 
                    ((js--pitem-h-begin pitem)
-                    (assert (integerp (js--pitem-h-begin pitem)))
+                    (cl-assert (integerp (js--pitem-h-begin pitem)))
                     (setq subitems (list
                                     (cons "[empty]"
                                           (js--maybe-make-marker

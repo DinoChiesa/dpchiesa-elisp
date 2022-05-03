@@ -18,7 +18,7 @@
     (concat "[\n"
             (mapconcat
              'identity
-             (loop for v across val
+             (cl-loop for v across val
                    collect (concat
                             (json-reformat:indent (1+ level))
                             (json-reformat:print-value v (1+ level))

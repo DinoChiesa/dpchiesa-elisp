@@ -1,6 +1,6 @@
 ;;; emacs.el -- Dino's .emacs setup file.
 ;;
-;; Last saved: <2022-April-26 20:24:24>
+;; Last saved: <2022-May-03 11:23:50>
 ;;
 ;; Works with v24.5 and v25.1 of emacs.
 ;;
@@ -258,7 +258,7 @@
   (flycheck-mode 1)
 
   (add-hook 'before-save-hook
-            '(lambda ()
+            (lambda ()
                (save-excursion
                  (delete-trailing-whitespace)))
             nil 'local)
@@ -1012,7 +1012,7 @@ With a prefix argument, makes a private paste."
    (if (string= mode-name "SCSS") 'scss-lint 'css-csslint))
 
   (add-hook 'before-save-hook
-            '(lambda ()
+            (lambda ()
                (save-excursion
                  (delete-trailing-whitespace)))
             nil 'local)
@@ -1251,7 +1251,7 @@ just auto-corrects on common mis-spellings by me."
     ;; http://stackoverflow.com/questions/1931784
     ;;(add-hook 'write-contents-functions 'dino-delete-trailing-whitespace)
   (add-hook 'before-save-hook
-            '(lambda ()
+            (lambda ()
                (save-excursion
                  (delete-trailing-whitespace)))
             nil 'local))
@@ -1294,7 +1294,7 @@ just auto-corrects on common mis-spellings by me."
     ;; http://stackoverflow.com/questions/1931784
     ;;(add-hook 'write-contents-functions 'dino-delete-trailing-whitespace)
     (add-hook 'before-save-hook
-              '(lambda ()
+              (lambda ()
                  (save-excursion
                    (delete-trailing-whitespace)))
               nil 'local)
@@ -2264,7 +2264,7 @@ Does not consider word syntax tables.
     (modify-syntax-entry ?\' ".")) ;; . = punctuation
 
   (add-hook 'before-save-hook
-            '(lambda ()
+            (lambda ()
                (save-excursion
                  (delete-trailing-whitespace)))
             nil 'local)
@@ -2347,7 +2347,7 @@ Does not consider word syntax tables.
   (linum-on)
 
   (add-hook 'before-save-hook
-            '(lambda ()
+            (lambda ()
                (save-excursion
                  (delete-trailing-whitespace)))
             nil 'local)
@@ -2434,6 +2434,7 @@ i.e M-x kmacro-set-counter."
 (add-hook 'js2-mode-hook #'js2-imenu-extras-mode)
 (defun dino-js2-mode-fn ()
   (tern-mode)
+  (setq js2-basic-offset 2)
   )
 
 (add-hook 'js2-mode-hook #'dino-js2-mode-fn)
@@ -2571,7 +2572,7 @@ i.e M-x kmacro-set-counter."
 
   ;; always delete trailing whitespace
   (add-hook 'before-save-hook
-            '(lambda ()
+            (lambda ()
                (save-excursion
                  (delete-trailing-whitespace)))
             nil 'local)

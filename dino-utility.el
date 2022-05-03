@@ -1191,6 +1191,20 @@ insert a pair, and backup one character."
       (self-insert-command (prefix-numeric-value arg)))))
 
 
+(eval-and-compile
+
+;; [4] NameStartChar
+;; See the definition of word syntax in `xml-syntax-table'.
+(defconst xml-name-start-char-re "[[:word:]:_]")
+
+;; [4a] NameChar ::= NameStartChar | "-" | "." | [0-9] | #xB7
+;;                 | [#x0300-#x036F] | [#x203F-#x2040]
+(defconst xml-name-char-re "[[:word:]:_.0-9\u00B7\u0300-\u036F\u203F\u2040-]")
+
+;; [5] Name     ::= NameStartChar (NameChar)*
+(defconst xml-name-re (concat xml-name-start-char-re xml-name-char-re "*"))
+)
+
 ;;; Thursday, 12 October 2017, 13:18
 ;;; replace xml-parse-tag-1 to not skip comments.
 ;;; This modified version of the fn returns a cons of (nil . "<!-- string -->")
