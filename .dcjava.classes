@@ -655,3 +655,5 @@ java.net.http.HttpClient
 org.apache.xml.security.Init
 org.apache.xml.security.c14n.Canonicalizer
 javax.xml.namespace.NamespaceContext
+java.util.Comparator
+java.util.TreeMap
