@@ -1,6 +1,6 @@
 ;;; emacs.el -- Dino's .emacs setup file.
 ;;
-;; Last saved: <2023-February-26 14:39:09>
+;; Last saved: <2023-February-26 14:44:26>
 ;;
 ;; Works with v24.5 and v25.1 of emacs.
 ;;
@@ -525,7 +525,7 @@
         ;;(font . "-*-Menlo-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1")
         ;; works with windows
         (font . "-*-Consolas-normal-normal-normal-*-20-*-*-*-c-*-iso8859-1")
-        ;; to inquire the font spec, open a text file, then C-u C-x =
+        ;; The font spec is so intuitive! To inquire the current font spec, open a text file, then C-u C-x =
         )
       )
 
@@ -545,11 +545,10 @@
 ;;   (set-default-font "Inconsolata-11"))
 
 
-;; initial frame is 128 wide x 68 high, also specify frame position.
+;; initial frame will be 128 wide x 72 high, also specify frame position.
 (setq initial-frame-alist
       '( (top . 220) (left . 840)
-         (width . 120) (height . 72)
-         ;;(width . 128) (height . 68)
+         (width . 128) (height . 72)
          )
       )
 
