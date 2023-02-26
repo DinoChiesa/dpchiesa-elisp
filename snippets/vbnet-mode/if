@@ -1,6 +1,0 @@
-#key : if
-#name : If ... Then  ... End If
-# --
-If ${1:predicate} Then
-  ${2:// then clause}
-End If

@@ -1,0 +1,9 @@
+# -*- mode: snippet -*-
+# name: IntStream.range(...).forEach( ix -> { ... })
+# key: fore
+# --
+    IntStream.range(0, tests.length)
+      .boxed()
+      .forEach(ix -> {
+        ${1:// body...}
+      });

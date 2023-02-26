@@ -1,0 +1,8 @@
+#key : rrule
+#name : <RouteRule...>
+# --
+<RouteRule name='${1:rule1}'>
+  <TargetEndpoint>${2:target1}</TargetEndpoint>
+  <Condition>${3:conditional_statement}</Condition>
+</RouteRule>
+

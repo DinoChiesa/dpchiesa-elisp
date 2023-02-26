@@ -1,5 +1,4 @@
-dpchiesa-elisp
-==============
+# dpchiesa-elisp
 
 My public elisp repo.
 

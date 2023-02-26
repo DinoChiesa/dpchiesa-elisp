@@ -1150,6 +1150,12 @@ START-URL is the URL requested."
       (request--netscape-filter-cookies (request--netscape-cookie-parse)
                                         host localpart secure))))
 
+(defun request-file-contents (filename)
+  (with-temp-buffer
+    (erase-buffer)
+    (insert-file-contents filename)
+    (buffer-substring-no-properties (point-min) (point-max))))
+
 
 ;;; Monkey patches for url.el
 

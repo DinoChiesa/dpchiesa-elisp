@@ -1,4 +1,0 @@
-#key : wl
-#name : WriteLine (...) { ... }
-# --
-Console.WriteLine(${0:"{0}"});

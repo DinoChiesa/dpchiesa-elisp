@@ -1,0 +1,11 @@
+# -*- mode: snippet -*-
+# name: <AssignMessage...>
+# key: amh
+# --
+<AssignMessage name='AM-$1'>
+  <Set>
+    <Headers>
+      <Header name='FirstKey'>{firstVariable}</Header>
+    </Headers>
+  </Set>
+</AssignMessage>

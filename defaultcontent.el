@@ -7,7 +7,7 @@
 ;; Keywords   : template
 ;; URL        : http://www.emacswiki.org/emacs/defaultcontent.el
 ;; X-URL      : http://www.emacswiki.org/emacs/defaultcontent.el
-;; Last-saved : <2012-September-15 22:23:10>
+;; Last-saved : <2021-July-07 14:20:11>
 
 ;; Copyright (C) 1993-2001 by Christian Queinnec (University Paris 6)
 ;;
@@ -247,7 +247,7 @@ by dc-auto-insert-file. Nevertheless, it slows down expansion but gives
 you a chance to see bad variables." )
 
 ;;; The real function that does the real work ie it looks for variables
-;;; and expands them. It may also notiy erroneous variables with the
+;;; and expands them. It may also notify erroneous variables with the
 ;;; previous dc-show-unexpanded-variables boolean flag.
 
 (defun dc-expand-internal-variables (start)

@@ -1,8 +1,8 @@
-;;; emacs.el -- dino's em Dino's .emacs setup file.
+;;; emacs.el -- Dino's .emacs setup file.
 ;;
-;; Last saved: <2017-August-30 15:08:54>
+;; Last saved: <2022-May-03 11:23:50>
 ;;
-;; Works with v24.5 of emacs.
+;; Works with v24.5 and v25.1 of emacs.
 ;;
 
 ;;; Commentary:
@@ -10,16 +10,15 @@
 ;;; Code:
 (message "Running emacs.el...")
 
-;; quiet, please! No dinging!
-(setq visible-bell nil)
+(setq inhibit-splash-screen t)
+(setq visible-bell nil) ;; quiet, please! No dinging!
 (setq ring-bell-function `(lambda ()
                             (set-face-background 'default "DodgerBlue")
                             (set-face-background 'default "black")))
 
-(setq inhibit-splash-screen t)
+(setq scroll-error-top-bottom t) ;; move cursor when scrolling not possible
 (if (fboundp 'tool-bar-mode) (tool-bar-mode -1)) ;; we don't need no steenking icons
 (setq user-mail-address "dpchiesa@hotmail.com")
-
 (setq comment-style 'indent) ;; see doc for variable comment-styles
 (setq Buffer-menu-name-width 40)
 
@@ -48,14 +47,18 @@
 ;;
 (require 'dino-utility)
 
+(add-hook 'before-save-hook 'dino-untabify-maybe)
+(global-set-key "\C-x7"     'dino-toggle-frame-split)
+
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; package manager
 ;;
 (require 'package)
 (dolist (item (list
-              ;;'("marmalade" . "http://marmalade-repo.org/packages/")
-              '("melpa"     . "https://stable.melpa.org/packages/")
-              '("org"       . "http://orgmode.org/elpa/")))
+              '("MELPA Stable"     . "https://stable.melpa.org/packages/")
+              '("org"              . "http://orgmode.org/elpa/")))
   (add-to-list 'package-archives item))
 
 (when (< emacs-major-version 24)
@@ -71,23 +74,53 @@
 (let ((default-directory "~/.emacs.d/elpa"))
   (normal-top-level-add-subdirs-to-load-path))
 
-;; simply add package names to the list
+;; Maybe check out https://github.com/jwiegley/use-package?
+;; My own implementation is used here.
+;; Simply add package names to the list.
 (dino-ensure-package-installed
- 's
- 'yasnippet
- 'yaxception
- 'seq
- 'magit
- 'logito
- 'go-mode
- 'go-autocomplete
- 'flycheck
  'company
  'company-go
+ 'dash-functional
+ 'default-text-scale
+ 'expand-region
+ 'flycheck
+ 'go-autocomplete
+ 'go-mode
+ 'js2-mode
+ 'js2-refactor
+ 'json-mode
+ 'logito
+ 'magit
+ 'markdown-mode
+ 'path-helper
  'popup
-)
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ 's
+ 'seq
+ 'typescript-mode
+ 'yasnippet
+ 'yaxception
+ )
 
+
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    ;; set path correctly on MacOS, based on /etc/paths
+    (if (memq window-system '(ns mac))
+      (path-helper-setenv "PATH"))
+
+
+;;(setenv "PATH" (concat "/usr/local/bin:" (getenv "PATH")))
+;;(setq exec-path (split-string (getenv "PATH") ":"))
+;;(add-to-list 'exec-path "/usr/local/bin")
+;;     "/usr/bin"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(require 'default-text-scale)
+
+(default-text-scale-mode)
+(global-set-key (kbd "C-=") 'default-text-scale-increase)
+(global-set-key (kbd "C--") 'default-text-scale-decrease)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (setq magit-git-executable "/usr/local/git/current/bin/git")
 
@@ -102,6 +135,7 @@
      ;; (setq flycheck-phpcs-standard "Drupal") ;; DinoChiesa
      (setq flycheck-phpcs-standard "/usr/local/share/pear/PHP/CodeSniffer/src/Standards/DinoChiesa")
      )) ;; DinoChiesa
+
 ;; $ pear config-get php_dir
 ;; will show the pear PHP config directory.  Eg /usr/local/share/pear
 ;; .. which means the phpcs dir is /usr/local/share/pear/PHP/CodeSniffer
@@ -153,8 +187,22 @@
                             (?\{ . ?\})
                             ) )
 
+(global-set-key (kbd "C-c d") 'delete-trailing-whitespace)
 
+;;; Tips from https://www.youtube.com/watch?v=p3Te_a-AGqM
+;; for marking ever-larger regions iteratively
+(require 'expand-region)
+(global-set-key (kbd "C-=") 'er/expand-region)
 
+;; for visually editing similar things with one key sequence
+(require 'multiple-cursors)
+(global-set-key (kbd "C->") 'mc/mark-next-like-this)
+(global-set-key (kbd "C-<") 'mc/mark-previous-like-this)
+(global-set-key (kbd "C-c C-<") 'mc/mark-all-like-this)
+
+;; edit files in a grep output buffer
+(require 'wgrep)
+(global-set-key (kbd "C-c C-p") 'wgrep-change-to-wgrep-mode)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; stuff for Apigee Edge
@@ -163,7 +211,7 @@
 ;; (setq apigee-apiproxies-home "~/dev/apiproxies/")
 
 (add-to-list 'load-path "~/elisp/apigee")
-(require 'apigee-edge)
+(require 'apigee)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; golang
@@ -204,36 +252,34 @@
   (local-set-key "\M-\C-R"  'indent-region)
   (local-set-key "\M-#"     'dino-indent-buffer)
 
+  (linum-on)
+
   (require 'goflycheck)
-  (flycheck-mode 1))
+  (flycheck-mode 1)
+
+  (add-hook 'before-save-hook
+            (lambda ()
+               (save-excursion
+                 (delete-trailing-whitespace)))
+            nil 'local)
+  )
 
 (add-hook 'go-mode-hook 'dino-go-mode-fn)
-
-;; (add-to-list 'load-path "/Users/dino/dev/go/libs/src/github.com/dougm/goflymake")
-;;
-;; (defun dino-go-mode-fn ()
-;;   ;;(require 'flymake)
-;;   (require 'go-flycheck)
-;;   (and (file-name-directory buffer-file-name)
-;;        (progn
-;;          ;;(flymake-mode 1)
-;;        (setq goflymake-path "/Users/dino/dev/go/libs/bin/goflymake"))))
-
 
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; org mode, including html5 presentations from .org documents
 ;;
-(require 'org)
+;;  (require 'org)
 
-(org-babel-do-load-languages
- 'org-babel-load-languages
- '(
-   (sh . t)
-   (python . t)
-   (perl . t)
-   ))
+;; (org-babel-do-load-languages
+;;  'org-babel-load-languages
+;;  '(
+;;    (sh . t)
+;;    (python . t)
+;;    (perl . t)
+;;    ))
 (defun my-org-confirm-babel-evaluate (lang body)
   (not  ; don't ask for any of the following languages
    (or
@@ -386,6 +432,7 @@
 (global-set-key "\C-c\C-x\C-c"  'calendar)
 (global-set-key "\C-xn"     'other-window)
 (global-set-key "\C-x\C-e"  'smarter-compile)
+(global-set-key "\C-xE"     'smarter-compile-run)
 (global-set-key "\C-x\C-g"  'auto-fill-mode)
 (global-set-key "\C-x\C-n"  'next-error)
 ;(global-set-key "\C-xt"     'dino-toggle-truncation)
@@ -397,7 +444,7 @@
 (global-set-key "\C-ck"     'global-set-key)
 (global-set-key "\C-cs"     'search-forward-regexp)
 (global-set-key "\C-cy"     'linum-mode)
-(global-set-key "\C-c\C-p"  'dino-copy-value-from-key-into-killring)
+;;(global-set-key "\C-c\C-p"  'dino-copy-value-from-key-into-killring)
 ;;(global-set-key "\C-cm"     'dino-gtm-url)
 (global-set-key "\C-cq"     'query-replace)
 (global-set-key "\C-cc"     'goto-char)
@@ -434,23 +481,23 @@
 (setq inhibit-eol-conversion nil)
 
 ;; turn on font-lock globally
+;; for fontification in emacs progmodes:
+(require 'font-lock)
+(setq font-lock-maximum-decoration t)
 (global-font-lock-mode 1) ;;  'ON
 
-(setq-default fill-column 72)
+(setq-default fill-column 80)
 (setq auto-save-interval 500)
 (setq case-fold-search nil)
 (setq comment-empty-lines t)
 
+;; fringe (between line numbers and buffer text)
+(setq-default left-fringe-width  10)
+(set-face-attribute 'fringe nil :background "black")
 
 ;; helpful for debugging lisp code:
 (setq messages-buffer-max-lines 2500)
-
-;; for fontification in emacs progmodes:
-(require 'font-lock)
-(setq font-lock-maximum-decoration t)
-
 (setq completion-auto-help nil)
-
 (put 'eval-expression 'disabled nil)
 
 ;; set truncation on side-by-side windows to nil.
@@ -472,11 +519,15 @@
         ;;(foreground-color . "White")
         ;;(background-color . "Black")
         (mouse-color . "sienna3")
+        ;; works with macos
+        (font . "-*-Menlo-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1")
+        ;; works with windows
         ;;(font . "-*-Consolas-normal-normal-normal-*-11-*-*-*-m-0-iso10646-1")
         )
       )
 
-;(set-face-attribute 'default t :font "Consolas-11")
+;; works with Windows
+;;(set-face-attribute 'default t :font "Consolas-11")
 
 ;; (message (face-font 'tooltip))
 ;; (message (face-font 'default))
@@ -538,6 +589,18 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; markdown
+
+(require 'markdown-mode)
+(defun dino-markdown-mode-fn ()
+  "My hook for markdown mode"
+  (modify-syntax-entry ?_ "w")
+  (auto-fill-mode -1))
+
+(add-hook 'markdown-mode-hook 'dino-markdown-mode-fn)
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; adjustment to mode mappings
 ;
 ;; NB: In the regexp's, the trailing \\' represents "end of string".
@@ -545,11 +608,6 @@
 ;; equivalent unless there is a filename with a new line in it (not
 ;; likely).
 ;;
-;; (setq auto-mode-alist
-;;       (append
-;;        '(
-;;          ("\\.proto$"                         . protobuf-mode)
-;;          ) auto-mode-alist ))
 
 (setq auto-mode-alist
       (append
@@ -560,7 +618,8 @@
          ("\\(Iirf\\|iirf\\|IIRF\\)\\(Global\\)?\\.ini$"   . iirf-mode)
          ("\\.css$"                           . css-mode)
          ("\\.proto$"                         . protobuf-mode)
-         ("\\.php$"                           . php-mode)
+         ("\\.\\(php\\|module\\)$"            . php-mode)
+         ("\\.md$"                            . markdown-mode)
          ("\\.cs$"                            . csharp-mode)
          ("\\.asp$"                           . html-mode)
          ;;("\\.aspx$"                        . html-helper-mode)
@@ -572,11 +631,10 @@
          ("\\.htm$"                           . web-mode)
          ("\\.md$"                            . fundamental-mode)  ;; markdown
          ("\\.el$"                            . emacs-lisp-mode)
-         ;; ("\\.\\(js\\|jsi\\)$"                . mode)
-         ;; ("\\.\\(js\\|jsi\\)$"                . espresso-mode)
-         ;; ("\\.js$"                            . js2-mode)
-         ("\\.\\(js\\|gs\\|jsi\\)$"           . js-mode)
-         ("\\.\\(avsc\\)$"                    . js-mode)            ;; avro schema
+         ("\\.js$"                            . js2-mode)
+         ("\\.gs$"                            . js2-mode)            ;; google script
+         ;;("\\.\\(js\\|gs\\|jsi\\)$"           . js2-mode)
+         ("\\.\\(avsc\\)$"                    . json-mode)           ;; avro schema
          ("\\.txt$"                           . text-mode)
          ("\\.asmx$"                          . csharp-mode)         ; likely, could be another language tho
          ("\\.\\(vb\\)$"                      . vbnet-mode)
@@ -677,16 +735,70 @@ With a prefix argument, makes a private paste."
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
+;; image-dired
 (eval-after-load "image-dired"
   '(progn
      (require 'image-dired-fixups)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; image-mode
+
+(defun dino/image-transform-fit-to-window()
+  "Resize the image to fit the width or height based on the image and window ratios."
+  (interactive)
+  (let* ( (img-size (image-display-size (image-get-display-property) t))
+          (img-width (car img-size))
+          (img-height (cdr img-size))
+          (img-h/w-ratio (/ (float img-height) (float img-width)))
+          (win-width (- (nth 2 (window-inside-pixel-edges))
+                        (nth 0 (window-inside-pixel-edges))))
+          (win-height (- (nth 3 (window-inside-pixel-edges))
+                         (nth 1 (window-inside-pixel-edges))))
+          (win-h/w-ratio (/ (float win-height) (float win-width))))
+    ;; Fit image by width if the h/w ratio of window is > h/w ratio of the image
+    (if (> win-h/w-ratio img-h/w-ratio)
+        (image-transform-fit-to-width)
+      ;; Else fit by height
+      (image-transform-fit-to-height))))
+
+(defun dino-image-mode-fn ()
+  "My hook for image-mode"
+  (dino/image-transform-fit-to-window)
+  (local-set-key "h"  'image-transform-fit-to-height)
+  (local-set-key "w"  'image-transform-fit-to-width))
+
+(add-hook 'image-mode-hook 'dino-image-mode-fn)
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; yaml
 (require 'yaml-mode)
+(require 'yaml-pretty-mode)
+(defun dino-yaml-mode-fn ()
+  "My hook for YAML mode"
+  (interactive)
+  (turn-on-font-lock)
+  (turn-on-auto-revert-mode)
+  (linum-on)
+  (yaml-pretty-mode)
+  ;;(make-local-variable 'indent-tabs-mode)
+  (setq indent-tabs-mode nil))
 
+(add-hook 'yaml-mode-hook 'dino-yaml-mode-fn)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Typescript
+(add-to-list 'auto-mode-alist '("\\.ts\\'" . typescript-mode))
+
+(defun dino-typescript-mode-fn ()
+  (turn-on-font-lock)
+  (local-set-key "\M-\C-R"  'indent-region)
+  (turn-on-auto-revert-mode)
+  (setq typescript-indent-level 2)
+  (linum-on)
+  (auto-fill-mode -1)
+  )
+(add-hook 'typescript-mode-hook 'dino-typescript-mode-fn)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Powershell
@@ -736,7 +848,9 @@ With a prefix argument, makes a private paste."
 (add-to-list 'auto-mode-alist '("\\.lua\\'" . lua-mode))
 (add-to-list 'interpreter-mode-alist '("lua" . lua-mode))
 
-(setq lua-default-application "c:\\tools\\lua\\lua52.exe")
+(if (eq system-type 'windows-nt)
+    (setq lua-default-application "c:\\tools\\lua\\lua52.exe")
+  )
 
 (eval-after-load "lua-mode"
   '(progn
@@ -785,8 +899,6 @@ With a prefix argument, makes a private paste."
 
 (add-to-list 'load-path (file-name-as-directory "~/elisp/cscomp"))
 
-
-;;(require 'csharp-completion)
 (autoload 'cscomp-complete-at-point      "csharp-completion"  "code-completion for C#" t)
 (autoload 'cscomp-complete-at-point-menu "csharp-completion"  "code-completion for C#" t)
 
@@ -840,9 +952,6 @@ With a prefix argument, makes a private paste."
   (require 'yasnippet)
   (yas-minor-mode-on)
 
-  ;; (local-set-key "\C-c\C-n"  'flymake-goto-next-error)
-  ;; (local-set-key "\C-c\C-m"  'flymake-display-err-menu-for-current-line)
-
   ;; use autopair for curlies, parens, square brackets.
   ;; electric-pair-mode works better than autopair.el in 24.4,
   ;; and is important for use with popup / auto-complete.
@@ -859,7 +968,6 @@ With a prefix argument, makes a private paste."
 
 (add-hook 'vbnet-mode-hook 'dino-vbnet-mode-fn)
 (add-hook 'vbs-mode-hook 'dino-vbnet-mode-fn)
-
 
 
 
@@ -897,14 +1005,23 @@ With a prefix argument, makes a private paste."
   ;; make auto-complete start only after 2 chars
   (setq ac-auto-start 2)  ;;or 3?
 
-  (require 'csslint)
+  ;;(require 'csslint)
   (require 'flycheck)
   (flycheck-mode)
-  (flycheck-select-checker 'css-csslint)
+  (flycheck-select-checker
+   (if (string= mode-name "SCSS") 'scss-lint 'css-csslint))
 
-  ;; (require 'flymake)
-  ;; (and (file-name-directory buffer-file-name)
-  ;;      (flymake-mode 1))
+  (add-hook 'before-save-hook
+            (lambda ()
+               (save-excursion
+                 (delete-trailing-whitespace)))
+            nil 'local)
+
+  ;; display CSS colors in color
+  (require 'rainbow-mode)
+  (rainbow-mode)
+
+  (linum-on)
 
   ;; "no tabs" -- use only spaces
   ;;(make-local-variable 'indent-tabs-mode)
@@ -977,12 +1094,14 @@ With a prefix argument, makes a private paste."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; configure external utilities
 
-(if (file-exists-p "/Users/Dino/bin/unzip.exe")
-    (progn
-      (setq archive-zip-use-pkzip nil   ; i.e. use unzip instead
-            archive-zip-extract '("/Users/Dino/bin/unzip.exe" "-"))))
+(if (eq system-type 'windows-nt)
+    (if (file-exists-p "/Users/dpchiesa/bin/unzip.exe")
+        (progn
+          (setq archive-zip-use-pkzip nil   ; i.e. use unzip instead
+                archive-zip-extract '("/Users/dpchiesa/bin/unzip.exe" "-"))))
+  )
 
-(setq-default grep-command "grep -i ")
+(setq-default grep-command "grep -i -n ")
 
 
 
@@ -1000,11 +1119,11 @@ With a prefix argument, makes a private paste."
   time-stamp-active t          ; do enable time-stamps
   ;; time-stamp-line-limit 34     ; check first N buffer lines for Time-stamp: <>
   ;; example: Tuesday, July 15, 2008  10:59:09  (by dinoch)
-  ;;time-stamp-format "%:a, %:b %02d, %04y  %02H:%02M:%02S %Z (by %u)") ; date format
-  ;;time-stamp-format "%04y-%:b-%02d %02H:%02M:%02S" ; date format
-  time-stamp-pattern "34/\\(\\(L\\|l\\)ast\\( \\|-\\)\\(\\(S\\|s\\)aved\\|\\(M\\|m\\)odified\\|\\(U\\|u\\)pdated\\)\\|Time-stamp\\) *: <%04y-%:b-%02d %02H:%02M:%02S>")
+  ;;time-stamp-format "%:a, %:b %02d, %Y  %02H:%02M:%02S %Z (by %u)") ; date format
+  ;;time-stamp-format "%Y-%:b-%02d %02H:%02M:%02S" ; date format
+  time-stamp-pattern "34/\\(\\(L\\|l\\)ast\\( \\|-\\)\\(\\(S\\|s\\)aved\\|\\(M\\|m\\)odified\\|\\(U\\|u\\)pdated\\)\\|Time-stamp\\) *: <%Y-%:b-%02d %02H:%02M:%02S>")
 
-;; can also add this to source code: // (set-variable time-stamp-format "%04y-%:b-%02d %02H:%02M:%02S")
+;; can also add this to source code: // (set-variable time-stamp-format "%Y-%:b-%02d %02H:%02M:%02S")
 
 (add-hook 'before-save-hook 'time-stamp)  ; update time stamps when saving
 
@@ -1050,12 +1169,14 @@ With a prefix argument, makes a private paste."
 (defun dino-fix-abbrev-table ()
   "set up a custom abbrev table. The normal
 saving isn't allowed on my computer. Really these are
-just auto-corrects on common mis-spellings by me. "
+just auto-corrects on common mis-spellings by me."
 
   (define-abbrev-table 'text-mode-abbrev-table
     '(
       ("teh" "the" nil 1)
       ("somehting" "something" nil 1)
+      ("deprectaed" "deprecated" nil 0)
+      ("APigee" "Apigee" nil 1)
       ("hting" "thing" nil 1)
       ("rigueur" "rigeuer" nil 1)
       ("riguer" "rigeuer" nil 1)
@@ -1063,6 +1184,7 @@ just auto-corrects on common mis-spellings by me. "
       ("rwquest" "request" nil 1)
       ("hygeine" "hygiene" nil 0)
       ("laucnhed" "launched" nil 0)
+      ("supproted" "supported" nil 0)
       ("comittee" "committee" nil 0)
       ("machien" "machine" nil 0)
       ("siilar" "similar" nil 0)
@@ -1099,20 +1221,14 @@ just auto-corrects on common mis-spellings by me. "
 (add-hook 'text-mode-hook 'dino-text-mode-hook-fn)
 
 
-
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; linum - line numbering
-;; linum-ex - enhancements with coloring and delay (for performance)
+;; linum-ex - linum-mode with enhancements for coloring and delay (for performance)
 
-;;(require 'linum)
+;;(require 'linum-ex)
 (autoload 'linum-on "linum-ex" nil t)
 (autoload 'linum-mode "linum-ex" nil t)
-
 (eval-after-load "linum-ex"
   '(progn
-
     ;;(message "%s" (prin1-to-string (defined-colors))) ;; to list possible colors
      ;;(list-colors-display) to show a list of colors in a new buffer
     (set-face-foreground 'linum "SlateGray")
@@ -1134,16 +1250,17 @@ just auto-corrects on common mis-spellings by me. "
     ;; remove trailing whitespace in C files
     ;; http://stackoverflow.com/questions/1931784
     ;;(add-hook 'write-contents-functions 'dino-delete-trailing-whitespace)
-    (add-hook 'local-write-file-hooks
-              '(lambda ()
-                 (save-excursion
-                   (delete-trailing-whitespace)))))
-
+  (add-hook 'before-save-hook
+            (lambda ()
+               (save-excursion
+                 (delete-trailing-whitespace)))
+            nil 'local))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; C mode  (common)
-;
+                                        ;
+(require 'dtrt-indent)
 (defun dino-c-mode-common-hook-fn ()
   (cond
    (window-system
@@ -1161,7 +1278,7 @@ just auto-corrects on common mis-spellings by me. "
     (local-set-key "\C-c\C-w"  'compare-windows)
 
     (hl-line-mode 1)
-
+    (dtrt-indent-mode t)
     ;; ;; allow fill-paragraph to work on xml code doc
     ;; (make-local-variable 'paragraph-separate)
 
@@ -1176,10 +1293,11 @@ just auto-corrects on common mis-spellings by me. "
     ;; remove trailing whitespace in C files
     ;; http://stackoverflow.com/questions/1931784
     ;;(add-hook 'write-contents-functions 'dino-delete-trailing-whitespace)
-    (add-hook 'local-write-file-hooks
-              '(lambda ()
+    (add-hook 'before-save-hook
+              (lambda ()
                  (save-excursion
-                   (delete-trailing-whitespace))))
+                   (delete-trailing-whitespace)))
+              nil 'local)
 
     (message "dino-c-mode-common-hook-fn: done."))))
 
@@ -1218,12 +1336,10 @@ just auto-corrects on common mis-spellings by me. "
 
          (setq c-auto-newline nil)
 
-         ;; (require 'flymake)
-         ;; (flymake-mode 1)
-
          (set (make-local-variable 'comment-start) "// ")
          (set (make-local-variable 'comment-end) "")
 
+         (local-set-key (kbd "\"") 'skeleton-pair-insert-maybe)
          (local-set-key (kbd "{") 'skeleton-pair-insert-maybe)
          (set (make-local-variable 'skeleton-pair) t)
 
@@ -1452,9 +1568,6 @@ just auto-corrects on common mis-spellings by me. "
          ;; for snippets support:
          (require 'yasnippet)
          (yas-minor-mode-on)
-
-         ;; for flymake support:
-         ;;(flymake-mode)
 
          ;; for hide/show support
          (hs-minor-mode 1)
@@ -1810,16 +1923,9 @@ again, I haven't see that as a problem."
          (show-paren-mode 1)
          (hl-line-mode 1)
 
-         ;; (require 'flymake)
-         ;; (and (file-name-directory buffer-file-name)
-         ;;      (flymake-mode 1))
-         ;;
-         ;; (local-set-key "\C-c\C-n"  'flymake-goto-next-error)
-         ;; (local-set-key "\C-c\C-m"  'flymake-display-err-menu-for-current-line)
-
          (require 'flycheck)
          (flycheck-mode)
-         (flycheck-select-checker 'csharp)
+;;         (flycheck-select-checker 'csharp)
 
          ;; for hide/show support
          (hs-minor-mode 1)
@@ -1859,8 +1965,11 @@ again, I haven't see that as a problem."
          ;;(local-set-key "\M-\\"   'cscomp-complete-at-point-menu)
          (local-set-key "\M-\."   'cscomp-complete-at-point-menu)
 
+         (linum-on)
+
          (require 'rfringe)
          (message "dino-csharp-mode-fn: done.")
+
          )))
 
 
@@ -2019,13 +2128,11 @@ Does not consider word syntax tables.
 
 (defun dino-php-mode-fn ()
   "Function to run when php-mode is initialized for a buffer."
-  ;; (require 'flymake)
-  ;; (and (file-name-directory buffer-file-name)
-  ;;      (flymake-mode 1))
 
   (require 'flycheck)
   (flycheck-mode)
-  (flycheck-select-checker 'php-phpcs)
+  ;;(flycheck-select-checker 'php-phpcs) ;; style and syntax
+  (flycheck-select-checker 'php) ;; syntax only
 
   (setq c-default-style "bsd"
         c-basic-offset 2)
@@ -2039,18 +2146,20 @@ Does not consider word syntax tables.
   (modify-syntax-entry ?\n "> b"  php-mode-syntax-table)
   (modify-syntax-entry ?\^m "> b" php-mode-syntax-table)
 
+  ;; why / how is the following getting overridden?
   (setq comment-multi-line nil ;; maybe
         comment-start "// "
         comment-end ""
         comment-style 'indent
-        comment-use-syntax t))
-
+        comment-use-syntax t)
+  )
+(add-hook 'php-mode-hook 'dino-php-mode-fn t)
 
 (eval-after-load "php-mode"
   '(progn
      (require 'compile)
-     ;;(require 'flymake)
-     (add-hook 'php-mode-hook 'dino-php-mode-fn t)))
+     ))
+
 
 
 (defvar dc-php-program "/usr/bin/php" "PHP interpreter")
@@ -2130,6 +2239,7 @@ Does not consider word syntax tables.
   (local-set-key "\M-\C-R"  'indent-region)
   (local-set-key "\C-cn"    'sgml-name-char) ;; inserts entity ref of pressed char
   (local-set-key "\M-#"     'dino-xml-pretty-print-buffer)
+  (local-set-key "\C-cf"    'dino-replace-filename-no-extension)
 
   (local-set-key (kbd "C-<")  'nxml-backward-element)
   (local-set-key (kbd "C->")  'nxml-forward-element)
@@ -2153,12 +2263,11 @@ Does not consider word syntax tables.
       (modify-syntax-entry ?\' "\"" sgml-mode-syntax-table)
     (modify-syntax-entry ?\' ".")) ;; . = punctuation
 
-  ;; http://stackoverflow.com/questions/1931784
-  ;;(add-hook 'write-contents-functions 'dino-delete-trailing-whitespace)
-  (add-hook 'local-write-file-hooks
-            '(lambda ()
+  (add-hook 'before-save-hook
+            (lambda ()
                (save-excursion
-                 (delete-trailing-whitespace))))
+                 (delete-trailing-whitespace)))
+            nil 'local)
 
   ;; when `nxml-slash-auto-complete-flag' is non-nil, get completion
   (setq nxml-slash-auto-complete-flag t)
@@ -2211,11 +2320,9 @@ Does not consider word syntax tables.
 (defun dino-enable-highlight-trailing-ws-based-on-extension ()
   "turns on highlighting of trailing whitespace based on file extension"
   (let ((extension (file-name-extension buffer-file-name))
-        (extensions-that-get-highlighting '("md") ))
-    (while extensions-that-get-highlighting
-      (if (string= (car extensions-that-get-highlighting) extension)
-          (hc-highlight-trailing-whitespace))
-      (setq extensions-that-get-highlighting (cdr extensions-that-get-highlighting)))))
+        (extensions-that-get-highlighting '("md" "css" "java" "js" "go") ))
+    (if (member "go" extensions-that-get-highlighting)
+          (hc-highlight-trailing-whitespace))))
 
 (add-hook 'find-file-hook 'dino-enable-highlight-trailing-ws-based-on-extension)
 
@@ -2237,19 +2344,14 @@ Does not consider word syntax tables.
   (setq indent-tabs-mode nil)
   (hl-line-mode 1)
   (turn-on-auto-revert-mode)
+  (linum-on)
 
-  ;; This write-contents-functions hook seems awesome except it wasn't
-  ;; working for me.  It's possible that it was not working because of a
-  ;; side-effect of the markdown fn (dino-do-markdown), which I created
-  ;; to prevent the deletion of trailing whitespace in markdown
-  ;; buffers. I don't have time for all this nonsense.
-
-  ;;(add-hook 'write-contents-functions 'dino-delete-trailing-whitespace)
-  (add-hook 'local-write-file-hooks
-            '(lambda ()
+  (add-hook 'before-save-hook
+            (lambda ()
                (save-excursion
-                 (delete-trailing-whitespace))))
-  )
+                 (delete-trailing-whitespace)))
+            nil 'local)
+)
 
 
 (add-hook 'emacs-lisp-mode-hook 'dino-elisp-mode-fn)
@@ -2285,37 +2387,9 @@ Does not consider word syntax tables.
   ;; ya-snippet
   (yas-minor-mode-on)
 
-  ;; ;; use flymake with pyflakes
-  ;; (require 'flymake)
-  ;; (and (file-name-directory buffer-file-name)
-  ;;      (flymake-mode 1))
-
-  ;; (local-set-key "\C-c\C-n"  'flymake-goto-next-error)
-  ;; (local-set-key "\C-c\C-m"  'flymake-display-err-menu-for-current-line)
-
   (show-paren-mode 1))
 
 (add-hook 'python-mode-hook 'dino-python-mode-fn)
-
-
-;; (eval-after-load "flymake"
-;;   '(progn
-;;      (defun dino-flymake-pyflakes-init ()
-;;        (let* ((temp-file (flymake-init-create-temp-buffer-copy
-;;                           'flymake-create-temp-inplace))
-;;               (local-file (file-relative-name
-;;                            temp-file
-;;                            (file-name-directory buffer-file-name))))
-;;
-;;          (list "c:\\Python27\\pyflakes.cmd" (list local-file))))
-;;
-;;      (let* ((key "\\.py\\'")
-;;             (pyentry (assoc key flymake-allowed-file-name-masks)))
-;;        (if pyentry
-;;            (setcdr pyentry '(dino-flymake-pyflakes-init))
-;;          (add-to-list
-;;           'flymake-allowed-file-name-masks
-;;           (list key 'dino-flymake-pyflakes-init))))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -2353,15 +2427,85 @@ i.e M-x kmacro-set-counter."
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; JavaScript
-(autoload 'js-mode "js" nil t)
-;;(autoload 'js2-mode "js2" nil t)
+;; JavaScript - js2-mode (new - 20180416-1511)
+(autoload 'js2-mode "js2-mode" nil t)
+;;(eval-after-load 'js2-mode '(require 'setup-js2-mode))
+;; Better imenu
+(add-hook 'js2-mode-hook #'js2-imenu-extras-mode)
+(defun dino-js2-mode-fn ()
+  (tern-mode)
+  (setq js2-basic-offset 2)
+  )
 
-(defun dino-javascript-mode-fn ()
+(add-hook 'js2-mode-hook #'dino-js2-mode-fn)
+
+(js2r-add-keybindings-with-prefix "C-c C-m")
+
+;; xxx WHY have I deleted this?
+;;
+;; (defun dino-js2-mode-fn ()
+;;   (turn-on-font-lock)
+;;
+;;   (local-set-key "\M-\C-R"  'indent-region)
+;;   (local-set-key "\M-#"     'dino-indent-buffer)
+;;   (local-set-key "\C-c\C-c" 'comment-region)
+;;   (local-set-key (kbd "<C-tab>") 'yas-expand)
+;;
+;;   (set (make-local-variable 'indent-tabs-mode) nil)
+;;   ;; indent increment
+;;   (set (make-local-variable 'js-indent-level) 2)
+;;   (linum-on)
+;;
+;;   ;; use autopair for curlies, parens, square brackets.
+;;   ;; electric-pair-mode works better than autopair.el in 24.4,
+;;   ;; and is important for use with popup / auto-complete.
+;;   (if (or (not (fboundp 'version<)) (version< emacs-version "24.4"))
+;;       (progn (require 'autopair) (autopair-mode))
+;;     (electric-pair-mode))
+;;
+;;   ;; json-mode is a child mode of js-mode. Select different checker
+;;   ;; based on the file extension.
+;;   (require 'flycheck)
+;;   (if (and buffer-file-name
+;;            (file-name-directory buffer-file-name))
+;;        (progn
+;;          (flycheck-mode)
+;;          (flycheck-select-checker
+;;           (if (string-suffix-p ".json" buffer-file-name)
+;;               'json-jsonlint
+;;             'javascript-jshint))))
+;;
+;;   (yas-minor-mode-on)
+;;
+;;   (require 'smart-op) ;; for smart insertion of ++ and == and += etc
+;;   (smart-op-mode)
+;;   )
+;;
+;;
+;; (add-hook 'js2-mode-hook   'dino-js2-mode-fn)
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; JavaScript - js-mode (old?)
+;;(autoload 'js-mode "js" nil t)  ;; 20220426-2016
+(defun dino-js-mode-fn ()
+  ;; https://stackoverflow.com/a/15239704/48082
+  (set (make-local-variable 'font-lock-multiline) t)
+  ;; (add-hook 'font-lock-extend-region-functions
+  ;;           'js-fixup-font-lock-extend-region)
+
   (turn-on-font-lock)
+
+  ;; Dino 20210127-1259 - trying to diagnose checker errors
+  ;;
+  ;; ;; for syntax-checking, auto-complete, etc
+  ;; (require 'tern)
+  ;; (tern-mode t)
+
   (local-set-key "\M-\C-R"  'indent-region)
   (local-set-key "\M-#"     'dino-indent-buffer)
-  (local-set-key "\C-c\C-c" 'comment-region)
+  (local-set-key "\C-cc"    'comment-region)
   (local-set-key "\C-c."    'tern-ac-complete)
   ;;(local-set-key "\C-\."     'tern-ac-complete)
   (local-set-key (kbd "C-.")  'tern-ac-complete)
@@ -2377,19 +2521,13 @@ i.e M-x kmacro-set-counter."
   ;; indent increment
   (set (make-local-variable 'js-indent-level) 2)
 
-  ;; for syntax-checking, auto-complete, etc
-  (require 'tern)
-  (tern-mode t)
-
   ;; interactive javascript shell
   ;;(local-set-key "\C-x\C-e" 'jsshell-send-last-sexp)
-  (local-set-key "\C-\M-x"  'jsshell-send-last-sexp-and-pop)
-  (local-set-key "\C-cb"    'jsshell-send-buffer)
-  (local-set-key "\C-c\C-b" 'jsshell-send-buffer-and-pop)
-  (local-set-key "\C-cl"    'jsshell-load-file-and-pop)
-  (local-set-key "\C-c\C-e" 'jsshell-send-region)
-
-  (linum-on)
+  ;; (local-set-key "\C-\M-x"  'jsshell-send-last-sexp-and-pop)
+  ;; (local-set-key "\C-cb"    'jsshell-send-buffer)
+  ;; (local-set-key "\C-c\C-b" 'jsshell-send-buffer-and-pop)
+  ;; (local-set-key "\C-cl"    'jsshell-load-file-and-pop)
+  ;; (local-set-key "\C-c\C-e" 'jsshell-send-region)
 
   ;; use autopair for curlies, parens, square brackets.
   ;; electric-pair-mode works better than autopair.el in 24.4,
@@ -2398,20 +2536,28 @@ i.e M-x kmacro-set-counter."
       (progn (require 'autopair) (autopair-mode))
     (electric-pair-mode))
 
-  (require 'flycheck)
-  (and buffer-file-name
-       (file-name-directory buffer-file-name)
-       (flycheck-mode))
-  (flycheck-select-checker 'javascript-jshint)
+  ;; Dino 20210127-1259 - trying to diagnose checker errors
+  ;;
+  ;; ;; json-mode is a child mode of js-mode. Select different checker
+  ;; ;; based on the file extension.
+  ;; (require 'flycheck)
+  ;; (if (and buffer-file-name
+  ;;          (file-name-directory buffer-file-name))
+  ;;      (progn
+  ;;        (flycheck-mode)
+  ;;        (flycheck-select-checker
+  ;;         (if (string-suffix-p ".json" buffer-file-name)
+  ;;             'json-jsonlint
+  ;;           'javascript-jshint))))
 
-  ;; turn on flymake
-  ;; (require 'flymake)
-  ;; (local-set-key "\C-c\C-n"  'flymake-goto-next-error)
-  ;; (local-set-key "\C-c\C-m"  'flymake-display-err-menu-for-current-line)
+  ;;(flycheck-select-checker 'javascript-eslint) ;; for more control?
+  ;;
+  ;; Tuesday,  2 January 2018, 15:36
+  ;; I tried eslint for emacs and found that it complained a lot about
+  ;; the indent style I prefer. Also I could not figure out how to get it to
+  ;; stop complaining. So I didn't use it, and still use jshint, which
+  ;; seems to work just fine.
 
-  ;; (require 'flymake-for-jslint-for-wsh)
-  ;; ;;(setq flyjs-jslintwsh-location "c:\\users\\dino\\bin\\jslint-for-wsh.js")
-  ;; (setq flyjs-jslintwsh-location "c:\\users\\dino\\bin\\jshint-for-wsh.js")
 
   ;; (require
   ;;  (if (eq system-type 'windows-nt)
@@ -2422,23 +2568,16 @@ i.e M-x kmacro-set-counter."
   ;; ;;(setq flyjs-jslintwsh-location "c:\\users\\dino\\bin\\jslint-for-wsh.js")
   ;; (setq flyjs-jslintwsh-location "c:\\users\\dino\\bin\\jshint-for-wsh.js")
 
-  ;; (and buffer-file-name
-  ;;      (file-name-directory buffer-file-name)
-  ;;      (flymake-mode 1))
-
-  ;; ya-snippet
-  ;;(add-to-list 'yas/known-modes 'espresso-mode) ;; need this?
-  ;;(add-to-list 'yas/known-modes 'js-mode) ;; need this?
   (yas-minor-mode-on)
 
-  ;; wtf? Does this no longer work?
-  (add-hook 'local-write-file-hooks
-              '(lambda ()
-                 (save-excursion
-                   (delete-trailing-whitespace))))
+  ;; always delete trailing whitespace
+  (add-hook 'before-save-hook
+            (lambda ()
+               (save-excursion
+                 (delete-trailing-whitespace)))
+            nil 'local)
 
-  ;; trying to force delete trailing whitespace
-  (dino-enable-delete-trailing-whitespace)
+  ;;(dino-enable-delete-trailing-whitespace)
 
   (require 'imenu)
   (imenu-add-menubar-index)
@@ -2448,16 +2587,36 @@ i.e M-x kmacro-set-counter."
 
   (require 'smart-op) ;; for smart insertion of ++ and == and += etc
   (smart-op-mode)
-)
-(add-hook 'js-mode-hook   'dino-javascript-mode-fn)
 
-;; ;; to allow jshint to work?
-;;(setenv "PATH" (concat "/usr/local/bin:" (getenv "PATH")))
-(add-to-list 'exec-path "/usr/local/bin")
-;;     "/usr/bin"
+  (linum-on)
+  )
+
+(add-hook 'js-mode-hook   'dino-js-mode-fn)
+;;(add-hook 'js2-mode-hook   'dino-js-mode-fn)
+
+;; for {jshint, jslint, flycheck javascript-jshint} to work,
+;; the path m ust have been previously set correctly.
 
 (require 'js-mode-fixups)
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; JSON
+(require 'json-mode)
 (require 'json-reformat)
+
+(autoload 'json-mode "json" nil t)
+
+;; add a new element to the front of the list and it will shadow matches further down the list.
+(add-to-list 'auto-mode-alist '("\\.json\\'" . json-mode))
+
+(defun dino-json-mode-fn ()
+  ;;(turn-on-font-lock)
+  ;;(flycheck-mode 0)
+  )
+
+(add-hook 'json-mode-hook   'dino-json-mode-fn)
 
 ;; function alias
 (defalias 'json-prettify-region 'json-reformat-region)
@@ -2468,12 +2627,11 @@ i.e M-x kmacro-set-counter."
   (save-excursion
     (json-prettify-region (point-min) (point-max))))
 
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-
 ;;(require 'aspx-mode)
 (autoload  'aspx-mode "aspx-mode" nil t)
-
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -2485,9 +2643,24 @@ i.e M-x kmacro-set-counter."
   (local-set-key "\M-\C-R" 'indent-region)
   (local-set-key "\M-#"     'dino-indent-buffer)
 
+  (modify-syntax-entry ?_ "w")
+
   (set (make-local-variable 'indent-tabs-mode) nil)
-  (set (make-local-variable 'skeleton-pair) t)
-  (local-set-key (kbd "{") 'skeleton-pair-insert-maybe)
+  (set (make-local-variable 'c-basic-offset) 2) ;; dino 20190418-1407
+
+  ;; 20191015-1837 - better than autopair or skeleton pair
+  (electric-pair-mode)
+
+  ;;(set (make-local-variable 'skeleton-pair) t)
+  ;;(local-set-key (kbd "{") 'skeleton-pair-insert-maybe)
+  ;;(local-set-key (kbd "\"") 'skeleton-pair-insert-maybe)
+  ;; ;;(local-set-key (kbd "\"") 'dino-skeleton-pair-end)
+
+  (eval-after-load "smarter-compile"
+    '(progn
+       (add-to-list
+        'smart-compile-compile-command-in-comments-extension-list
+        ".java")))
 
   ;; some of my own java-mode helpers
   (require 'dcjava)
@@ -2498,6 +2671,7 @@ i.e M-x kmacro-set-counter."
   (local-set-key "\C-c\C-f"  'dcjava-find-wacapps-java-source-for-class-at-point)
   (local-set-key "\C-c\C-r"  'dcjava-reload-classlist)
   (local-set-key "\C-c\C-s"  'dcjava-sort-import-statements)
+  (local-set-key "\C-c\C-g"  'dcjava-gformat-buffer)
   (dino-enable-delete-trailing-whitespace)
   (linum-on)
   )
@@ -2507,7 +2681,7 @@ i.e M-x kmacro-set-counter."
 
 (c-add-style "myJavaStyle"
              '("Java"  ; this must be defined elsewhere - it is in cc-modes.el
-               (c-basic-offset . 4)
+               (c-basic-offset . 2)
                (c-echo-syntactic-information-p . t)
                (c-comment-only-line-offset . (0 . 0))
                (c-offsets-alist . (
@@ -2561,8 +2735,15 @@ i.e M-x kmacro-set-counter."
      ;;(setq-default compile-command (concat nmake.exe " "))
      (setq-default compile-command "make ")
      ))
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; salted files
+(require 'salted)
+(setq salted--salt-file-utility "~/dev/go/src/github.com/DinoChiesa/salted/salt_file")
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Github GraphQL mode
+(autoload 'gh-graphql-mode "gh-graphql")
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -2928,7 +3109,8 @@ i.e M-x kmacro-set-counter."
   (interactive)
   (let* ((all-files recentf-list)
          (tocpl (mapcar (function
-                         (lambda (x) (cons (file-name-nondirectory x) x))) all-files))
+                         (lambda (x) (cons (file-name-nondirectory x) x)))
+                        all-files))
          (prompt (append '("File name: ") tocpl))
          (fname (completing-read (car prompt) (cdr prompt) nil nil)))
     (find-file (cdr (assoc-string fname tocpl)))))
@@ -2943,8 +3125,13 @@ i.e M-x kmacro-set-counter."
 ;;
 (require 'thesaurus)
 (thesaurus-set-bhl-api-key-from-file "~/BigHugeLabs.apikey.txt")
-;;(define-key global-map (kbd "C-x t") 'thesaurus-choose-synonym-and-replace)
 (global-set-key "\C-ct"     'thesaurus-choose-synonym-and-replace)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; dictionary
+;;
+(require 'dictionary)
+(global-set-key "\C-c\C-d"     'dictionary-get-definition)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -3007,6 +3194,15 @@ i.e M-x kmacro-set-counter."
               (lambda () (turn-on-auto-revert-mode)))
 
 
+;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; ;; google things
+;; (add-to-list 'load-path "~/elisp/site-lisp/emacs-google-config/devtools/editors/emacs")
+;; ;; (load-file
+;; ;;  "/usr/share/emacs/site-lisp/emacs-google-config/devtools/editors/emacs/google.el")
+;; (require 'google-java-format)
+
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; basic, default colors
 
@@ -3023,12 +3219,11 @@ i.e M-x kmacro-set-counter."
 (defadvice hl-line-mode (after
                          dino-advise-hl-line-mode
                          activate compile)
-  (set-face-background hl-line-face "gray13"))
+  (set-face-background hl-line-face "gray18"))
 
 (global-hl-line-mode)
 
 (custom-set-faces
- ;; '(flymake-errline              ((t (:inherit error :background "firebrick4"))))
  '(flycheck-error               ((t (:background "firebrick4"))))
  '(font-lock-comment-face       ((t (:foreground "PaleVioletRed3"))))
  '(font-lock-keyword-face       ((t (:foreground "CadetBlue2"))))

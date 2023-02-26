@@ -1,0 +1,13 @@
+# key : reducer
+# name : reducer
+# --
+const reducer = (promise, item) =>
+    promise .then( accumulator =>
+      collection
+      .get({ name: item })
+      .then( ({revision}) => [ ...accumulator, {item, count:revision.length} ] )
+      );
+
+return items
+  .reduce(reducer, Promise.resolve([]))
+  .then(...)

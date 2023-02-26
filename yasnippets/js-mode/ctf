@@ -1,6 +1,0 @@
-# key : ctf
-# name : fso.CreateTextFile
-# --
-f = fso.CreateTextFile(${1:filename});
-
-

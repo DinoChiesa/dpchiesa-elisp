@@ -1,7 +1,0 @@
-# key : using
-# name : using ... { ... }
-# --
-using (${1:type} ${2:var} = new ${1:type}(${3:ctor args}))
-{
-    ${4:// body...}
-}

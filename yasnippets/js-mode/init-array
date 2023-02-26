@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# key : inita
+# name : Array.from(...)
+# --
+let values = Array.from(Array(length), (e,ix)=>(wantRandom)? r() : fixed);
+

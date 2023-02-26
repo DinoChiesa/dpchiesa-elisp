@@ -558,7 +558,7 @@ holding export options."
                          ((debug wrong-number-of-arguments) (org-html-checkbox checkbox))))
          (checkbox (concat org-checkbox (and checkbox " "))))
     (concat
-     (case type
+     (cl-case type
        (ordered
         (concat
          "<li"
@@ -581,7 +581,7 @@ holding export options."
          "</b></dt><dd>")))
      (unless (eq type 'descriptive) checkbox)
      contents
-     (case type
+     (cl-case type
        (ordered "</li>")
        (unordered "</li>")
        (descriptive "</dd>")))))
@@ -602,7 +602,7 @@ contextual information."
 
 (defun org-reveal-parse-token (key &optional value)
   "Return HTML tags or perform SIDE EFFECT according to key"
-  (case (intern key)
+  (cl-case (intern key)
     (split "</section>\n<section>")))
 
 (defun org-reveal-parse-keyword-value (value)
@@ -622,7 +622,7 @@ and may change custom variables as SIDE EFFECT.
 CONTENTS is nil. INFO is a plist holding contextual information."
   (let ((key (org-element-property :key keyword))
         (value (org-element-property :value keyword)))
-    (case (intern key)
+    (cl-case (intern key)
       (REVEAL (org-reveal-parse-keyword-value value))
       (REVEAL_HTML value))))
 

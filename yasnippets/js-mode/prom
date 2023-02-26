@@ -1,10 +1,6 @@
 # key : prom
-# name : series of promises on an array
+# name : new Promise
 # --
-function doAsyncSeries(arr) {
-    return arr.reduce(function (promise, item) {
-      return promise.then(function(result) {
-        return doSomethingAsync(result, item);
-      });
-    }, $q.when(initialValue));
-}
+new Promise((resolve,reject) => {
+  $0
+});

@@ -6,7 +6,7 @@
 ;; Version    : 0.2
 ;; Keywords   : http url get
 ;; X-URL      : http://cheeso.members.winisp.net/srcview.aspx?dir=emacs&file=httpget.el
-;; Last-saved : <2012-October-30 23:57:31>
+;; Last-saved : <2022-April-26 19:52:23>
 
 ;;
 ;; This module defines one interactive function, `httpget', along with
@@ -59,7 +59,6 @@
 ;; OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;
 
-
 (defvar httpget--recv-buffer nil
   "buffer to recv http output.")
 
@@ -92,7 +91,7 @@ Returns nil if not found.
       (setq c2 (aref s i))
       (if (= c c2)
           (setq ix i))
-      (decf i))
+      (setq i (- i 1)))
     ix))
 
 

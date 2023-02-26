@@ -20,7 +20,6 @@
 ;; (require 'dino-dired-fixups)
 ;;
 
-
 (require 'cl)
 (require 'dired)
 (require 'dired-aux)
@@ -49,7 +48,7 @@ which is up to 10gb.  Some files are larger than that.
   (if (or (not human-readable) (< f-size 1024))
       (format (if (floatp f-size) " %11.0f" " %11d") f-size)
     (let (post-fixes)
-      (do ((f-size (/ f-size 1024.0) (/ f-size 1024.0))
+      (cl-do ((f-size (/ f-size 1024.0) (/ f-size 1024.0))
            ;; kilo, mega, giga, tera, peta, exa
            (post-fixes (list "k" "M" "G" "T" "P" "E") (cdr post-fixes)))
           ((< f-size 1024) (format " %10.0f%s"  f-size (car post-fixes)))))))
@@ -246,13 +245,19 @@ and quit.
    #'(lambda (win)
        (with-selected-window win
          (when (eq major-mode 'dired-mode)
-           (let ((mod (gethash default-directory dired-file-modification-hash)))
-             (unless (and mod
-                          (equal mod (nth 5 (file-attributes
-                                             default-directory))))
-               (setq mod (nth 5 (file-attributes default-directory)))
-               (puthash default-directory mod dired-file-modification-hash)
-               (dired-revert))))))
+           (if (file-attributes default-directory)
+               ;; there are attributes, the dir exists
+               (let ((mod (gethash default-directory dired-file-modification-hash)))
+                 (unless (and mod
+                              (equal mod (nth 5 (file-attributes
+                                                 default-directory))))
+                   (setq mod (nth 5 (file-attributes default-directory)))
+                   (puthash default-directory mod dired-file-modification-hash)
+                   (dired-revert)))
+             ;; else, the dired buffer points to a dir that no longer exists
+             (let ((zombie-buffer (window-buffer win)))
+               (kill-buffer zombie-buffer))))))
+               ;;(condition-case nil (delete-window win) (error nil)))))))
    'no-mini 'all-frames))
 
 (run-with-idle-timer 1 t 'maybe-revert-dired-buffers)
@@ -271,7 +276,8 @@ for a given file or set of files. This function makes an intelligent guess."
              (ext (file-name-extension file))
              (initial
               (if (member ext '("png" "jpg" "gif"))
-                  (concat "open -a seashore " (car files))
+                  ;;(concat "open -a seashore " (car files))
+                  (concat "open -a preview " (car files))
                 "")))
         (read-shell-command prompt initial))
 

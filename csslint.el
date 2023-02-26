@@ -87,5 +87,4 @@ value is a STRING, a regex.")
 
 
 (provide 'csslint)
-
-;;; fly-csslint.el ends here
+;;; csslint.el ends here

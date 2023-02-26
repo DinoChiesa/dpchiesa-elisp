@@ -109,6 +109,15 @@ or
           (base64-encode-string
            (concat username ":" password))))
 
+(defun dino-netrc-basic-auth-creds (machine-name)
+  "retrieve a (USERNAME . PASSWORD) from .netrc for the given MACHINE-NAME.
+
+A typical use might be:
+  (dino-netrc-basic-auth \"api.enterprise.apigee.com\")
+"
+        (cdr (dino-netrc-find machine-name)))
+
+
 (defun dino-netrc-find (machine)
   "parse .netrc for the given machine, return cons of (username . login)"
   (let ((tuples (dino-netrc-parse)))

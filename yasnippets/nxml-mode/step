@@ -2,4 +2,6 @@
 # name: <Step...>
 # key: step
 # --
-<Step><Name>${1:VerifyApiKey-1}</Name></Step>
+<Step>
+  <Name>${1:VerifyApiKey-1}</Name>
+</Step>

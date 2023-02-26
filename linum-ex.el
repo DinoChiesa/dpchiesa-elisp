@@ -6,7 +6,7 @@
 ;; modifications in linum-ex.el provided by: Dino Chiesa
 
 ;; Author: Markus Triska <markus.triska@gmx.at>
-;; Last saved: <2013-March-05 11:59:56>
+;; Last saved: <2018-September-04 11:16:30>
 ;;
 ;; Keywords: convenience
 
@@ -48,22 +48,25 @@
 ;; display when the user was continuously scrolling.  It also introduced
 ;; noticeable delays when scrolling only momentarily.
 ;;
-;; One idea for working around that is to use run-with-idle-timer, and
+;; One idea for working around that is to use `run-with-idle-timer', and
 ;; only update the line numbers when emacs is idle. One can set a single
 ;; timer, for, say 0.1s, and then when emacs goes idle for that period,
-;; the line numbers will be updated. Seems like the perfect fit,
-;; but there's a problem: a timer created via run-with-idle-timer
-;; gets canceled after being delayed 10 times.
+;; the line numbers will be updated.
 ;;
-;; So if the after-scroll event sets up a timer via run-with-idle-timer,
-;; only when no timer has been set, the timer may get canceled silently,
-;; by timer.el . Look at `timer-max-repeats'.
+;; Seems like the perfect fit, but there's a problem: a timer created
+;; via `run-with-idle-timer' gets canceled after being delayed 10 times.
+;; If the after-scroll event sets up a timer via `run-with-idle-timer',
+;; only in the case when no timer has been set, the timer may get
+;; canceled silently, by timer.el . For more on this look at
+;; `timer-max-repeats'.
 ;;
-;; This happens if emacs is busy for 1s, as for example when the user is
-;; holding pgdn to continuously scroll through a large document.  If the
-;; timer doesn't fire, then the line numbers don't ever get updated.
+;; If the base delay is 0.1s, then this cancellation would happen after
+;; 10 cycles, or if emacs is busy for 1s, which may occur for example
+;; when the user is holding pgdn to continuously scroll through a large
+;; document. If the timer gets cancelled, then the line numbers don't
+;; ever get updated.
 ;;
-;; To avoid that pitfall, this code can set run-with-idle-timer for
+;; To avoid that pitfall, this code can set `run-with-idle-timer' for
 ;; every scroll event, and handle the delay explicitly, right here.  The
 ;; way to do it is, within the after-scroll event, store the "last
 ;; scrolled" time, and then call `run-with-idle-timer'. There may be
@@ -75,9 +78,9 @@
 ;;
 ;; The result is that timers fire constantly while the user is
 ;; continuously scrolling, but the line numbers get updated only after
-;; the user stops scrolling.  The user experiences no delay while
-;; scrolling, but (unfortunately) gets no line numbers either.  The user
-;; sees updated line numbers immediately when he stops.
+;; the user stops scrolling. The user experiences no delay while
+;; scrolling, but (unfortunately) gets no line numbers either. The user
+;; sees updated line numbers immediately when he stops scrolling.
 ;;
 ;; =======================================================
 
@@ -200,7 +203,6 @@ and you have to scroll or press C-l to update the numbers."
             linum--last-cmd nil
             linum--last-scroll nil))))
 
-
 (defun linum-update-window (win)
   "Update line numbers for the portion visible in window WIN."
   (goto-char (window-start win))
@@ -237,7 +239,28 @@ and you have to scroll or press C-l to update the numbers."
             (overlay-put ov 'linum-str str))))
       (forward-line)
       (setq line (1+ line)))
-    (set-window-margins win width)))
+    (linumex-set-window-margin-width win width)
+    ;;(set-window-margins win width)
+    ))
+
+(defun linumex-set-window-margin-width (win width)
+  "Sets the window margin width. When scaling text font in the window,
+the linum font also scales. When the font becomes larger, in some
+cases the line number will be too wide to fit in the margin. This
+code updates the margin width used by linum when scaling."
+  ;; When there has been no previous scaling event in the window, the variables
+  ;; are not yet set.  Therefore we need to use default values.
+  (let* ((stepvar (or (and (boundp 'text-scale-mode-step) text-scale-mode-step) 1.2))
+         (amountvar (or (and (boundp 'text-scale-mode-amount) text-scale-mode-amount) 0))
+         (xstep (or (and stepvar amountvar (expt stepvar (+ 0.8 amountvar))) 1))
+         (net-width (ceiling (* xstep width))))
+    ;; (message "step(%s) amount(%s) xstep(%s) net-width(%s)"
+    ;;          (prin1-to-string stepvar)
+    ;;          (prin1-to-string amountvar)
+    ;;          (prin1-to-string xstep)
+    ;;          (prin1-to-string net-width))
+    (set-window-margins win net-width)))
+
 
 (defun linum-after-change (beg end len)
   ;; update overlays on deletions, and after newlines are inserted
@@ -249,7 +272,7 @@ and you have to scroll or press C-l to update the numbers."
 
 (defun linum--after-scroll-fired ()
   (if linum--last-scroll
-      (let ((now  (current-time))
+      (let ((now (current-time))
             (one-moment-after-scroll (timer-relative-time linum--last-scroll linum--delay-time)))
         (if (time-less-p one-moment-after-scroll now)
             (linum-update linum--win)))))
@@ -262,10 +285,9 @@ and you have to scroll or press C-l to update the numbers."
         (run-with-idle-timer linum--delay-time nil 'linum--after-scroll-fired))
     (linum-update (window-buffer win))))
 
-
 (defun linum--post-command-fired ()
   (if linum--last-cmd
-      (let ((now  (current-time))
+      (let ((now (current-time))
             (one-moment-after-cmd (timer-relative-time linum--last-cmd linum--delay-time)))
         (if (time-less-p one-moment-after-cmd now)
             (linum-update-current)))))

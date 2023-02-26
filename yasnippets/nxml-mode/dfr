@@ -1,0 +1,10 @@
+# -*- mode: snippet -*-
+# name: <DefaultFaultRule...>
+# key: dfr
+# --
+<DefaultFaultRule name="default-fault-rule">
+  <Step>
+    <Name>AM-Inject-Proxy-Revision-Header</Name>
+  </Step>
+  <AlwaysEnforce>true</AlwaysEnforce>
+</DefaultFaultRule>

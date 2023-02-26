@@ -145,7 +145,7 @@
 ;;
 ;;; Code:
 
-(eval-when-compile (require 'cl))
+(eval-when-compile (require 'cl)) ; for incf
 
 (require 'ox)
 
@@ -609,7 +609,7 @@ doesn't include leading \"depends\"."
               ;; common ancestor between TASK and DEP.
               (while (not (org-element-map parent 'headline
                             (lambda (hl) (eq hl dep))))
-                (incf exclamations)
+                (cl-incf exclamations)
                 (setq parent (org-export-get-parent parent)))
               ;; Build path from DEP to PARENT.
               (while (not (eq parent dep))

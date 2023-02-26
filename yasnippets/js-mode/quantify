@@ -1,0 +1,16 @@
+# -*- mode: snippet -*-
+# key : quantify
+# name : quantify(q,term) ... { ... }
+# --
+function quantify(quantity, term) {
+  let termIsPlural = term.endsWith('s');
+  let quantityIsPlural = (quantity != 1 && quantity != -1);
+
+  if (termIsPlural && !quantityIsPlural)
+    return term.slice(0, -1);
+
+  if ( ! termIsPlural && quantityIsPlural)
+    return term + 's';
+
+  return term;
+}

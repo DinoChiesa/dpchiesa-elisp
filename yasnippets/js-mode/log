@@ -1,0 +1,10 @@
+# key : log
+# name : logWrite
+# --
+function logWrite() {
+  let time = (new Date()).toString(),
+      tstr = '[' + time.substr(11, 4) + '-' +
+      time.substr(4, 3) + '-' + time.substr(8, 2) + ' ' +
+      time.substr(16, 8) + '] ';
+  console.log(tstr + util.format.apply(null, arguments));
+}

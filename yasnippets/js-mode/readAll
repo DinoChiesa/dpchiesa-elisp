@@ -1,7 +1,0 @@
-# key : readAll
-# name : function readAll(..) {..fs.readFile...}
-# --
-function readAllText(filename) {
-    var fileData = fs.readFileSync(filename, "binary");
-    return fileData;
-}
