@@ -107,3 +107,14 @@ selection to the kill ring"
          "c:\\dev\\js\\moment.js"
          "c:\\dev\\js\\arrayExtensions.js"))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(ls-lisp-format-time-list (quote ("%Y-%m-%d %H:%M" "%Y-%m-%d %H:%M")))
+ '(ls-lisp-use-localized-time-format t)
+ '(temporary-file-directory "C:/Users/dpchi/AppData/Local/Temp"))
