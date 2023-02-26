@@ -1,6 +1,6 @@
 ;;; emacs.el -- Dino's .emacs setup file.
 ;;
-;; Last saved: <2022-May-03 11:23:50>
+;; Last saved: <2023-February-26 14:39:09>
 ;;
 ;; Works with v24.5 and v25.1 of emacs.
 ;;
@@ -210,8 +210,9 @@
 ;; (require 'apigee)
 ;; (setq apigee-apiproxies-home "~/dev/apiproxies/")
 
-(add-to-list 'load-path "~/elisp/apigee")
-(require 'apigee)
+;; 2023 Feb 26 TODO - figure out why apigee.el is broken
+;;(add-to-list 'load-path "~/elisp/apigee")
+;;(require 'apigee)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; golang
@@ -294,9 +295,10 @@
 ;; including html5 presentations from .org documents
 ;;
 
+;; 2023 Feb 26 TODO -  remove ox-reveal.el, it is broken
 ;; my own home-built thing. Not quite as cool as Org-export with reveal.js .
 ;; (require 'dpreso)
-(require 'ox-reveal)
+;;(require 'ox-reveal)
 ;;(setq org-reveal-root "http://cdn.jsdelivr.net/reveal.js/2.5.0/")
 ;; to use: M-x org-reveal-export-to-html
 
@@ -512,7 +514,7 @@
 ;;(setq dino-name-of-preferred-font "-*-Consolas-normal-normal-normal-*-11-*-*-*-m-0-iso10646-1")
 
 (setq default-frame-alist
-      '((top . 10) (left . 860)
+      '((top . 320) (left . 460)
         (width . 100) (height . 25)
         (cursor-color . "Orange")
         (cursor-type . box)
@@ -520,9 +522,10 @@
         ;;(background-color . "Black")
         (mouse-color . "sienna3")
         ;; works with macos
-        (font . "-*-Menlo-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1")
+        ;;(font . "-*-Menlo-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1")
         ;; works with windows
-        ;;(font . "-*-Consolas-normal-normal-normal-*-11-*-*-*-m-0-iso10646-1")
+        (font . "-*-Consolas-normal-normal-normal-*-20-*-*-*-c-*-iso8859-1")
+        ;; to inquire the font spec, open a text file, then C-u C-x =
         )
       )
 
@@ -542,10 +545,10 @@
 ;;   (set-default-font "Inconsolata-11"))
 
 
-;; initial frame is 128 wide x 68 high
+;; initial frame is 128 wide x 68 high, also specify frame position.
 (setq initial-frame-alist
-      '( (top . 30) (left . 10)
-         (width . 90) (height . 52)
+      '( (top . 220) (left . 840)
+         (width . 120) (height . 72)
          ;;(width . 128) (height . 68)
          )
       )
