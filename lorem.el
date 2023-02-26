@@ -36,6 +36,12 @@
      (substring s (- 0 elength))
      ending))))
 
+(defun lorem-ipsum-reset ()
+  "resets the source file to allow re-reading."
+  (interactive)
+  (setq lorem-text-list nil)
+  )
+
 (defun lorem-ipsum ()
   "Inserts one paragraph of lorem ipsum text at point."
   (interactive)
