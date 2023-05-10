@@ -825,7 +825,7 @@ Like `replace-string' but for non-interactive use. "
         (delete-char len)
         (insert (shell-command-to-string
                  (concat
-                       "/usr/local/bin/node -e \"console.log(unescape('"
+                       "node -e \"console.log(unescape('"
                        str "'))\"" )))))))
 
 

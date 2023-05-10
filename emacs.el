@@ -1,6 +1,6 @@
 ;;; emacs.el -- Dino's .emacs setup file.
 ;;
-;; Last saved: <2023-February-26 14:44:26>
+;; Last saved: <2023-April-07 15:17:50>
 ;;
 ;; Works with v24.5 and v25.1 of emacs.
 ;;
@@ -80,12 +80,14 @@
 (dino-ensure-package-installed
  'company
  'company-go
+ 'dash
  'dash-functional
  'default-text-scale
  'expand-region
  'flycheck
  'go-autocomplete
  'go-mode
+ 'dart-mode
  'js2-mode
  'js2-refactor
  'json-mode
@@ -115,14 +117,22 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (require 'default-text-scale)
-
 (default-text-scale-mode)
 (global-set-key (kbd "C-=") 'default-text-scale-increase)
 (global-set-key (kbd "C--") 'default-text-scale-decrease)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(setq magit-git-executable "/usr/local/git/current/bin/git")
+;; The magit doc says setting this var directly is a kludge, should rely on
+;; $PATH.  but it works for me.;; (--first is from the dash.el module)
+
+(require 'dash)
+(setq magit-git-executable
+      (--first
+       (file-exists-p it)
+       '("c:/Program Files/Git/cmd/git.exe"
+          "/usr/local/git/current/bin/git")))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; flycheck, always
@@ -631,7 +641,8 @@
          ("\\.s?html?\\'"                     . html-mode)
          ("\\.html$"                          . web-mode)
          ("\\.htm$"                           . web-mode)
-         ("\\.md$"                            . fundamental-mode)  ;; markdown
+         ("\\.md$"                            . markdown-mode)
+         ("\\.dart$"                          . dart-mode)
          ("\\.el$"                            . emacs-lisp-mode)
          ("\\.js$"                            . js2-mode)
          ("\\.gs$"                            . js2-mode)            ;; google script
@@ -1097,10 +1108,10 @@ With a prefix argument, makes a private paste."
 ;; configure external utilities
 
 (if (eq system-type 'windows-nt)
-    (if (file-exists-p "/Users/dpchiesa/bin/unzip.exe")
+    (if (file-exists-p "c:/Users/dpchi/bin/unzip.exe")
         (progn
           (setq archive-zip-use-pkzip nil   ; i.e. use unzip instead
-                archive-zip-extract '("/Users/dpchiesa/bin/unzip.exe" "-"))))
+                archive-zip-extract '("c:/Users/dpchi/bin/unzip.exe" "-"))))
   )
 
 (setq-default grep-command "grep -i -n ")
