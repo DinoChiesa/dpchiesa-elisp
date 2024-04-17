@@ -1,0 +1,11 @@
+# -*- mode: snippet -*-
+# name: untildify
+# key: untildify
+# contributor: dchiesa001@gmail.com
+# --
+const untildify = (() => {
+  const os = require('os');
+  const homedir = os.homedir();
+  return (pathToResolve) =>
+    homedir ? pathToResolve.replace(/^~(?=$|\/|\\)/, homedir) : pathToResolve;
+})();

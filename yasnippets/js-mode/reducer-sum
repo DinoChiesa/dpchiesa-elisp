@@ -1,0 +1,13 @@
+# key : reducer-sum
+# name : reducer-sum
+# --
+const sumReducer = (accumulator, currentValue, index) => {
+  const returns = accumulator + currentValue;
+  console.log(
+    `accumulator: ${accumulator}, currentValue: ${currentValue}, index: ${index}, returns: ${returns}`,
+  );
+  return returns;
+};
+
+let sum = a.reduce(sumReducer, 0);
+

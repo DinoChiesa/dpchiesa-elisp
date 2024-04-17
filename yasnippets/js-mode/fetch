@@ -1,0 +1,14 @@
+# -*- mode: snippet -*-
+# key : fetch
+# name : fetch(...) { ... }
+# --
+fetch('${1:https://httpbin.org/post}', {
+    method: '${2:POST}',
+    headers: {
+      'Accept': 'application/json, text/plain, */*',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(${3:variable})
+  })
+  .then(res => res.json())
+  .then(res => console.log(res));

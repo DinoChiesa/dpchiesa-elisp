@@ -11,7 +11,7 @@
 ;; Requires   : s.el dash.el
 ;; License    : Apache 2.0
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2021-September-27 16:00:59>
+;; Last-saved : <2024-February-05 18:17:25>
 ;;
 ;;; Commentary:
 ;;
@@ -95,7 +95,8 @@
 (require 'dash) ;; magnars' functional lib
 
 (defcustom dcjava-location-of-gformat-jar
-  "~/dev/java/lib/google-java-format-1.7-all-deps.jar"
+  ;;"~/dev/java/lib/google-java-format-1.7-all-deps.jar"
+  "~/dev/java/lib/google-java-format-1.17.0-all-deps.jar"
   "Path to the google-java-format jar."
   :group 'dcjava)
 
@@ -425,11 +426,14 @@ strings (filenames). "
       (car attrs)
       (not (stringp (car attrs)))))))
 
-(defun dcjava-path-of-api-platform ()
-  "returns a string representing the api_platform directory for the
-given current working directory."
+
+(defun dcjava--parent-of-dir (contained_dir)
+  "returns a string representing the parent dir of the directory named
+in CONTAINED_DIR, searching from the tree above the given current working
+directory. CONTAINED_DIR should be a simple path segment, no
+slashes."
   (interactive)
-  (let ((to-find "api_platform"))
+  (let ((to-find contained_dir))
     (let ((path
            (dcjava-insure-trailing-slash
             (let ((maybe-this (concat (file-name-directory default-directory) to-find)))
@@ -445,6 +449,15 @@ given current working directory."
                       (mapconcat 'identity r "/") )))))))
       (and path (file-truename path)))))
 
+(defun dcjava-wacapps-dir ()
+  "returns a string representing the wacapps dir,
+searching from the tree above the given current working directory."
+  (interactive)
+  (concat
+   (dcjava-insure-trailing-slash
+    (dcjava--parent-of-dir "wacapps"))
+   "wacapps/"))
+
 (defun dcjava-insure-trailing-slash (path)
   "Insure the given path ends with a slash. This is useful with
 `default-directory'. Setting `default-directory' to a value that
@@ -452,11 +465,6 @@ does not end with a slash causes it to use the parent directory.
 "
   (and path
        (if (s-ends-with? "/" path) path (concat path "/"))))
-
-
-
-;;(defvar dcjava-wacapps-root "~/dev/wacapps/new/api_platform")
-(defvar dcjava-cps-root "~/dev/wacapps/cps")
 
 
 (defun dcjava-find-file-from-choice (flist)
@@ -481,11 +489,14 @@ the shell find command. "
   (if (not classname)
       (setq classname (read-string "Class to find: " nil)))
 
-  (let* ((src-root (concat (dcjava-insure-trailing-slash (dcjava-path-of-api-platform)) "api_platform/"))
-    (filenames (and classname
+  ;; this assumes cps and api_platform are sibling directories in the tree
+  (let* ((wacapps-dir (dcjava-wacapps-dir))
+         (api-platform-src-root (concat wacapps-dir "api_platform/"))
+         (cps-src-root (concat wacapps-dir "cps/"))
+         (filenames (and classname
                     (or
-                     (dcjava-find-java-source-in-dir src-root classname)
-                     (dcjava-find-java-source-in-dir dcjava-cps-root classname)))))
+                     (dcjava-find-java-source-in-dir api-platform-src-root classname)
+                     (dcjava-find-java-source-in-dir cps-src-root classname)))))
 
     (if filenames
         (let ((numfiles (length filenames)))
@@ -576,10 +587,18 @@ at the top of the source file."
                              output-goes-to-current-buffer
                              output-replaces-current-content)))
 
+;; (defun dcjava-gformat-buffer ()
+;;   "runs google-java-format on the current buffer"
+;;   (interactive)
+;;   (let ((command (concat "java -jar " dcjava-location-of-gformat-jar " -")))
+;;     (dcjava-shell-command-on-buffer command))
+;;   )
 (defun dcjava-gformat-buffer ()
   "runs google-java-format on the current buffer"
   (interactive)
-  (let ((command (concat "java -jar " dcjava-location-of-gformat-jar " -")))
+  (let ((command (concat "google-java-format" " -"
+                         " --assume-filename "
+                         (file-name-nondirectory (buffer-file-name)))))
     (dcjava-shell-command-on-buffer command))
   )
 

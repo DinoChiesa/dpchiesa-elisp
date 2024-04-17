@@ -1,6 +1,6 @@
 ;;; emacs.el -- Dino's .emacs setup file.
 ;;
-;; Last saved: <2023-April-07 15:17:50>
+;; Last saved: <2024-April-10 16:22:33>
 ;;
 ;; Works with v24.5 and v25.1 of emacs.
 ;;
@@ -46,7 +46,6 @@
 ;; a bunch of random utility functions
 ;;
 (require 'dino-utility)
-
 (add-hook 'before-save-hook 'dino-untabify-maybe)
 (global-set-key "\C-x7"     'dino-toggle-frame-split)
 
@@ -57,7 +56,8 @@
 ;;
 (require 'package)
 (dolist (item (list
-              '("MELPA Stable"     . "https://stable.melpa.org/packages/")
+               ;; '("MELPA Stable"     . "https://stable.melpa.org/packages/")
+              '("MELPA"     . "https://melpa.org/packages/")
               '("org"              . "http://orgmode.org/elpa/")))
   (add-to-list 'package-archives item))
 
@@ -78,20 +78,24 @@
 ;; My own implementation is used here.
 ;; Simply add package names to the list.
 (dino-ensure-package-installed
- 'company
- 'company-go
+ 'apheleia        ;; clever reformatting engine
+ 'company         ;; COMPlete ANYthing
+ 'company-box     ;; i guess this makes the popup a little nicer?
+ 'auto-complete   ;; i should probably convert to company. I think this is legacy now.
+ ;; 'company-go
  'dash
  'dash-functional
  'default-text-scale
  'expand-region
  'flycheck
- 'go-autocomplete
+ ;; 'go-autocomplete
  'go-mode
  'dart-mode
  'js2-mode
  'js2-refactor
  'json-mode
- 'logito
+ 'logito ;; a tiny logging framework for emacs. Not sure where this is used
+ 'lsp-mode
  'magit
  'markdown-mode
  'path-helper
@@ -215,14 +219,52 @@
 (global-set-key (kbd "C-c C-p") 'wgrep-change-to-wgrep-mode)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; stuff for Apigee Edge
+;; stuff for Apigee
 ;;
 ;; (require 'apigee)
 ;; (setq apigee-apiproxies-home "~/dev/apiproxies/")
 
-;; 2023 Feb 26 TODO - figure out why apigee.el is broken
-;;(add-to-list 'load-path "~/elisp/apigee")
-;;(require 'apigee)
+;; with apigee.el in elisp/apigee/apigee.el
+;; M-x load-library RET "apigee/apigee" RET
+
+(eval-after-load "apigee"
+  '(progn
+     ;;(debug)
+     (setcar (alist-get 'apigeecli apigee-programs-alist)
+         "~/.apigeecli/bin/apigeecli")
+     (setcar (alist-get 'apigeelint apigee-programs-alist)
+         "node ~/dev/apigeelint/cli.js")
+     (setcar (alist-get 'gcloud apigee-programs-alist)
+         "~/google-cloud-sdk/bin/gcloud")
+     (setcar (alist-get 'lint apigee-commands-alist)
+             "%apigeelint -s ./apiproxy -e TD002,TD004 -f visualstudio.js")
+     (setq apigee-environment (getenv "ENV")
+           apigee-organization (getenv "ORG"))
+     ))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; apheleia - clever code reformatting for multiple languages.
+;;
+;; https://github.com/radian-software/apheleia
+;; It runs code formatters on after-save-hook, and then resaves only if there
+;; are changes. It preserves cursor location across these changes. Sweet.
+
+(require 'apheleia)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; sh-mode
+(setcar (alist-get 'shfmt apheleia-formatters)
+         "~/go/bin/shfmt")
+(push '(sh-mode . shfmt) apheleia-mode-alist)
+
+(defun dino-sh-mode-fn ()
+  (display-line-numbers-mode)
+  (sh-electric-here-document-mode)
+  ;; 20230918-1015
+  (apheleia-mode)
+)
+(add-hook 'sh-mode-hook 'dino-sh-mode-fn)
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; golang
@@ -263,7 +305,10 @@
   (local-set-key "\M-\C-R"  'indent-region)
   (local-set-key "\M-#"     'dino-indent-buffer)
 
-  (linum-on)
+  (display-line-numbers-mode)
+
+  ;; 20230918-1015
+  (apheleia-mode)
 
   (require 'goflycheck)
   (flycheck-mode 1)
@@ -298,8 +343,8 @@
     )))
 (setq org-confirm-babel-evaluate 'my-org-confirm-babel-evaluate)
 
-(require 'ox-taskjuggler)
-(add-to-list 'org-export-backends 'taskjuggler)
+;; (require 'ox-taskjuggler)
+;; (add-to-list 'org-export-backends 'taskjuggler)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; including html5 presentations from .org documents
@@ -455,7 +500,7 @@
 (global-set-key "\C-c\C-c"  'center-paragraph)  ; good for text mode
 (global-set-key "\C-ck"     'global-set-key)
 (global-set-key "\C-cs"     'search-forward-regexp)
-(global-set-key "\C-cy"     'linum-mode)
+(global-set-key "\C-cy"     'display-line-numbers-mode)
 ;;(global-set-key "\C-c\C-p"  'dino-copy-value-from-key-into-killring)
 ;;(global-set-key "\C-cm"     'dino-gtm-url)
 (global-set-key "\C-cq"     'query-replace)
@@ -532,9 +577,9 @@
         ;;(background-color . "Black")
         (mouse-color . "sienna3")
         ;; works with macos
-        ;;(font . "-*-Menlo-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1")
+        (font . "-*-Menlo-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1")
         ;; works with windows
-        (font . "-*-Consolas-normal-normal-normal-*-20-*-*-*-c-*-iso8859-1")
+        ;;(font . "-*-Consolas-normal-normal-normal-*-20-*-*-*-c-*-iso8859-1")
         ;; The font spec is so intuitive! To inquire the current font spec, open a text file, then C-u C-x =
         )
       )
@@ -555,10 +600,10 @@
 ;;   (set-default-font "Inconsolata-11"))
 
 
-;; initial frame will be 128 wide x 72 high, also specify frame position.
+;; initial frame will be 128 wide x 68 high, also specify frame position.
 (setq initial-frame-alist
-      '( (top . 220) (left . 840)
-         (width . 128) (height . 72)
+      '( (top . 80) (left . 840)
+         (width . 128) (height . 68)
          )
       )
 
@@ -590,7 +635,7 @@
   (turn-on-font-lock)
   ;;; minor-mode
   ;;(hs-minor-mode 1)
-  (linum-on)
+  (display-line-numbers-mode)
   ;; why I have to re-set this key is baffling to me.
   ;; and this does not seem to work...
   (local-set-key "\M-\C-R"  'indent-region)
@@ -664,11 +709,19 @@
          ) auto-mode-alist ))
 
 
+
 ;; replace all html-mode in this alist with web-mode, which is more betta.
 (mapc
      (lambda (pair)
        (if (eq (cdr pair) 'html-mode)
            (setcdr pair 'web-mode)))
+     auto-mode-alist)
+
+;; 20230828-1703 replace java-mode with java-ts-mode
+(mapc
+     (lambda (pair)
+       (if (eq (cdr pair) 'java-mode)
+           (setcdr pair 'java-ts-mode)))
      auto-mode-alist)
 
 
@@ -792,7 +845,7 @@ With a prefix argument, makes a private paste."
   (interactive)
   (turn-on-font-lock)
   (turn-on-auto-revert-mode)
-  (linum-on)
+  (display-line-numbers-mode)
   (yaml-pretty-mode)
   ;;(make-local-variable 'indent-tabs-mode)
   (setq indent-tabs-mode nil))
@@ -808,7 +861,7 @@ With a prefix argument, makes a private paste."
   (local-set-key "\M-\C-R"  'indent-region)
   (turn-on-auto-revert-mode)
   (setq typescript-indent-level 2)
-  (linum-on)
+  (display-line-numbers-mode)
   (auto-fill-mode -1)
   )
 (add-hook 'typescript-mode-hook 'dino-typescript-mode-fn)
@@ -848,7 +901,7 @@ With a prefix argument, makes a private paste."
   (electric-pair-mode 1)
   (require 'hideshow)
   (hs-minor-mode t)
-  (linum-on)
+  (display-line-numbers-mode)
   (dino-enable-delete-trailing-whitespace)
   )
 
@@ -990,6 +1043,27 @@ With a prefix argument, makes a private paste."
 ;;(require 'css-mode)
 (autoload 'css-mode "css-mode" "Mode for editing Cascading Stylesheets." t)
 
+(push '(prettier-css-dino .
+        ("/usr/local/bin/prettier"
+         "--stdin-filepath" filepath "--parser=css"))
+      apheleia-formatters)
+
+(push '(css-mode . prettier-css-dino) apheleia-mode-alist)
+
+;; Overwrite existing scss-stylelint checker to not use --syntax
+(flycheck-define-checker scss-stylelint
+  "A SCSS syntax and style checker using stylelint.
+
+See URL `http://stylelint.io/'."
+  :command ("stylelint"
+            (eval flycheck-stylelint-args)
+            ;; "--syntax" "scss"
+            (option-flag "--quiet" flycheck-stylelint-quiet)
+            (config-file "--config" flycheck-stylelintrc))
+  :standard-input t
+  :error-parser flycheck-parse-stylelint
+  :modes (scss-mode))
+
 (defun dino-css-mode-fn ()
   "My hook for CSS mode"
   (interactive)
@@ -1001,11 +1075,13 @@ With a prefix argument, makes a private paste."
   (local-set-key "\C-c\C-c" 'comment-region)
 
   (turn-on-auto-revert-mode)
+  (display-line-numbers-mode)
+  (apheleia-mode)
 
   ;; use autopair for curlies, parens, square brackets.
   ;; electric-pair-mode works better than autopair.el in 24.4,
   ;; and is important for use with popup / auto-complete.
-  (if (or (not (fboundp 'version<)) (version< emacs-version "24.4"))
+  (if (not (fboundp 'version<))
       (progn (require 'autopair) (autopair-mode))
     (electric-pair-mode))
 
@@ -1018,11 +1094,14 @@ With a prefix argument, makes a private paste."
   ;; make auto-complete start only after 2 chars
   (setq ac-auto-start 2)  ;;or 3?
 
-  ;;(require 'csslint)
   (require 'flycheck)
   (flycheck-mode)
+
+  ;; to install the external checkers:
+  ;; sudo npm install -g csslint
+  ;; sudo npm install -g stylelint stylelint-config-standard stylelint-scss
   (flycheck-select-checker
-   (if (string= mode-name "SCSS") 'scss-lint 'css-csslint))
+   (if (string= mode-name "SCSS") 'scss-stylelint 'css-csslint))
 
   (add-hook 'before-save-hook
             (lambda ()
@@ -1030,11 +1109,14 @@ With a prefix argument, makes a private paste."
                  (delete-trailing-whitespace)))
             nil 'local)
 
-  ;; display CSS colors in color
-  (require 'rainbow-mode)
-  (rainbow-mode)
+  ;; rainbow-mode is no longer needed as of emacs 26.1. css-mode now colorizes
+  ;; color expressions automatically.
+  ;; ============================================
+  ;; ;; display CSS colors in color
+  ;; ;; (require 'rainbow-mode)
+  ;; ;; (rainbow-mode)
 
-  (linum-on)
+  (display-line-numbers-mode)
 
   ;; "no tabs" -- use only spaces
   ;;(make-local-variable 'indent-tabs-mode)
@@ -1043,25 +1125,17 @@ With a prefix argument, makes a private paste."
 (add-hook 'css-mode-hook 'dino-css-mode-fn)
 
 
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; defaultcontent
-;;
-;; This package inserts "default content" into a new file of a given
-;; type, when that file is newly created in emacs.
-;; See the elisp/defaultcontent directory for templates.
-;;
-;; http://pagesperso-systeme.lip6.fr/Christian.Queinnec/Miscellaneous/defaultcontent.el
+;; auto-insert - 20231005-1717
 
-(require 'defaultcontent)
+(auto-insert-mode 1);; global minor mode
+(setq auto-insert-query nil) ;; no prompt before auto-insertion:
+(setq auto-insert-directory "~/elisp/auto-insert-content")
 
-;; specify the directory to look in for templates
-(setq dc-auto-insert-directory "~/elisp/defaultcontent")
-(setq dc-fast-variable-handling t)
+(require 'auto-insert-plus)
 
-;; specify the template to use for various files:
-(setq dc-auto-insert-alist
+;; specify the template to use for various filename regexi:
+(setq my-auto-insert-alist
       '(
         ("\\.cs$"                      .  "Template.cs" )
         ("\\.css$"                     .  "Template.css" )
@@ -1096,12 +1170,8 @@ With a prefix argument, makes a private paste."
         ("\\.org$"                     .  "Template.org" )
         ) )
 
-;; (setq dc-auto-insert-alist
-;;       (append '(
-;;                 ("\\.\\(htm\\|html\\)$"   .  "Template.htm" )
-;;                 ) dc-auto-insert-alist ))
-
-
+(setq auto-insert-alist
+      (aip/fixup-auto-insert-alist my-auto-insert-alist))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1237,22 +1307,22 @@ just auto-corrects on common mis-spellings by me."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; linum-ex - linum-mode with enhancements for coloring and delay (for performance)
 
-;;(require 'linum-ex)
-(autoload 'linum-on "linum-ex" nil t)
-(autoload 'linum-mode "linum-ex" nil t)
-(eval-after-load "linum-ex"
-  '(progn
-    ;;(message "%s" (prin1-to-string (defined-colors))) ;; to list possible colors
-     ;;(list-colors-display) to show a list of colors in a new buffer
-    (set-face-foreground 'linum "SlateGray")
-    ;;(set-face-background 'linum "WhiteSmoke")
-    (set-face-background 'linum "gray19")
-    ;; to see font string M-x describe-font
-    ;;(set-face-font 'linum "-*-Lucida Console-normal-r-*-*-11-82-96-96-c-*-iso8859-1")
-    ;;(set-face-font 'linum "-*-Consolas-normal-r-*-*-11-82-96-96-c-*-iso8859-1")
-    ;;(setq setnu-line-number-face 'setnu)
-    (setq linum-delay t)
-))
+;; ;;(require 'linum-ex)
+;; (autoload 'linum-on "linum-ex" nil t)
+;; (autoload 'linum-mode "linum-ex" nil t)
+;; (eval-after-load "linum-ex"
+;;   '(progn
+;;     ;;(message "%s" (prin1-to-string (defined-colors))) ;; to list possible colors
+;;      ;;(list-colors-display) to show a list of colors in a new buffer
+;;     (set-face-foreground 'linum "SlateGray")
+;;     ;;(set-face-background 'linum "WhiteSmoke")
+;;     (set-face-background 'linum "gray19")
+;;     ;; to see font string M-x describe-font
+;;     ;;(set-face-font 'linum "-*-Lucida Console-normal-r-*-*-11-82-96-96-c-*-iso8859-1")
+;;     ;;(set-face-font 'linum "-*-Consolas-normal-r-*-*-11-82-96-96-c-*-iso8859-1")
+;;     ;;(setq setnu-line-number-face 'setnu)
+;;     (setq linum-delay t)
+;; ))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1629,7 +1699,8 @@ just auto-corrects on common mis-spellings by me."
          (local-set-key "\M-\C-R"  'indent-region)
          (local-set-key "\M-#"     'dino-indent-buffer)
          (local-set-key "\C-c\C-w" 'compare-windows)
-  (linum-on)
+  (display-line-numbers-mode)
+
   (c-add-style "my-style" my-protobuf-style t)
   ;;(require 'flycheck)
   ;;(flycheck-mode 1)
@@ -1978,7 +2049,7 @@ again, I haven't see that as a problem."
          ;;(local-set-key "\M-\\"   'cscomp-complete-at-point-menu)
          (local-set-key "\M-\."   'cscomp-complete-at-point-menu)
 
-         (linum-on)
+         (display-line-numbers-mode)
 
          (require 'rfringe)
          (message "dino-csharp-mode-fn: done.")
@@ -2238,17 +2309,43 @@ Does not consider word syntax tables.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; XML (nxml-mode)
 ;;
+(push '(dino-xmlpretty .
+        ("java" "-jar"
+         "/Users/dchiesa/dev/java/XmlPretty/target/com.google.dchiesa-xml-prettifier-20230725.jar"
+         "-"))
+      apheleia-formatters)
+
+(push '(xml-prettier .
+        ("/Users/dchiesa/dev/java/XmlPretty/node_modules/.bin/prettier"
+         "--config" "/Users/dchiesa/dev/java/XmlPretty/prettier-config.json"
+         "--stdin-filepath" "foo.xml"))
+      apheleia-formatters)
+
+
+;; ;; change an existing formatter in the alist (during development only)
+;; (setf (alist-get 'xml-prettier apheleia-formatters)
+;;        '("/Users/dchiesa/dev/java/XmlPretty/node_modules/.bin/prettier"
+;;           "--config" "/Users/dchiesa/dev/java/XmlPretty/prettier-config.json"
+;;          "--stdin-filepath" "foo.xml"))
+
+;; to specify an apheleia plugin for a mode that is not currently in the list:
+;;(push '(nxml-mode . dino-xmlpretty) apheleia-mode-alist)
+(push '(nxml-mode . xml-prettier) apheleia-mode-alist)
+
+;; ;; to switch between previously set plugin for a mode:
+;; (setf (alist-get 'nxml-mode apheleia-mode-alist) 'xml-prettier)
+;; ;;(setf (alist-get 'nxml-mode apheleia-mode-alist) 'dino-xmlpretty)
+
 
 (defun dino-xml-mode-fn ()
   (turn-on-auto-revert-mode)
   ;; for hide/show support
   (hs-minor-mode 1)
   (setq hs-isearch-open t)
-  (linum-on)
+  (display-line-numbers-mode)
   (local-set-key "\M-\C-R"  'indent-region)
   (local-set-key "\C-cn"    'sgml-name-char) ;; inserts entity ref of pressed char
   (local-set-key "\M-#"     'dino-xml-pretty-print-buffer)
@@ -2266,6 +2363,9 @@ Does not consider word syntax tables.
   ;; never convert leading spaces to tabs:
   ;;(make-local-variable 'indent-tabs-mode)
   (setq indent-tabs-mode nil)
+
+  ;; 20230718-1235
+  ;;(apheleia-mode)
 
   ;; Include single-quote as a string-quote char
   ;; Without this, it was being treated as part of a word,
@@ -2357,7 +2457,7 @@ Does not consider word syntax tables.
   (setq indent-tabs-mode nil)
   (hl-line-mode 1)
   (turn-on-auto-revert-mode)
-  (linum-on)
+  (display-line-numbers-mode)
 
   (add-hook 'before-save-hook
             (lambda ()
@@ -2389,8 +2489,9 @@ Does not consider word syntax tables.
   (local-set-key "\C-c\C-w"  'compare-windows)
 
   (set (make-local-variable 'indent-tabs-mode) nil)
+  (display-line-numbers-mode)
 
-  ;; use autopair for curlies, parens, square brackets.
+  ;; Use autopair for curlies, parens, square brackets.
   ;; electric-pair-mode works better than autopair.el in 24.4,
   ;; and is important for use with popup / auto-complete.
   (if (or (not (fboundp 'version<)) (version< emacs-version "24.4"))
@@ -2428,14 +2529,15 @@ i.e M-x kmacro-set-counter."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; tern
 ;;
-
-(add-to-list 'load-path (file-name-as-directory "~/elisp/tern/emacs/"))
-(autoload 'tern-mode "tern.el" nil t)
-
-(eval-after-load 'tern
-  '(progn
-     (require 'tern-auto-complete)
-     (tern-ac-setup)))
+;; I think I don't need this, now that I am using deno.
+;;
+;; (add-to-list 'load-path (file-name-as-directory "~/elisp/tern/emacs/"))
+;; (autoload 'tern-mode "tern.el" nil t)
+;;
+;; (eval-after-load 'tern
+;;   '(progn
+;;      (require 'tern-auto-complete)
+;;      (tern-ac-setup)))
 
 
 
@@ -2445,12 +2547,101 @@ i.e M-x kmacro-set-counter."
 ;;(eval-after-load 'js2-mode '(require 'setup-js2-mode))
 ;; Better imenu
 (add-hook 'js2-mode-hook #'js2-imenu-extras-mode)
-(defun dino-js2-mode-fn ()
-  (tern-mode)
-  (setq js2-basic-offset 2)
-  )
 
+(push '(prettier-js-dino .
+        ("/usr/local/bin/prettier"
+         "--stdin-filepath" filepath "--parser=babel-flow"
+         "--trailing-comma" "none"
+         (apheleia-formatters-js-indent "--use-tabs" "--tab-width")))
+      apheleia-formatters)
+
+(push '(js-mode . prettier-js-dino) apheleia-mode-alist)
+
+(defun dino-js2-mode-fn ()
+  ;;(tern-mode)
+  (auto-complete-mode 0) ;; turn off auto-complete-mode
+  (lsp)
+  ;; you automatically get deno-lint with lsp mode.
+  ;; The linter is not configurable.  You can turn it on or turn it off.
+  ;; To turn it off:
+  ;; (setq lsp-clients-deno-enable-lint nil)
+
+  ;; lsp, when configured to use posframe for signature display, uses the
+  ;; background and foreground from the lsp-signature-posframe face to display
+  ;; the signature.
+  (set-face-attribute 'lsp-signature-posframe nil :background "LightSteelBlue1" )
+  ;; (set-face-attribute 'lsp-signature-posframe t :background "LightSteelBlue1")
+  ;; (face-attribute 'lsp-signature-posframe :background nil t)
+  ;; (face-attribute 'lsp-signature-posframe :foreground nil t)
+
+  ;; 20230918-1015
+  (apheleia-mode)
+
+  (company-mode)
+  (company-box-mode)
+  (define-key company-mode-map (kbd "M-<tab>") 'company-complete)
+  (setq company-minimum-prefix-length 2
+   lsp-signature-function 'lsp-signature-posframe
+   js2-basic-offset 2)
+  )
 (add-hook 'js2-mode-hook #'dino-js2-mode-fn)
+
+(defun dino-js2-apply-globals-from-jshintrc (&rest arguments)
+  "load extra globals from jshintrc when sending requests"
+  (js2-add-additional-externs (dino-read-globals-from-jshintrc)))
+
+(eval-after-load "js2-mode"
+  '(progn
+     (advice-add 'js2-apply-jslint-globals :after #'dino-js2-apply-globals-from-jshintrc)))
+
+
+(defun dino-posframe-swap-background (str)
+
+  "HACK 20230627 the posframe package exposes an emacs bug, I
+think. After displaying a frame, as with the information from an
+LSP server showing the function definition, the background and
+foreground colors for the frame can ... change.  Even while the
+frame is still displayed. The background can sometimes revert to the
+default background, which is black. Used with a dark foreground, the
+signature definition can be unreadable.
+
+You'd think just displaying a new frame would solve it but
+posframe caches the old frame and checks the frame params for new
+frames against the cached one. I guess for performance. Anyway
+the result is, once the bg color is munged, it stays that way.
+
+The documented way to override the fg
+and bg for `lsp-signature-posframe' is to set the fg and bg
+properties on the `lsp-signature-posframe' face. Eg
+
+(set-face-attribute 'lsp-signature-posframe nil :background \"lightyellow\") .
+
+This should directly affect the cached posframe, but because of the bug,
+somehow it does not.
+
+This function swaps between two similar bg colors, to prevent
+posframe from caching the frame, which then... allows the frames
+to display properly. It swaps only when the input str is blank,
+which happens when the help is to disappear. That makes the face
+color ready for next time.
+"
+  (if (not str)
+      (let ((cur-bg (face-attribute 'lsp-signature-posframe :background nil t)))
+        (set-face-attribute 'lsp-signature-posframe nil :background
+                            (if (string= "LightSteelBlue1" cur-bg)
+                                "SlateGray1" "LightSteelBlue1")))))
+(eval-after-load "lsp"
+  '(progn
+     ;; I think this might help avoid a frame bug?
+     (plist-put lsp-signature-posframe-params :font "Menlo")
+     (advice-add 'lsp-signature-posframe :before #'dino-posframe-swap-background)))
+
+;;    (set-face-attribute 'lsp-signature-posframe nil :background "LightSteelBlue1" )
+
+;;     (advice-add 'lsp-signature-posframe :before #'dino-posframe-swap-background)
+;;     (advice-remove 'lsp-signature-posframe #'dino-posframe-swap-background)
+
+
 
 (js2r-add-keybindings-with-prefix "C-c C-m")
 
@@ -2515,17 +2706,17 @@ i.e M-x kmacro-set-counter."
   ;; ;; for syntax-checking, auto-complete, etc
   ;; (require 'tern)
   ;; (tern-mode t)
+  ;; I have now moved to deno and lsp-mode
 
   (local-set-key "\M-\C-R"  'indent-region)
   (local-set-key "\M-#"     'dino-indent-buffer)
   (local-set-key "\C-cc"    'comment-region)
-  (local-set-key "\C-c."    'tern-ac-complete)
-  ;;(local-set-key "\C-\."     'tern-ac-complete)
-  (local-set-key (kbd "C-.")  'tern-ac-complete)
-  ;; (local-set-key "\M-tab" 'tern-ac-complete)
-  ;; (local-set-key "<TAB>" 'tern-ac-complete)
-  ;;(define-key yas-minor-mode-map (kbd "<tab>") nil)
-  (local-set-key (kbd "<M-tab>") 'tern-ac-complete)
+  ;; (local-set-key "\C-c."    'tern-ac-complete)
+  ;;(local-set-key (kbd "C-.")  'tern-ac-complete)
+  ;;(local-set-key (kbd "<M-tab>") 'tern-ac-complete)
+  (local-set-key (kbd "C-.")  'company-capf)
+  (local-set-key "\C-c."    'company-capf)
+  (local-set-key (kbd "<M-tab>") 'company-capf)
   (local-set-key (kbd "TAB") 'js-indent-line)
   (local-set-key (kbd "<C-tab>") 'yas-expand)
 
@@ -2601,14 +2792,14 @@ i.e M-x kmacro-set-counter."
   (require 'smart-op) ;; for smart insertion of ++ and == and += etc
   (smart-op-mode)
 
-  (linum-on)
+  (display-line-numbers-mode)
   )
 
 (add-hook 'js-mode-hook   'dino-js-mode-fn)
 ;;(add-hook 'js2-mode-hook   'dino-js-mode-fn)
 
 ;; for {jshint, jslint, flycheck javascript-jshint} to work,
-;; the path m ust have been previously set correctly.
+;; the path must have been previously set correctly.
 
 (require 'js-mode-fixups)
 
@@ -2650,8 +2841,13 @@ i.e M-x kmacro-set-counter."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Java
 
+;; change the existing google-java-format in the builtin apheleia-formatters
+(setf (alist-get 'google-java-format apheleia-formatters)
+      '("java" "-jar" "/Users/dchiesa/dev/java/lib/google-java-format-1.17.0-all-deps.jar" "-"))
+
 (defun dino-java-mode-fn ()
-  (c-set-style "myJavaStyle")
+  (if c-buffer-is-cc-mode
+  (c-set-style "myJavaStyle"))
   (turn-on-font-lock)
   (local-set-key "\M-\C-R" 'indent-region)
   (local-set-key "\M-#"     'dino-indent-buffer)
@@ -2663,6 +2859,9 @@ i.e M-x kmacro-set-counter."
 
   ;; 20191015-1837 - better than autopair or skeleton pair
   (electric-pair-mode)
+
+  ;; 20230718-1235
+  (apheleia-mode)
 
   ;;(set (make-local-variable 'skeleton-pair) t)
   ;;(local-set-key (kbd "{") 'skeleton-pair-insert-maybe)
@@ -2684,12 +2883,45 @@ i.e M-x kmacro-set-counter."
   (local-set-key "\C-c\C-f"  'dcjava-find-wacapps-java-source-for-class-at-point)
   (local-set-key "\C-c\C-r"  'dcjava-reload-classlist)
   (local-set-key "\C-c\C-s"  'dcjava-sort-import-statements)
+
+  ;; 20230828 With apheleia-mode, the manual gformat is unnecessary. just save.
   (local-set-key "\C-c\C-g"  'dcjava-gformat-buffer)
   (dino-enable-delete-trailing-whitespace)
-  (linum-on)
+  (display-line-numbers-mode)
   )
 
 (add-hook 'java-mode-hook 'dino-java-mode-fn)
+;;(remove-hook 'java-ts-mode-hook 'dino-java-mode-fn)
+
+;; 20230828-1658
+;; treesitter mode for Java with emacs 29.1.
+;; It provides better, more reliable syntax analysis, and better highlighting.
+;;
+;; As a one-time setup thing, need to do this:
+;;   M-x treesit-install-language-grammar RET java
+;; to build the language grammar. This requires a compiler.
+;; See: https://archive.casouri.cc/note/2023/tree-sitter-in-emacs-29/index.html
+;;
+;; Some changes: the indent is no longer based on c-basic-offset.
+;; It is `java-ts-mode-indent-offset'.  So we need a different mode hook.
+;; For some reason, the java-ts-mode is no longer a cc-mode, so
+;; calling `c-set-style' will result in an error.  So I needed to change that
+;; in the java-mode hook, to check whether the mode is a cc-mode or not.
+;;
+;; You can try M-x load-library RET treesit-fold
+;; and then ‘treesit-fold-toggle’ to expand/collapse blocks.
+;;
+(defun dino-java-ts-mode-fn ()
+  (setq java-ts-mode-indent-offset 2)
+  (dino-java-mode-fn)
+  )
+
+(add-hook 'java-ts-mode-hook 'dino-java-ts-mode-fn)
+
+
+
+;;
+
 
 
 (c-add-style "myJavaStyle"
@@ -2950,18 +3182,6 @@ i.e M-x kmacro-set-counter."
 
 (require 'lorem)
 
-(defun mspl ()
-  "inserts MS-PL text at point"
-  (interactive)
-  (insert-file-contents "c:\\users\\dino\\Documents\\MS-PL.txt"))
-
-(defun bsd ()
-  "inserts New BSD text at point"
-  (interactive)
-  ;;(insert-file-contents "c:\\users\\dino\\Documents\\BSD.txt")
-  (insert-file-contents "~/Documents/License.BSD.txt")
-  )
-
 
 
 ;08.04.2003: Kai Großjohann
@@ -3012,74 +3232,7 @@ i.e M-x kmacro-set-counter."
   (shell-command "open ."))
 (global-set-key (kbd "<f8>") 'open-in-finder)
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; disable tramp?
-;;
-;; emacs file urls for SSH:
-;;     /ssh:root@localhost#10022:/opt/apigee4
-
-;; (defun dino-disable-tramp ()
-;;   "This function tries to disable tramp.
-;;
-;; It does this by doctoring the variable `file-name-handler-alist'
-;; to remove all tramp symbols in that alist. That list is used by
-;; emacs to connect to logic that handles filenames of various
-;; forms.  The list associates a regex with a function that handles
-;; filenames that match the regex.  When tramp loads, it injects
-;; pairs into that alist, so that filenames that look like URLs can
-;; be loaded via tramp magic.  Removing the tramp pairs unhooks
-;; tramp from the file name handling logic.
-;;
-;; Why would anyone want to do this?  I'll tell you: I've found
-;; tramp to be worse than useless on Windows, always turning on for
-;; reasons that are not apparent to me, providing no discernable
-;; utility, and interfering with normal, expected operation.
-;;
-;; When I use emacs to open a file that resides on a mapped
-;; drive (for example, G:\), tramp pipes in and begins trying to
-;; help.  It then messes up dired, somehow, so that I can no longer
-;; navigate in directories that are on mapped drives. Confoundingly,
-;; it also prevents me from closing buffers, including dired buffers
-;; and file buffers that are open on mapped drives. Why or how it
-;; would do this, I don't know, and I don't care to spend the time
-;; finding out. I think the basic problem is that the tramp regexes
-;; are broken, but I'm not sure why g:\ would be treated any
-;; differently than c:\.  In any case it isn't worth my time to find
-;; out.
-;;
-;; All these problems happened on Windows, but I still have weird
-;; behavior from tramp on MacOS.  I have no idea why, but it's very
-;; unpleasant and requires me to stop and restart emacs
-;; periodically, because tramp goes haywire. Keep in mind that I
-;; never purposely invoke tramp.  I suppose sometimes I fat-finger
-;; something and it causes tramp to wake up and go crazy. It
-;; perpetually generates errors complaining about tramp-ftp-method
-;; being an unknown variable. WTF? It's a scourge.
-;;
-;; Tramp is documented as providing the ability to do remote file
-;; editing, via things like rsh/rcp and ssh/scp.  That sounds really useful.
-;; Too bad it doesn't work.
-;; "
-;;   (interactive)
-;;   (let (new-alist)
-;;     (dolist (pair file-name-handler-alist)
-;;       (let ((sym (cdr pair)))
-;;         (if (string-match "^tramp-" (symbol-name sym))
-;;             (message "removing: %s" sym)
-;;           (message "keeping: %s" sym)
-;;           (setq new-alist
-;;                 (cons pair new-alist)))))
-;;     (setq file-name-handler-alist (reverse new-alist)))
-;;   (tramp-unload-tramp)) ;;; please! go away!
-;;
-;; ;; not sure this really works
-;; (eval-after-load "tramp" '(dino-disable-tramp))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -3213,7 +3366,6 @@ i.e M-x kmacro-set-counter."
 ;; ;; (load-file
 ;; ;;  "/usr/share/emacs/site-lisp/emacs-google-config/devtools/editors/emacs/google.el")
 ;; (require 'google-java-format)
-
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

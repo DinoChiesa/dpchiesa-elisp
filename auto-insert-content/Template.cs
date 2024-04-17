@@ -1,3 +1,5 @@
+@INSERTFILE(/Users/dchiesa/elisp/defaultcontent/Google-Copyright.txt)@
+//
 // @BASEFILENAME@
 // ------------------------------------------------------------------
 //
@@ -6,11 +8,9 @@
 // Author: @AUTHOR@
 // initialized on: @DATE@
 //
-// last saved: <2018-May-02 13:40:55>
+// last saved: <2023-October-05 17:52:35>
 // ------------------------------------------------------------------
 //
-@INSERTFILE(/Users/dchiesa/elisp/defaultcontent/Copyright.txt)@//
-// ------------------------------------------------------------------
 
 using System;
 using System.Reflection;

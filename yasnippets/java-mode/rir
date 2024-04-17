@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# name: random-in-range
+# key: rir
+# --
+int randomNum = ThreadLocalRandom.current().nextInt(min, max + 1);
+

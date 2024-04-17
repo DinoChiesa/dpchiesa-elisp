@@ -8,9 +8,9 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <AppName>@@BASEFILENAMELESSEXTENSION@@</AppName>
+    <AppName>@BASEFILENAMELESSEXTENSION@</AppName>
     <OutputType>Library</OutputType>
-    <ProjectGuid>{@@LISP((dino-insert-uuid))@@}</ProjectGuid>
+    <ProjectGuid>{@LISP((dino-insert-uuid))@}</ProjectGuid>
     <ProductVersion>9.0.30729</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <SignAssembly>false</SignAssembly>
@@ -68,7 +68,7 @@
 
   <!-- Specify the inputs by type and file name -->
   <ItemGroup>
-    <CSFile      Include="@@DOT@@"/>
+    <CSFile      Include="@DOT@"/>
     <CSFile      Include="BuildTimestamp.cs"/>
     <StampFile   Include="BuildTimestamp.cs"/>
   </ItemGroup>
@@ -118,7 +118,7 @@
 
   <!-- ============================================================================= -->
   <Target
-     Name="@@BASEFILENAMELESSEXTENSION@@"
+     Name="@BASEFILENAMELESSEXTENSION@"
      DependsOnTargets="RegisterAssembly;GacAssembly"
      >
   </Target>
@@ -130,7 +130,7 @@
      Name="RegisterAssembly"
      DependsOnTargets="CompileAssembly"
      >
-    <Message Text="Registering the @@BASEFILENAMELESSEXTENSION@@ assembly" />
+    <Message Text="Registering the @BASEFILENAMELESSEXTENSION@ assembly" />
 
     <Exec Command="C:\.net2.0\regasm.exe $(OutputPath)\$(AppName).dll"/>
 
@@ -144,7 +144,7 @@
      Name="GacAssembly"
      DependsOnTargets="CompileAssembly"
      >
-    <Message Text="GAC'ing the @@BASEFILENAMELESSEXTENSION@@ assembly" />
+    <Message Text="GAC'ing the @BASEFILENAMELESSEXTENSION@ assembly" />
 
     <Exec Command="c:\netsdk2.0\bin\gacutil.exe -i $(OutputPath)\$(AppName).dll"/>
 
@@ -180,4 +180,3 @@
 
 
 </Project>
-

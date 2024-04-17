@@ -1,0 +1,19 @@
+# -*- mode: snippet -*-
+# name: debounce
+# key: debounce
+# --
+
+function debounce(callback, interval) {
+  let debounceTimeoutId;
+  return function (...args) {
+    if (debounceTimeoutId) {
+      clearTimeout(debounceTimeoutId);
+    }
+    debounceTimeoutId = setTimeout(() => callback.apply(this, args), interval);
+  };
+}
+
+element.addEventListener(
+  "change",
+  debounce(theFunction, debounceInterval));
+

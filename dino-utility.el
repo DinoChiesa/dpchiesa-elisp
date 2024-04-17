@@ -55,6 +55,7 @@
 ;;(require 'cl) ; for incf
 (require 's)
 (require 'package)
+(require 'json)
 
 (defconst dino--short-filename-regex "[A-Za-z]\\S+\\.[-A-Za-z0-9_]+"
   "regexp for a filename")
@@ -598,7 +599,7 @@ filename."
 
 (defun dino-gcloud-auth-print-access-token ()
   "return output of $(gcloud auth print-access-token)"
-  (let* ((gcloud-pgm "~/Downloads/google-cloud-sdk/bin/gcloud")
+  (let* ((gcloud-pgm "~/google-cloud-sdk/bin/gcloud")
          (command-string (concat gcloud-pgm " auth print-access-token"))
          (output (replace-regexp-in-string "\n$" "" (shell-command-to-string command-string)))
          (lines (split-string output "\n")))
@@ -1379,7 +1380,25 @@ The first line is indented with INDENT-STRING."
       (insert ?< ?/ (symbol-name (xml-node-name xml)) ?>))))
 
 
-(defun jshintrc ()
+(defun dino--parent-directory (dir)
+  (unless (equal "/" dir)
+    (file-name-directory (directory-file-name dir))))
+
+(defun dino--find-file-in-tree (current-dir fname)
+  "Search for a file named FNAME upwards through the directory hierarchy, starting from CURRENT-DIR"
+  (let ((file (concat current-dir fname))
+        (parent (dino--parent-directory (expand-file-name current-dir))))
+    (if (file-exists-p file)
+        file
+      (when parent
+        (dino--find-file-in-tree parent fname)))))
+
+(defun dino-jshintrc-find ()
+  "find a jshintrc file in the cwd or in a parent."
+  (interactive)
+  (dino--find-file-in-tree default-directory ".jshintrc"))
+
+(defun dino-jshintrc-get-or-create ()
     "create a .jshintrc file in the current working directory if one does not yet exist."
   (interactive)
   (or (file-exists-p ".jshintrc")
@@ -1410,9 +1429,26 @@ The first line is indented with INDENT-STRING."
 "  \"predef\": [\n"
 "  \"Promise\"\n"
 "  ]\n"
-"}\n"
+"}\n"))))))
 
-                   ))))))
+
+(defun dino-read-globals-from-jshintrc ()
+  "read globals from jshintrc file"
+  (let ((jshintrc (dino-jshintrc-find)))
+    (if jshintrc
+        ;; The let* is required because otherwise the call to json-read-file
+        ;; will not see the previously bound values as let sets them in
+        ;; parallel...
+        (let ((json-object-type 'alist)
+               (json-array-type 'list)
+               (json-key-type 'string))
+          (let* ((json (json-read-file jshintrc))
+                 (globals (assoc "globals" json)))
+            (mapcar 'car (cdr globals))
+            ;;(mapcar 'car globals)
+            )))))
+
+
 
 
 (defun dino-buganizer-open ()

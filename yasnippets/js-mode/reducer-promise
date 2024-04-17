@@ -1,5 +1,5 @@
-# key : reducer
-# name : reducer
+# key : reducer-promise
+# name : reducer-promise
 # --
 const reducer = (promise, item) =>
     promise .then( accumulator =>

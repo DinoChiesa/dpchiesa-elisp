@@ -1,0 +1,8 @@
+# -*- mode: snippet -*-
+# key : fsexists
+# name : fs.existsSync
+# --
+let exists = fs.existsSync(src),
+    stats = exists && fs.lstatSync(src),
+    isDirectory = exists && stats.isDirectory();
+

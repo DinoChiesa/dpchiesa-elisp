@@ -1,3 +1,5 @@
+@INSERTFILE(/Users/dchiesa/elisp/defaultcontent/Google-Copyright.txt)@
+
 // @BASEFILENAME@
 // ------------------------------------------------------------------
 //
@@ -6,7 +8,7 @@
 // Author: @AUTHOR@
 // Created @DATE@
 //
-// Last saved: <2021-July-07 14:35:41>
+// Last saved: <2023-October-05 17:39:25>
 // ------------------------------------------------------------------
 //
 
@@ -17,9 +19,9 @@ import java.util.Enumeration;
 import java.util.ArrayList;
 
 public class @BASEFILENAMELESSEXTENSION@ {
-    public @BASEFILENAMELESSEXTENSION@ () {} // uncomment if wanted
+  // public @BASEFILENAMELESSEXTENSION@ () {} // uncomment if wanted
 
-    public @BASEFILENAMELESSEXTENSION@ (String[] args) {
-        @DOT@
-    }
+  public @BASEFILENAMELESSEXTENSION@ (String[] args) {
+    @DOT@
+  }
 }
