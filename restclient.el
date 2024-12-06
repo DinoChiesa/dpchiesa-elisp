@@ -7,6 +7,9 @@
 ;; Created: 01 Apr 2012
 ;; Keywords: http
 
+;; slightly modified by Dino.
+;; 2024-11-05T14:33:11
+
 ;; This file is not part of GNU Emacs.
 ;; This file is public domain software. Do what you want.
 
@@ -339,9 +342,12 @@ The buffer contains the raw HTTP response sent by the server."
           (setq vars (cons (cons name (if should-eval (restclient-eval-var value) value)) vars))))
       (restclient--unique-vars vars))))
 
-;; this function can be used to refer to a var, in an eval var decl,
-;; eg, :basicauth := (base64-encode-string (concat (restclient-var ":username") ":" (restclient-var ":pwd"))
 (defun restclient-var (name)
+  "return the value of a var in the restclient context.
+eg, :basicauth := (base64-encode-string
+                   (concat (restclient-var \":userNAME\")
+                      \":\" (restclient-var \":pwd\"))
+"
   (cdr (assoc name vars)))
 
 (defun restclient-eval-var (string)
@@ -373,7 +379,29 @@ The buffer contains the raw HTTP response sent by the server."
                (vars (restclient-find-vars-before-point))
                (url (restclient-replace-all-in-string vars url))
                (headers (restclient-replace-all-in-headers vars headers))
-               (entity (restclient-replace-all-in-string vars entity)))
+               (entity (restclient-replace-all-in-string vars entity))
+               ;; dino - modified 20241105-1500
+               ;; To compactify json optionally.
+               ;; This is necessary for some API servers. (5g Apigee portals)
+               (ctype-hdr (or
+                           (cdr (assoc "content-type" headers))
+                           (cdr (assoc "Content-Type" headers))))
+               ;; rely on a variable
+               (compact-var (cdr (assoc ":-compact-json" vars)))
+               (want-compact-json (and
+                                   ctype-hdr
+                                   compact-var
+                                   (string-match "^application/json.*" ctype-hdr)
+                                   (string-match "^\\(true\\|True\\)$" compact-var)
+                                   )))
+          (if want-compact-json
+              (setq entity
+                    (with-temp-buffer
+                      (insert entity)
+                      (goto-char (point-min))
+                      (let ((json-encoding-pretty-print nil))
+                        (json-encode (json-read))))))
+
           (apply func method url headers entity args))))))
 
 (defun restclient-copy-curl-command ()

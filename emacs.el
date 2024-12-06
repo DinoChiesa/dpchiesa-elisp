@@ -1,6 +1,6 @@
 ;;; emacs.el -- Dino's .emacs setup file.
 ;;
-;; Last saved: <2024-April-10 16:22:33>
+;; Last saved: <2024-December-06 01:51:28>
 ;;
 ;; Works with v24.5 and v25.1 of emacs.
 ;;
@@ -57,8 +57,8 @@
 (require 'package)
 (dolist (item (list
                ;; '("MELPA Stable"     . "https://stable.melpa.org/packages/")
-              '("MELPA"     . "https://melpa.org/packages/")
-              '("org"              . "http://orgmode.org/elpa/")))
+               '("MELPA"     . "https://melpa.org/packages/")
+               '("org"              . "http://orgmode.org/elpa/")))
   (add-to-list 'package-archives item))
 
 (when (< emacs-major-version 24)
@@ -91,8 +91,8 @@
  ;; 'go-autocomplete
  'go-mode
  'dart-mode
- 'js2-mode
- 'js2-refactor
+;; 'js2-mode
+;; 'js2-refactor
  'json-mode
  'logito ;; a tiny logging framework for emacs. Not sure where this is used
  'lsp-mode
@@ -108,16 +108,37 @@
  )
 
 
-    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    ;; set path correctly on MacOS, based on /etc/paths
-    (if (memq window-system '(ns mac))
-      (path-helper-setenv "PATH"))
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; set path correctly on MacOS, based on /etc/paths
+(if (memq window-system '(ns mac))
+    (path-helper-setenv "PATH"))
 
 
-;;(setenv "PATH" (concat "/usr/local/bin:" (getenv "PATH")))
-;;(setq exec-path (split-string (getenv "PATH") ":"))
-;;(add-to-list 'exec-path "/usr/local/bin")
-;;     "/usr/bin"
+;; 20241122-1947 - apheleia needs exec-path AND environment PATH to be set.
+(defun dino-maybe-add-to-exec-path (path)
+  "Add PATH to exec-path and PATH environment if it exists and is not already present."
+  (when (file-directory-p path)
+    (when (not (member path exec-path))
+      (add-to-list 'exec-path path))
+    (let ((paths (split-string (getenv "PATH") ":")))
+      (when (not (member path paths))
+        (add-to-list 'paths path)
+        (setenv "PATH"  (mapconcat 'identity paths ":"))
+        ))))
+
+;; For csslint, anything that depends on node, csharpier, and etc.
+;; --
+;; I've hard-coded the path to node here, as I am not sure how to determine
+;; where node is installed with nvm.  nvm is a shell function, so I cannot run
+;; it as a shell command. ("nvm: command not found")
+(dolist (path '("/home/dchiesa/.config/nvm/versions/node/v22.11.0/bin"
+                "/home/dchiesa/.dotnet/tools"
+                "/usr/local/bin"
+                "/usr/bin"
+                "/usr/lib/google-golang/bin"
+                "/usr/local/git/current/bin"
+                ))
+  (dino-maybe-add-to-exec-path path))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (require 'default-text-scale)
@@ -128,14 +149,30 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; The magit doc says setting this var directly is a kludge, should rely on
-;; $PATH.  but it works for me.;; (--first is from the dash.el module)
+;; $PATH.  but it works for me.
 
-(require 'dash)
-(setq magit-git-executable
-      (--first
-       (file-exists-p it)
-       '("c:/Program Files/Git/cmd/git.exe"
-          "/usr/local/git/current/bin/git")))
+;; 20241114-2251
+;; Commenting this out. This is kludgy anyway, relying on hard-coded
+;; paths. If anything it should try the path first, then revert to
+;; looking in some well-known paths for git. But really, just set the path!
+;; The latest magit does the right thing now, scanning the path.
+;;
+
+;;(require 'dash)
+;; (setq magit-git-executable
+;;       (--first ;; (--first is from the dash.el module)
+;;        (file-exists-p it)
+;;        '("c:/Program Files/Git/cmd/git.exe"
+;;           "/usr/local/git/current/bin/git")))
+
+;; An error gets triggered only on a machine with no git installed.
+;; The fix is to install git!
+(eval-after-load "magit-git"
+  '(progn
+     (if (not (boundp 'magit-git-executable))
+         (error "git executable is not bound")
+       (if (not magit-git-executable)
+           (error "git executable is not set")))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -221,26 +258,25 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; stuff for Apigee
 ;;
+;; with apigee.el in elisp/apigee/apigee.el
+;; M-x load-library RET "apigee/apigee" RET
+;;
 ;; (require 'apigee)
 ;; (setq apigee-apiproxies-home "~/dev/apiproxies/")
 
-;; with apigee.el in elisp/apigee/apigee.el
-;; M-x load-library RET "apigee/apigee" RET
-
 (eval-after-load "apigee"
   '(progn
-     ;;(debug)
-     (setcar (alist-get 'apigeecli apigee-programs-alist)
-         "~/.apigeecli/bin/apigeecli")
-     (setcar (alist-get 'apigeelint apigee-programs-alist)
-         "node ~/dev/apigeelint/cli.js")
-     (setcar (alist-get 'gcloud apigee-programs-alist)
-         "~/google-cloud-sdk/bin/gcloud")
-     (setcar (alist-get 'lint apigee-commands-alist)
-             "%apigeelint -s ./apiproxy -e TD002,TD004 -f visualstudio.js")
-     (setq apigee-environment (getenv "ENV")
-           apigee-organization (getenv "ORG"))
+     (setf (alist-get 'apigeecli apigee-programs-alist)
+           "~/.apigeecli/bin/apigeecli")
+     (setf (alist-get 'gcloud  apigee-programs-alist)
+           "/usr/bin/gcloud")
+     (setf (alist-get 'apigeelint apigee-programs-alist)
+           "node ~/apigeelint/cli.js")
+     (if (and (getenv "ENV")(getenv "ORG"))
+         (setq apigee-environment (getenv "ENV")
+               apigee-organization (getenv "ORG")))
      ))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; apheleia - clever code reformatting for multiple languages.
@@ -248,21 +284,26 @@
 ;; https://github.com/radian-software/apheleia
 ;; It runs code formatters on after-save-hook, and then resaves only if there
 ;; are changes. It preserves cursor location across these changes. Sweet.
+;; Works on java-mode js2-mode css-mode sh-mode csharp-mode...
 
 (require 'apheleia)
+
+;; ask apheleia to log info
+(setq apheleia-log-debug-info t)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; sh-mode
 (setcar (alist-get 'shfmt apheleia-formatters)
-         "~/go/bin/shfmt")
+        "~/go/bin/shfmt")
 (push '(sh-mode . shfmt) apheleia-mode-alist)
 
 (defun dino-sh-mode-fn ()
   (display-line-numbers-mode)
+  (setq sh-basic-offset 2)
   (sh-electric-here-document-mode)
   ;; 20230918-1015
   (apheleia-mode)
-)
+  )
 (add-hook 'sh-mode-hook 'dino-sh-mode-fn)
 
 
@@ -284,7 +325,7 @@
         standard-indent 2
         indent-tabs-mode t) ;; golang prefers tabs, ugh
 
-  (require 'go-autocomplete)
+;;  (require 'go-autocomplete) ;; where did this go?
 
   (local-set-key "\M-\C-R"  'indent-region)
   (local-set-key "\M-#"     'dino-indent-buffer)
@@ -297,7 +338,7 @@
         'smart-compile-compile-command-in-comments-extension-list
         ".go")))
 
-    (eval-after-load "flycheck"
+  (eval-after-load "flycheck"
     '(progn
        (add-to-list
         'flycheck-disabled-checkers 'go-build))) ;; go-gofmt?
@@ -305,18 +346,22 @@
   (local-set-key "\M-\C-R"  'indent-region)
   (local-set-key "\M-#"     'dino-indent-buffer)
 
+  ;;(linum-on) ;; marked obsolete in 29.1
   (display-line-numbers-mode)
 
   ;; 20230918-1015
   (apheleia-mode)
+  (setq apheleia-log-debug-info t)
+  (setq apheleia-remote-algorithm 'local)
 
+  ;; still need this? 20241203-0215
   (require 'goflycheck)
   (flycheck-mode 1)
 
   (add-hook 'before-save-hook
             (lambda ()
-               (save-excursion
-                 (delete-trailing-whitespace)))
+              (save-excursion
+                (delete-trailing-whitespace)))
             nil 'local)
   )
 
@@ -357,27 +402,27 @@
 ;;(setq org-reveal-root "http://cdn.jsdelivr.net/reveal.js/2.5.0/")
 ;; to use: M-x org-reveal-export-to-html
 
-(setq org-reveal-root "http://dinochiesa.github.io/rv/")
-
-(require 'org-fixups)
-(add-hook 'org-fixups/after-export-reveal-file
-          (lambda (filename)
-            (message "the file was exported to %s" expanded-filename)))
-
-(add-hook 'org-fixups/after-export-reveal-file
-          'my-copy-and-open)
-
-(defun my-copy-and-open (filename)
-  "fn to copy a file and open it in the browser."
-  (let* ((base-fname
-          (file-name-nondirectory filename))
-         (new-fname
-          (concat "/Users/dchiesa/dev/html/dpreso/" base-fname)))
-
-    (rename-file filename new-fname t)
-    (call-process "open" nil t t
-                  (concat "http://localhost:80/html/dpreso/"
-                          base-fname))))
+;; (setq org-reveal-root "http://dinochiesa.github.io/rv/")
+;;
+;; (require 'org-fixups)
+;; (add-hook 'org-fixups/after-export-reveal-file
+;;           (lambda (filename)
+;;             (message "the file was exported to %s" expanded-filename)))
+;;
+;; (add-hook 'org-fixups/after-export-reveal-file
+;;           'my-copy-and-open)
+;;
+;; (defun my-copy-and-open (filename)
+;;   "fn to copy a file and open it in the browser."
+;;   (let* ((base-fname
+;;           (file-name-nondirectory filename))
+;;          (new-fname
+;;           (concat "/Users/dchiesa/dev/html/dpreso/" base-fname)))
+;;
+;;     (rename-file filename new-fname t)
+;;     (call-process "open" nil t t
+;;                   (concat "http://localhost:80/html/dpreso/"
+;;                           base-fname))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -460,12 +505,12 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Word-count minor mode
 (autoload 'word-count-mode "word-count"
-          "Minor mode to count words." t nil)
+  "Minor mode to count words." t nil)
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Global key bindings
-;
+                                        ;
 (global-set-key "\C-xw" 'dino-fixup-linefeeds)
 (global-set-key "\C-cg" 'httpget)
 (global-set-key "\C-cu" 'dino-insert-uuid)
@@ -492,7 +537,7 @@
 (global-set-key "\C-xE"     'smarter-compile-run)
 (global-set-key "\C-x\C-g"  'auto-fill-mode)
 (global-set-key "\C-x\C-n"  'next-error)
-;(global-set-key "\C-xt"     'dino-toggle-truncation)
+                                        ;(global-set-key "\C-xt"     'dino-toggle-truncation)
 (global-set-key "\M-\C-y"   'yank-pop)
 (global-set-key "\M-g"      'goto-line)
 (global-set-key "\M- "      'set-mark-command)
@@ -600,10 +645,10 @@
 ;;   (set-default-font "Inconsolata-11"))
 
 
-;; initial frame will be 128 wide x 68 high, also specify frame position.
+;; initial frame will be 128 wide x 72 high, also specify frame position.
 (setq initial-frame-alist
-      '( (top . 80) (left . 840)
-         (width . 128) (height . 68)
+      '( (top . 220) (left . 840)
+         (width . 128) (height . 72)
          )
       )
 
@@ -616,8 +661,8 @@
 
 (if (file-exists-p abbrev-file-name)
     (quietly-read-abbrev-file))
-  (setq save-abbrevs t)              ;; save abbrevs when files are saved
-                                     ;; you will be asked before the abbreviations are saved
+(setq save-abbrevs t)              ;; save abbrevs when files are saved
+;; you will be asked before the abbreviations are saved
 
 
 (autoload 'csharp-mode "csharp-mode" "Major mode for editing C# code." t)
@@ -635,6 +680,7 @@
   (turn-on-font-lock)
   ;;; minor-mode
   ;;(hs-minor-mode 1)
+  ;;(linum-on) ;; marked obsolete in 29.1
   (display-line-numbers-mode)
   ;; why I have to re-set this key is baffling to me.
   ;; and this does not seem to work...
@@ -659,7 +705,7 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; adjustment to mode mappings
-;
+                                        ;
 ;; NB: In the regexp's, the trailing \\' represents "end of string".
 ;; The $ represents the zero-width place before newline.  They are
 ;; equivalent unless there is a filename with a new line in it (not
@@ -689,8 +735,8 @@
          ("\\.md$"                            . markdown-mode)
          ("\\.dart$"                          . dart-mode)
          ("\\.el$"                            . emacs-lisp-mode)
-         ("\\.js$"                            . js2-mode)
-         ("\\.gs$"                            . js2-mode)            ;; google script
+         ("\\.js$"                            . js-mode)
+         ("\\.gs$"                            . js-mode)            ;; google script
          ;;("\\.\\(js\\|gs\\|jsi\\)$"           . js2-mode)
          ("\\.\\(avsc\\)$"                    . json-mode)           ;; avro schema
          ("\\.txt$"                           . text-mode)
@@ -712,17 +758,17 @@
 
 ;; replace all html-mode in this alist with web-mode, which is more betta.
 (mapc
-     (lambda (pair)
-       (if (eq (cdr pair) 'html-mode)
-           (setcdr pair 'web-mode)))
-     auto-mode-alist)
+ (lambda (pair)
+   (if (eq (cdr pair) 'html-mode)
+       (setcdr pair 'web-mode)))
+ auto-mode-alist)
 
 ;; 20230828-1703 replace java-mode with java-ts-mode
 (mapc
-     (lambda (pair)
-       (if (eq (cdr pair) 'java-mode)
-           (setcdr pair 'java-ts-mode)))
-     auto-mode-alist)
+ (lambda (pair)
+   (if (eq (cdr pair) 'java-mode)
+       (setcdr pair 'java-ts-mode)))
+ auto-mode-alist)
 
 
 ;;;; Keep this snip !
@@ -771,25 +817,25 @@
 ;; If so, just run 'gist-list' and retry the gist-buffer.
 (eval-after-load "gist"
   '(progn
-;; note that we added the DESCRIPTION argument
-(defun gist-region-with-description (begin end &optional description private callback)
-  "Post the current region as a new paste at gist.github.com
+     ;; note that we added the DESCRIPTION argument
+     (defun gist-region-with-description (begin end &optional description private callback)
+       "Post the current region as a new paste at gist.github.com
 Copies the URL into the kill ring.
 
 With a prefix argument, makes a private paste."
-  (interactive "r\nsGist Description: \nP") ;; we handle the prompt here!
-  (let* ((file (or (buffer-file-name) (buffer-name)))
-         (name (file-name-nondirectory file))
-         (ext (or (cdr (assoc major-mode gist-supported-modes-alist))
-                  (file-name-extension file)
-                  "txt"))
-         (fname (concat (file-name-sans-extension name) "." ext))
-         (files (list
-                 (gh-gist-gist-file "file"
-                                    :filename fname
-                                    :content (buffer-substring begin end)))))
-    ;; finally we use our new arg to specify the description in the internal call
-    (gist-internal-new files private description callback)))
+       (interactive "r\nsGist Description: \nP") ;; we handle the prompt here!
+       (let* ((file (or (buffer-file-name) (buffer-name)))
+              (name (file-name-nondirectory file))
+              (ext (or (cdr (assoc major-mode gist-supported-modes-alist))
+                       (file-name-extension file)
+                       "txt"))
+              (fname (concat (file-name-sans-extension name) "." ext))
+              (files (list
+                      (gh-gist-gist-file "file"
+                                         :filename fname
+                                         :content (buffer-substring begin end)))))
+         ;; finally we use our new arg to specify the description in the internal call
+         (gist-internal-new files private description callback)))
      ))
 
 ;; (defun dino-add-user-agent (old-function &rest arguments)
@@ -845,6 +891,7 @@ With a prefix argument, makes a private paste."
   (interactive)
   (turn-on-font-lock)
   (turn-on-auto-revert-mode)
+  ;;(linum-on) ;; marked obsolete in 29.1
   (display-line-numbers-mode)
   (yaml-pretty-mode)
   ;;(make-local-variable 'indent-tabs-mode)
@@ -861,6 +908,7 @@ With a prefix argument, makes a private paste."
   (local-set-key "\M-\C-R"  'indent-region)
   (turn-on-auto-revert-mode)
   (setq typescript-indent-level 2)
+  ;;(linum-on) ;; marked obsolete in 29.1
   (display-line-numbers-mode)
   (auto-fill-mode -1)
   )
@@ -901,6 +949,7 @@ With a prefix argument, makes a private paste."
   (electric-pair-mode 1)
   (require 'hideshow)
   (hs-minor-mode t)
+  ;;(linum-on) ;; marked obsolete in 29.1
   (display-line-numbers-mode)
   (dino-enable-delete-trailing-whitespace)
   )
@@ -963,24 +1012,26 @@ With a prefix argument, makes a private paste."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CSharp Code Completion
 
-(add-to-list 'load-path (file-name-as-directory "~/elisp/cscomp"))
-
-(autoload 'cscomp-complete-at-point      "csharp-completion"  "code-completion for C#" t)
-(autoload 'cscomp-complete-at-point-menu "csharp-completion"  "code-completion for C#" t)
-
-(eval-after-load "csharp-completion"
-  '(progn
-     (setq cscomp-assembly-search-paths
-      (list "c:\\.net2.0"
-            "c:\\.net3.0RA" ;; speech, WPF, WCF, UIAutomation
-            ;;"c:\\.net3.5" -- not necessary, there are no DLLs there
-            "c:\\Program Files (x86)\\Microsoft ASP.NET\\ASP.NET MVC 2\\Assemblies"             ;; for ASPNET MVC2
-            "c:\\.net3.5ra"  ;; Linq, System.ServiceModel.Web, etc
-            "c:\\users\\dino\\dev\\DotNet"  ;; for ICSharpCode.NRefactory.dll, etc
-            "c:\\users\\dino\\bin"  ;; for Ionic.Zip.dll
-            "c:\\Program Files (x86)\\Microsoft WCF REST\\WCF REST Starter Kit Preview 2\\Assemblies"
-            ))
-     ))
+;; 20241120-0112
+;; commenting out this stuff. Not sure it's reliable.
+;; (add-to-list 'load-path (file-name-as-directory "~/elisp/cscomp"))
+;;
+;; (autoload 'cscomp-complete-at-point      "csharp-completion"  "code-completion for C#" t)
+;; (autoload 'cscomp-complete-at-point-menu "csharp-completion"  "code-completion for C#" t)
+;;
+;; (eval-after-load "csharp-completion"
+;;   '(progn
+;;      (setq cscomp-assembly-search-paths
+;;            (list "c:\\.net2.0"
+;;                  "c:\\.net3.0RA" ;; speech, WPF, WCF, UIAutomation
+;;                  ;;"c:\\.net3.5" -- not necessary, there are no DLLs there
+;;                  "c:\\Program Files (x86)\\Microsoft ASP.NET\\ASP.NET MVC 2\\Assemblies"             ;; for ASPNET MVC2
+;;                  "c:\\.net3.5ra"  ;; Linq, System.ServiceModel.Web, etc
+;;                  "c:\\users\\dino\\dev\\DotNet"  ;; for ICSharpCode.NRefactory.dll, etc
+;;                  "c:\\users\\dino\\bin"  ;; for Ionic.Zip.dll
+;;                  "c:\\Program Files (x86)\\Microsoft WCF REST\\WCF REST Starter Kit Preview 2\\Assemblies"
+;;                  ))
+;;      ))
 
 ;;TODO: fix this
 ;; (csde-complete-load-additional-assemblies
@@ -1040,29 +1091,32 @@ With a prefix argument, makes a private paste."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CSS mode
 
+
 ;;(require 'css-mode)
 (autoload 'css-mode "css-mode" "Mode for editing Cascading Stylesheets." t)
 
-(push '(prettier-css-dino .
-        ("/usr/local/bin/prettier"
-         "--stdin-filepath" filepath "--parser=css"))
-      apheleia-formatters)
-
-(push '(css-mode . prettier-css-dino) apheleia-mode-alist)
-
 ;; Overwrite existing scss-stylelint checker to not use --syntax
 (flycheck-define-checker scss-stylelint
-  "A SCSS syntax and style checker using stylelint.
+   "A SCSS syntax and style checker using stylelint.
 
-See URL `http://stylelint.io/'."
-  :command ("stylelint"
-            (eval flycheck-stylelint-args)
-            ;; "--syntax" "scss"
-            (option-flag "--quiet" flycheck-stylelint-quiet)
-            (config-file "--config" flycheck-stylelintrc))
-  :standard-input t
-  :error-parser flycheck-parse-stylelint
-  :modes (scss-mode))
+ See URL `http://stylelint.io/'."
+   :command ("stylelint"
+             (eval flycheck-stylelint-args)
+             ;; "--syntax" "scss"
+             (option-flag "--quiet" flycheck-stylelint-quiet)
+             (config-file "--config" flycheck-stylelintrc))
+   :standard-input t
+   :error-parser flycheck-parse-stylelint
+   :modes (scss-mode))
+
+;; (push '(prettier-css-dino .
+;;         ("/usr/local/bin/prettier"
+;;          "--stdin-filepath" filepath "--parser=css"))
+;;       apheleia-formatters)
+;;
+;; (push '(css-mode . prettier-css-dino) apheleia-mode-alist)
+
+(setf (alist-get 'css-mode apheleia-mode-alist) 'prettier-css)
 
 (defun dino-css-mode-fn ()
   "My hook for CSS mode"
@@ -1075,8 +1129,6 @@ See URL `http://stylelint.io/'."
   (local-set-key "\C-c\C-c" 'comment-region)
 
   (turn-on-auto-revert-mode)
-  (display-line-numbers-mode)
-  (apheleia-mode)
 
   ;; use autopair for curlies, parens, square brackets.
   ;; electric-pair-mode works better than autopair.el in 24.4,
@@ -1094,45 +1146,47 @@ See URL `http://stylelint.io/'."
   ;; make auto-complete start only after 2 chars
   (setq ac-auto-start 2)  ;;or 3?
 
-  (require 'flycheck)
-  (flycheck-mode)
+  (apheleia-mode)
+
+  ;;(require 'csslint)
+
 
   ;; to install the external checkers:
   ;; sudo npm install -g csslint
   ;; sudo npm install -g stylelint stylelint-config-standard stylelint-scss
+
+  (require 'flycheck)
+  (flycheck-mode)
   (flycheck-select-checker
-   (if (string= mode-name "SCSS") 'scss-stylelint 'css-csslint))
+   (if (string= mode-name "SCSS") 'scss-lint 'css-csslint))
 
   (add-hook 'before-save-hook
             (lambda ()
-               (save-excursion
-                 (delete-trailing-whitespace)))
+              (save-excursion
+                (delete-trailing-whitespace)))
             nil 'local)
-
-  ;; rainbow-mode is no longer needed as of emacs 26.1. css-mode now colorizes
-  ;; color expressions automatically.
-  ;; ============================================
-  ;; ;; display CSS colors in color
-  ;; ;; (require 'rainbow-mode)
-  ;; ;; (rainbow-mode)
 
   (display-line-numbers-mode)
 
   ;; "no tabs" -- use only spaces
   ;;(make-local-variable 'indent-tabs-mode)
-  (setq indent-tabs-mode nil))
+  (setq indent-tabs-mode nil) )
 
 (add-hook 'css-mode-hook 'dino-css-mode-fn)
 
 
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; auto-insert - 20231005-1717
+;; auto-insert - 20241206-0142
+;;
 
 (auto-insert-mode 1);; global minor mode
 (setq auto-insert-query nil) ;; no prompt before auto-insertion:
 (setq auto-insert-directory "~/elisp/auto-insert-content")
 
 (require 'auto-insert-plus)
+
 
 ;; specify the template to use for various filename regexi:
 (setq my-auto-insert-alist
@@ -1173,7 +1227,6 @@ See URL `http://stylelint.io/'."
 (setq auto-insert-alist
       (aip/fixup-auto-insert-alist my-auto-insert-alist))
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; configure external utilities
 
@@ -1199,12 +1252,12 @@ See URL `http://stylelint.io/'."
 ;;
 
 (setq
-  time-stamp-active t          ; do enable time-stamps
-  ;; time-stamp-line-limit 34     ; check first N buffer lines for Time-stamp: <>
-  ;; example: Tuesday, July 15, 2008  10:59:09  (by dinoch)
-  ;;time-stamp-format "%:a, %:b %02d, %Y  %02H:%02M:%02S %Z (by %u)") ; date format
-  ;;time-stamp-format "%Y-%:b-%02d %02H:%02M:%02S" ; date format
-  time-stamp-pattern "34/\\(\\(L\\|l\\)ast\\( \\|-\\)\\(\\(S\\|s\\)aved\\|\\(M\\|m\\)odified\\|\\(U\\|u\\)pdated\\)\\|Time-stamp\\) *: <%Y-%:b-%02d %02H:%02M:%02S>")
+ time-stamp-active t          ; do enable time-stamps
+ ;; time-stamp-line-limit 34     ; check first N buffer lines for Time-stamp: <>
+ ;; example: Tuesday, July 15, 2008  10:59:09  (by dinoch)
+ ;;time-stamp-format "%:a, %:b %02d, %Y  %02H:%02M:%02S %Z (by %u)") ; date format
+ ;;time-stamp-format "%Y-%:b-%02d %02H:%02M:%02S" ; date format
+ time-stamp-pattern "34/\\(\\(L\\|l\\)ast\\( \\|-\\)\\(\\(S\\|s\\)aved\\|\\(M\\|m\\)odified\\|\\(U\\|u\\)pdated\\)\\|Time-stamp\\) *: <%Y-%:b-%02d %02H:%02M:%02S>")
 
 ;; can also add this to source code: // (set-variable time-stamp-format "%Y-%:b-%02d %02H:%02M:%02S")
 
@@ -1330,13 +1383,13 @@ just auto-corrects on common mis-spellings by me."
 (defun dino-enable-delete-trailing-whitespace ()
   "remove trailing whitespace"
   (interactive)
-    ;; remove trailing whitespace in C files
-    ;; http://stackoverflow.com/questions/1931784
-    ;;(add-hook 'write-contents-functions 'dino-delete-trailing-whitespace)
+  ;; remove trailing whitespace in C files
+  ;; http://stackoverflow.com/questions/1931784
+  ;;(add-hook 'write-contents-functions 'dino-delete-trailing-whitespace)
   (add-hook 'before-save-hook
             (lambda ()
-               (save-excursion
-                 (delete-trailing-whitespace)))
+              (save-excursion
+                (delete-trailing-whitespace)))
             nil 'local))
 
 
@@ -1378,8 +1431,8 @@ just auto-corrects on common mis-spellings by me."
     ;;(add-hook 'write-contents-functions 'dino-delete-trailing-whitespace)
     (add-hook 'before-save-hook
               (lambda ()
-                 (save-excursion
-                   (delete-trailing-whitespace)))
+                (save-excursion
+                  (delete-trailing-whitespace)))
               nil 'local)
 
     (message "dino-c-mode-common-hook-fn: done."))))
@@ -1478,36 +1531,36 @@ just auto-corrects on common mis-spellings by me."
     colon.
 
     "
-      (let (start search-limit found)
-        ;; determine what lines to look in
-        (save-excursion
-          (save-restriction
-            (widen)
-            (cond ((> line-limit 0)
-                   (goto-char (setq start (point-min)))
-                   (forward-line line-limit)
-                   (setq search-limit (point)))
-                  ((< line-limit 0)
-                   (goto-char (setq search-limit (point-max)))
-                   (forward-line line-limit)
-                   (setq start (point)))
-                  (t                        ;0 => no limit (use with care!)
-                   (setq start (point-min))
-                   (setq search-limit (point-max))))))
+  (let (start search-limit found)
+    ;; determine what lines to look in
+    (save-excursion
+      (save-restriction
+        (widen)
+        (cond ((> line-limit 0)
+               (goto-char (setq start (point-min)))
+               (forward-line line-limit)
+               (setq search-limit (point)))
+              ((< line-limit 0)
+               (goto-char (setq search-limit (point-max)))
+               (forward-line line-limit)
+               (setq start (point)))
+              (t                        ;0 => no limit (use with care!)
+               (setq start (point-min))
+               (setq search-limit (point-max))))))
 
-        ;; look in those lines
-        (save-excursion
-          (save-restriction
-            (widen)
-            (let ((re-string
-                   (concat "\\b" marker-string "[ \t]*:[ \t]*\\(.+\\)$")))
-              (if (and start
-                       (< (goto-char start) search-limit)
-                       (re-search-forward re-string search-limit 'move))
+    ;; look in those lines
+    (save-excursion
+      (save-restriction
+        (widen)
+        (let ((re-string
+               (concat "\\b" marker-string "[ \t]*:[ \t]*\\(.+\\)$")))
+          (if (and start
+                   (< (goto-char start) search-limit)
+                   (re-search-forward re-string search-limit 'move))
 
-                  (buffer-substring-no-properties
-                   (match-beginning 1)
-                   (match-end 1))))))))
+              (buffer-substring-no-properties
+               (match-beginning 1)
+               (match-end 1))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -1692,13 +1745,13 @@ just auto-corrects on common mis-spellings by me."
 
 (require 'protobuf-mode)
 (defconst my-protobuf-style
-   '((c-basic-offset . 2)
-     (indent-tabs-mode . nil)))
+  '((c-basic-offset . 2)
+    (indent-tabs-mode . nil)))
 (defun dino-protobuf-mode-hook-fn ()
   "my mode hook for protobuf-mode"
-         (local-set-key "\M-\C-R"  'indent-region)
-         (local-set-key "\M-#"     'dino-indent-buffer)
-         (local-set-key "\C-c\C-w" 'compare-windows)
+  (local-set-key "\M-\C-R"  'indent-region)
+  (local-set-key "\M-#"     'dino-indent-buffer)
+  (local-set-key "\C-c\C-w" 'compare-windows)
   (display-line-numbers-mode)
 
   (c-add-style "my-style" my-protobuf-style t)
@@ -1725,7 +1778,7 @@ just auto-corrects on common mis-spellings by me."
                        (class-close           . 0)
                        (inclass               . +)
                        (block-open            . 0)  ;; eg, open a block under a function name or if stmt;
-                                                    ;; want this to be flush with prev line.
+                       ;; want this to be flush with prev line.
                        (arglist-cont          . +)
                        (substatement-open     . 0)  ;; I think this is for a try {} or if{} or etc. why this is not block open, I don't know!
                        (defun-open            . 0)  ;; method defn? (but no!)
@@ -1953,7 +2006,10 @@ again, I haven't see that as a problem."
         hs-special-modes-alist))
 
 
-
+(push '(csharpier .
+                  ("/home/dchiesa/.dotnet/tools/dotnet-csharpier"))
+      apheleia-formatters)
+(push '(csharp-mode . csharpier) apheleia-mode-alist)
 
 (defun dino-csharp-mode-fn ()
   "function that runs when csharp-mode is initialized for a buffer."
@@ -1961,6 +2017,7 @@ again, I haven't see that as a problem."
          (turn-on-font-lock)
          (c-set-style "myC#Style")
          (setq c-basic-offset 2) ;; width of one indent level
+         (apheleia-mode)
          (message "setting local key bindings....")
 
          (local-set-key "\M-\C-R"  'indent-region)
@@ -2009,7 +2066,7 @@ again, I haven't see that as a problem."
 
          (require 'flycheck)
          (flycheck-mode)
-;;         (flycheck-select-checker 'csharp)
+         ;;         (flycheck-select-checker 'csharp)
 
          ;; for hide/show support
          (hs-minor-mode 1)
@@ -2027,8 +2084,8 @@ again, I haven't see that as a problem."
          ;; (setting this variable automatically makes it local)
          (setq indent-tabs-mode nil)
 
-         ;; ;; C# code completion
-         (require 'csharp-completion)
+         ;; ;; dino's C# code completion
+         ;;(require 'csharp-completion)
          ;; ;;(csharp-analysis-get-analysis)
 
          ;; the imenu stuff doesn't perform well; impractical
@@ -2051,9 +2108,7 @@ again, I haven't see that as a problem."
 
          (display-line-numbers-mode)
 
-         (require 'rfringe)
          (message "dino-csharp-mode-fn: done.")
-
          )))
 
 
@@ -2061,7 +2116,6 @@ again, I haven't see that as a problem."
 ;; (defun ac-csharp-mode-setup ()
 ;;   (setq ac-sources (list 'ac-source-csharp)))
 ;; (add-hook 'csharp-mode-hook 'ac-csharp-mode-setup)
-
 
 
 (eval-after-load "csharp-mode"
@@ -2173,12 +2227,12 @@ again, I haven't see that as a problem."
 
 Does not consider word syntax tables.
 "
- (interactive)
- (let (pt)
-   (skip-chars-backward "_A-Za-z0-9")
-   (setq pt (point))
-   (skip-chars-forward "_A-Za-z0-9")
-   (set-mark pt)))
+  (interactive)
+  (let (pt)
+    (skip-chars-backward "_A-Za-z0-9")
+    (setq pt (point))
+    (skip-chars-forward "_A-Za-z0-9")
+    (set-mark pt)))
 
 
 (defun un-camelcase-word-at-point ()
@@ -2313,15 +2367,15 @@ Does not consider word syntax tables.
 ;; XML (nxml-mode)
 ;;
 (push '(dino-xmlpretty .
-        ("java" "-jar"
-         "/Users/dchiesa/dev/java/XmlPretty/target/com.google.dchiesa-xml-prettifier-20230725.jar"
-         "-"))
+                       ("java" "-jar"
+                        "/Users/dchiesa/dev/java/XmlPretty/target/com.google.dchiesa-xml-prettifier-20230725.jar"
+                        "-"))
       apheleia-formatters)
 
 (push '(xml-prettier .
-        ("/Users/dchiesa/dev/java/XmlPretty/node_modules/.bin/prettier"
-         "--config" "/Users/dchiesa/dev/java/XmlPretty/prettier-config.json"
-         "--stdin-filepath" "foo.xml"))
+                     ("/Users/dchiesa/dev/java/XmlPretty/node_modules/.bin/prettier"
+                      "--config" "/Users/dchiesa/dev/java/XmlPretty/prettier-config.json"
+                      "--stdin-filepath" "foo.xml"))
       apheleia-formatters)
 
 
@@ -2345,6 +2399,7 @@ Does not consider word syntax tables.
   ;; for hide/show support
   (hs-minor-mode 1)
   (setq hs-isearch-open t)
+  ;;(linum-on) ;; marked obsolete in 29.1
   (display-line-numbers-mode)
   (local-set-key "\M-\C-R"  'indent-region)
   (local-set-key "\C-cn"    'sgml-name-char) ;; inserts entity ref of pressed char
@@ -2378,8 +2433,8 @@ Does not consider word syntax tables.
 
   (add-hook 'before-save-hook
             (lambda ()
-               (save-excursion
-                 (delete-trailing-whitespace)))
+              (save-excursion
+                (delete-trailing-whitespace)))
             nil 'local)
 
   ;; when `nxml-slash-auto-complete-flag' is non-nil, get completion
@@ -2435,7 +2490,7 @@ Does not consider word syntax tables.
   (let ((extension (file-name-extension buffer-file-name))
         (extensions-that-get-highlighting '("md" "css" "java" "js" "go") ))
     (if (member "go" extensions-that-get-highlighting)
-          (hc-highlight-trailing-whitespace))))
+        (hc-highlight-trailing-whitespace))))
 
 (add-hook 'find-file-hook 'dino-enable-highlight-trailing-ws-based-on-extension)
 
@@ -2457,14 +2512,15 @@ Does not consider word syntax tables.
   (setq indent-tabs-mode nil)
   (hl-line-mode 1)
   (turn-on-auto-revert-mode)
+  ;;(linum-on) ;; marked obsolete in 29.1
   (display-line-numbers-mode)
 
   (add-hook 'before-save-hook
             (lambda ()
-               (save-excursion
-                 (delete-trailing-whitespace)))
+              (save-excursion
+                (delete-trailing-whitespace)))
             nil 'local)
-)
+  )
 
 
 (add-hook 'emacs-lisp-mode-hook 'dino-elisp-mode-fn)
@@ -2489,6 +2545,7 @@ Does not consider word syntax tables.
   (local-set-key "\C-c\C-w"  'compare-windows)
 
   (set (make-local-variable 'indent-tabs-mode) nil)
+  ;;(linum-on) ;; marked obsolete in 29.1
   (display-line-numbers-mode)
 
   ;; Use autopair for curlies, parens, square brackets.
@@ -2500,7 +2557,6 @@ Does not consider word syntax tables.
 
   ;; ya-snippet
   (yas-minor-mode-on)
-
   (show-paren-mode 1))
 
 (add-hook 'python-mode-hook 'dino-python-mode-fn)
@@ -2547,24 +2603,10 @@ i.e M-x kmacro-set-counter."
 ;;(eval-after-load 'js2-mode '(require 'setup-js2-mode))
 ;; Better imenu
 (add-hook 'js2-mode-hook #'js2-imenu-extras-mode)
-
-(push '(prettier-js-dino .
-        ("/usr/local/bin/prettier"
-         "--stdin-filepath" filepath "--parser=babel-flow"
-         "--trailing-comma" "none"
-         (apheleia-formatters-js-indent "--use-tabs" "--tab-width")))
-      apheleia-formatters)
-
-(push '(js-mode . prettier-js-dino) apheleia-mode-alist)
-
 (defun dino-js2-mode-fn ()
   ;;(tern-mode)
   (auto-complete-mode 0) ;; turn off auto-complete-mode
   (lsp)
-  ;; you automatically get deno-lint with lsp mode.
-  ;; The linter is not configurable.  You can turn it on or turn it off.
-  ;; To turn it off:
-  ;; (setq lsp-clients-deno-enable-lint nil)
 
   ;; lsp, when configured to use posframe for signature display, uses the
   ;; background and foreground from the lsp-signature-posframe face to display
@@ -2573,16 +2615,12 @@ i.e M-x kmacro-set-counter."
   ;; (set-face-attribute 'lsp-signature-posframe t :background "LightSteelBlue1")
   ;; (face-attribute 'lsp-signature-posframe :background nil t)
   ;; (face-attribute 'lsp-signature-posframe :foreground nil t)
-
-  ;; 20230918-1015
-  (apheleia-mode)
-
   (company-mode)
   (company-box-mode)
   (define-key company-mode-map (kbd "M-<tab>") 'company-complete)
   (setq company-minimum-prefix-length 2
-   lsp-signature-function 'lsp-signature-posframe
-   js2-basic-offset 2)
+        lsp-signature-function 'lsp-signature-posframe
+        js2-basic-offset 2)
   )
 (add-hook 'js2-mode-hook #'dino-js2-mode-fn)
 
@@ -2595,8 +2633,8 @@ i.e M-x kmacro-set-counter."
      (advice-add 'js2-apply-jslint-globals :after #'dino-js2-apply-globals-from-jshintrc)))
 
 
-(defun dino-posframe-swap-background (str)
 
+(defun dino-posframe-swap-background (str)
   "HACK 20230627 the posframe package exposes an emacs bug, I
 think. After displaying a frame, as with the information from an
 LSP server showing the function definition, the background and
@@ -2691,8 +2729,16 @@ color ready for next time.
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; JavaScript - js-mode (old?)
+;; JavaScript - js-mode (old? or maybe now current?)
 ;;(autoload 'js-mode "js" nil t)  ;; 20220426-2016
+
+;; (setf (alist-get 'prettier-javascript apheleia-formatters)
+;;        '("apheleia-npx" "prettier"
+;;          "--stdin-filepath" filepath "--parser=babel-flow"
+;;          (apheleia-formatters-js-indent "--use-tabs" "--tab-width")))
+
+(push '(js-mode . prettier-javascript) apheleia-mode-alist)
+
 (defun dino-js-mode-fn ()
   ;; https://stackoverflow.com/a/15239704/48082
   (set (make-local-variable 'font-lock-multiline) t)
@@ -2706,17 +2752,17 @@ color ready for next time.
   ;; ;; for syntax-checking, auto-complete, etc
   ;; (require 'tern)
   ;; (tern-mode t)
-  ;; I have now moved to deno and lsp-mode
 
   (local-set-key "\M-\C-R"  'indent-region)
   (local-set-key "\M-#"     'dino-indent-buffer)
   (local-set-key "\C-cc"    'comment-region)
-  ;; (local-set-key "\C-c."    'tern-ac-complete)
-  ;;(local-set-key (kbd "C-.")  'tern-ac-complete)
-  ;;(local-set-key (kbd "<M-tab>") 'tern-ac-complete)
-  (local-set-key (kbd "C-.")  'company-capf)
-  (local-set-key "\C-c."    'company-capf)
-  (local-set-key (kbd "<M-tab>") 'company-capf)
+  (local-set-key "\C-c."    'tern-ac-complete)
+  ;;(local-set-key "\C-\."     'tern-ac-complete)
+  (local-set-key (kbd "C-.")  'tern-ac-complete)
+  ;; (local-set-key "\M-tab" 'tern-ac-complete)
+  ;; (local-set-key "<TAB>" 'tern-ac-complete)
+  ;;(define-key yas-minor-mode-map (kbd "<tab>") nil)
+  (local-set-key (kbd "<M-tab>") 'tern-ac-complete)
   (local-set-key (kbd "TAB") 'js-indent-line)
   (local-set-key (kbd "<C-tab>") 'yas-expand)
 
@@ -2777,14 +2823,14 @@ color ready for next time.
   ;; always delete trailing whitespace
   (add-hook 'before-save-hook
             (lambda ()
-               (save-excursion
-                 (delete-trailing-whitespace)))
+              (save-excursion
+                (delete-trailing-whitespace)))
             nil 'local)
 
   ;;(dino-enable-delete-trailing-whitespace)
 
-  (require 'imenu)
-  (imenu-add-menubar-index)
+  ;;(require 'imenu)
+  ;;(imenu-add-menubar-index)
 
   (require 'hideshow)
   (hs-minor-mode t)
@@ -2792,14 +2838,20 @@ color ready for next time.
   (require 'smart-op) ;; for smart insertion of ++ and == and += etc
   (smart-op-mode)
 
+  ;;(linum-on) ;; marked obsolete in 29.1
   (display-line-numbers-mode)
+
+  ;; do prettifying locally
+  (setq apheleia-remote-algorithm 'local)
+  ;; ask apheleia to log info
+  (setq apheleia-log-debug-info t)
   )
 
 (add-hook 'js-mode-hook   'dino-js-mode-fn)
 ;;(add-hook 'js2-mode-hook   'dino-js-mode-fn)
 
 ;; for {jshint, jslint, flycheck javascript-jshint} to work,
-;; the path must have been previously set correctly.
+;; the path m ust have been previously set correctly.
 
 (require 'js-mode-fixups)
 
@@ -2841,13 +2893,13 @@ color ready for next time.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Java
 
-;; change the existing google-java-format in the builtin apheleia-formatters
+;; change the existing google-java-format in the builtin aphelia-formatters
 (setf (alist-get 'google-java-format apheleia-formatters)
-      '("java" "-jar" "/Users/dchiesa/dev/java/lib/google-java-format-1.17.0-all-deps.jar" "-"))
+      '("java" "-jar" "/home/dchiesa/bin/google-java-format-1.17.0-all-deps.jar" "-"))
 
 (defun dino-java-mode-fn ()
   (if c-buffer-is-cc-mode
-  (c-set-style "myJavaStyle"))
+      (c-set-style "myJavaStyle"))
   (turn-on-font-lock)
   (local-set-key "\M-\C-R" 'indent-region)
   (local-set-key "\M-#"     'dino-indent-buffer)
@@ -2887,6 +2939,7 @@ color ready for next time.
   ;; 20230828 With apheleia-mode, the manual gformat is unnecessary. just save.
   (local-set-key "\C-c\C-g"  'dcjava-gformat-buffer)
   (dino-enable-delete-trailing-whitespace)
+  ;;(linum-on) ;; marked obsolete in 29.1
   (display-line-numbers-mode)
   )
 
@@ -3183,8 +3236,7 @@ color ready for next time.
 (require 'lorem)
 
 
-
-;08.04.2003: Kai Großjohann
+                                        ;08.04.2003: Kai Großjohann
 (defun increment-number-at-point (amount)
   "Increment number at point by given AMOUNT."
   (interactive "NIncrement by: ")
@@ -3215,7 +3267,7 @@ color ready for next time.
     (setq totals (sort totals (lambda (x y) (> (cadr x) (cadr y)))))
     (with-output-to-temp-buffer "Buffer mode histogram"
       (princ (format "%d buffers open, in %d distinct modes\n\n"
-                      total-buffers (length totals)))
+                     total-buffers (length totals)))
       (dolist (item totals)
         (let
             ((key (car item))
@@ -3232,7 +3284,133 @@ color ready for next time.
   (shell-command "open ."))
 (global-set-key (kbd "<f8>") 'open-in-finder)
 
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; disable tramp?
+;;
+;; emacs file urls for SSH:
+;;     /ssh:root@localhost#10022:/opt/apigee4
+
+;; (defun dino-disable-tramp ()
+;;   "This function tries to disable tramp.
+;;
+;; It does this by doctoring the variable `file-name-handler-alist'
+;; to remove all tramp symbols in that alist. That list is used by
+;; emacs to connect to logic that handles filenames of various
+;; forms.  The list associates a regex with a function that handles
+;; filenames that match the regex.  When tramp loads, it injects
+;; pairs into that alist, so that filenames that look like URLs can
+;; be loaded via tramp magic.  Removing the tramp pairs unhooks
+;; tramp from the file name handling logic.
+;;
+;; Why would anyone want to do this?  I'll tell you: I've found
+;; tramp to be worse than useless on Windows, always turning on for
+;; reasons that are not apparent to me, providing no discernable
+;; utility, and interfering with normal, expected operation.
+;;
+;; When I use emacs to open a file that resides on a mapped
+;; drive (for example, G:\), tramp pipes in and begins trying to
+;; help.  It then messes up dired, somehow, so that I can no longer
+;; navigate in directories that are on mapped drives. Confoundingly,
+;; it also prevents me from closing buffers, including dired buffers
+;; and file buffers that are open on mapped drives. Why or how it
+;; would do this, I don't know, and I don't care to spend the time
+;; finding out. I think the basic problem is that the tramp regexes
+;; are broken, but I'm not sure why g:\ would be treated any
+;; differently than c:\.  In any case it isn't worth my time to find
+;; out.
+;;
+;; All these problems happened on Windows, but I still have weird
+;; behavior from tramp on MacOS.  I have no idea why, but it's very
+;; unpleasant and requires me to stop and restart emacs
+;; periodically, because tramp goes haywire. Keep in mind that I
+;; never purposely invoke tramp.  I suppose sometimes I fat-finger
+;; something and it causes tramp to wake up and go crazy. It
+;; perpetually generates errors complaining about tramp-ftp-method
+;; being an unknown variable. WTF? It's a scourge.
+;;
+;; Tramp is documented as providing the ability to do remote file
+;; editing, via things like rsh/rcp and ssh/scp.  That sounds really useful.
+;; Too bad it doesn't work.
+;; "
+;;   (interactive)
+;;   (let (new-alist)
+;;     (dolist (pair file-name-handler-alist)
+;;       (let ((sym (cdr pair)))
+;;         (if (string-match "^tramp-" (symbol-name sym))
+;;             (message "removing: %s" sym)
+;;           (message "keeping: %s" sym)
+;;           (setq new-alist
+;;                 (cons pair new-alist)))))
+;;     (setq file-name-handler-alist (reverse new-alist)))
+;;   (tramp-unload-tramp)) ;;; please! go away!
+;;
+;; ;; not sure this really works
+;; (eval-after-load "tramp" '(dino-disable-tramp))
+
+;; 20241116-0108 - trying to reduce touches
+;;  go/corpssh-faq#fewer-touches
+(defun dino-tramp-setup ()
+  "This function tries to set some things for tramp."
+  ;; https://www.gnu.org/software/tramp/#Using-ssh-connection-sharing-1
+  (setq tramp-use-connection-share nil)
+
+  ;; https://www.gnu.org/software/tramp/#Improving-performance-of-asynchronous-remote-processes-1
+  (connection-local-set-profile-variables
+   'remote-direct-async-process
+   '((tramp-direct-async-process . t)))
+  (connection-local-set-profiles
+   '(:application tramp)
+   'remote-direct-async-process)
+
+  ;; https://www.gnu.org/software/emacs/manual/html_node/tramp/Remote-shell-setup.html
+  (connection-local-set-profile-variables
+   'remote-bash
+   ;; I am not sure how many of the following I need.
+   ;; I really just want compilation-start to use bash
+   '((shell-file-name . "/bin/bash")
+     (tramp-direct-async-process . t)
+     (tramp-default-remote-shell . "/bin/bash")
+     (tramp-encoding-shell . "/bin/bash")
+     (shell-command-switch . "-c")
+     (shell-interactive-switch . "-i")
+     (shell-login-switch . "-l")
+     (compilation-shell-name . "/bin/bash")
+     ))
+
+  (connection-local-set-profiles
+   '(:application tramp :protocol "ssh" :machine "cloudtop")
+   'remote-bash)
+
+  (connection-local-set-profiles
+   '(:application tramp :protocol "ssh" :machine "dpchiesa.c.googlers.com")
+   'remote-bash)
+
+  ;; tell tramp to FRICKING USE MY PATH on the remote machine, why would it do otherwise?
+  (add-to-list 'tramp-remote-path 'tramp-own-remote-path)
+
+  ;; For error messages in local compilation buffers, generated by running a
+  ;; compile "remotely"(over tramp), tell emacs to resolve the paths to the
+  ;; tramp filespecs. This assumes /usr/local/google/home is always cloudtop.
+  ;; https://emacs.stackexchange.com/a/40582/3856
+  (setq directory-abbrev-alist '(("^/usr/local/google/home" . "/ssh:cloudtop:/usr/local/google/home")))
+
+  ;; If this isn't set, Tramp will always prompt for shell on M-x shell (which i do not often use)
+  (customize-set-variable 'explicit-shell-file-name "/bin/bash"))
+
+(eval-after-load "tramp" '(dino-tramp-setup))
+
+;; also for tramp
+(defun dino-vc-off-if-remote ()
+  (if (file-remote-p (buffer-file-name))
+      (setq-local vc-handled-backends nil)))
+(add-hook 'find-file-hook 'dino-vc-off-if-remote)
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -3253,8 +3431,8 @@ color ready for next time.
       '(progn
          (require 'w32-registry)
          (defadvice url-http-create-request (before
-                                  dino-set-proxy-dynamically
-                                  activate)
+                                             dino-set-proxy-dynamically
+                                             activate)
            "Before retrieving a URL, query the IE Proxy settings, and use them."
            (let ((proxy (w32reg-get-ie-proxy-config)))
              (setq url-using-proxy proxy
@@ -3318,12 +3496,19 @@ color ready for next time.
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-
-;; Before running an emacsclient, need to set the environment variable.
-;; set EMACS_SERVER_FILE=c:\users\dino\elisp\.emacs.d\server\server
+;; an emacsclient, will look in
+;; ~/.emacs.d/server/server for the TCP server information or
+;; /run/user/387638/emacs/server for the socket
 (require 'server)
+;; see https://mina86.com/2021/emacs-remote/
+;; if using server / daemon
+(setq server-port 17687
+      server-use-tcp t) ;; nil means use socket, not port (server-port is ignored)
 (if (not (eq t (server-running-p server-name)))
-    (server-start))
+    (server-start)
+  (if server-use-tcp
+      (message "server socket: %s" (expand-file-name server-name server-socket-dir)
+               #'external-debugging-output)))
 
 ;; For some reason, the font-face reverts during load of various elisp
 ;; libraries above.  So I set it again, here.
@@ -3353,11 +3538,11 @@ color ready for next time.
 ;; Loads system-type config; e.g. "darwin.el" on Mac
 (let ((system-specific-elisp (concat "~/elisp/" (symbol-name system-type) ".el")))
   (if (file-exists-p system-specific-elisp)
-    (load system-specific-elisp)))
+      (load system-specific-elisp)))
 
 ;; auto-revert for all files.
 (add-hook 'find-file-hook
-              (lambda () (turn-on-auto-revert-mode)))
+          (lambda () (turn-on-auto-revert-mode)))
 
 
 ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -3408,4 +3593,6 @@ color ready for next time.
 (setq read-file-name-completion-ignore-case t)
 
 (setq default-directory "~/")
+
+
 (message "Done with emacs.el...")

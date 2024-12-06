@@ -62,7 +62,23 @@
      (list machine login password))))
 
 
+;; (defun dino-netrc-is-remote-host ()
+;;   "return a list of (REMOTE-HOST SSH-PREFIX) if the `buffer-file-name'
+;; represents a remote (ssh) file.  the SSH-PREFIX will be of the form
+;; \"/ssh:remote-host:\"  Else return nil. "
+;;   (let ((remote-host
+;;          (save-match-data ; is usually a good idea
+;;            (and
+;;             (string-match "^/ssh:\\([^:]+\\):" dir)
+;;             (match-string 1 dir)
+;;             ))))
+;;     (and remote-host
+;;          (list remote-host
+;;                (concat "/ssh:" remote-host ":")  ))))
+
+
 (defun dino-netrc-parse ()
+  "parse the netrc file. This should be cached! "
   (let ((file (expand-file-name "~/.netrc"))
         (default-directory "~/")
         (element nil)
@@ -73,7 +89,7 @@
       ;; (setq default-directory (file-name-directory file))
       ;; (normal-mode t)
       ;; (run-hooks 'find-file-hook)
-      (setq buffer-file-name nil)
+      (setq buffer-file-name nil);; not clear why
       (goto-char (point-min))
       (while (search-forward-regexp "^[ \t]*#.*$" nil t)
         (replace-match ""))

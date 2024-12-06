@@ -11,7 +11,7 @@
 ;; Requires   : s.el dash.el
 ;; License    : Apache 2.0
 ;; X-URL      : https://github.com/dpchiesa/elisp
-;; Last-saved : <2024-February-05 18:17:25>
+;; Last-saved : <2024-December-06 01:20:03>
 ;;
 ;;; Commentary:
 ;;
@@ -96,7 +96,8 @@
 
 (defcustom dcjava-location-of-gformat-jar
   ;;"~/dev/java/lib/google-java-format-1.7-all-deps.jar"
-  "~/dev/java/lib/google-java-format-1.17.0-all-deps.jar"
+  ;;"~/dev/java/lib/google-java-format-1.17.0-all-deps.jar"
+  "~/bin/google-java-format-1.17.0-all-deps.jar"
   "Path to the google-java-format jar."
   :group 'dcjava)
 
@@ -403,19 +404,48 @@ uses a cached list to lookup the package/class to import."
 
 ;; ==================================================================
 
+(defun dcjava-tramp-aware-find-class (dir argument modified-classname)
+  "Execute shell command COMMAND and return its output as a string.
+This may be a remote shell if the file is being accessed from tramp.
+
+See https://mail.gnu.org/archive/html/emacs-devel/2018-01/msg00727.html "
+  (let* ((remote-host
+          (save-match-data ; is usually a good idea
+            (and
+             (string-match "^/ssh:\\([^:]+\\):" dir)
+             (match-string 1 dir))))
+         (desired-default-dir (if remote-host
+                                  (concat "/ssh:" remote-host ":~/")
+                                "~/"))
+         (source-dir-for-find (if remote-host
+                                  (s-chop-left (- (length desired-default-dir) 2) dir)
+                                dir))
+         (command
+          (concat "find " source-dir-for-find argument modified-classname ".java"))
+         (default-directory (expand-file-name desired-default-dir))
+         (found-file
+          (s-trim-right
+           (with-connection-local-variables
+            (shell-command-to-string command)))))
+
+    (setq found-file
+          (if (s-blank? found-file) nil
+            (s-chomp  found-file)))
+    (if (and found-file remote-host)
+        (concat "/ssh:" remote-host ":" found-file)
+      found-file)))
+
+
 (defun dcjava-find-java-source-in-dir (dir classname)
   "find a java source file in a DIR tree, based on the CLASSNAME. This is
 a simple wrapper on the shell find command. The return value is a list of
 strings (filenames). "
   (let* ((modified-classname (s-replace "." "/" classname))
          (argument (if (s-contains? "/" modified-classname)
-                       " -path \\*" " -name "))
-         (result
-          (s-trim-right
-           (shell-command-to-string
-            (concat "find " dir argument modified-classname ".java")))))
-    (if (s-blank? result) nil
-      (s-split "\n" result))))
+                       " -path \\*" " -name ")))
+    (dcjava-tramp-aware-find-class
+     dir argument modified-classname)))
+
 
 (defun dcjava--is-directory (dir-name)
   "Tests to see whether a name refers to a directory"
@@ -458,6 +488,23 @@ searching from the tree above the given current working directory."
     (dcjava--parent-of-dir "wacapps"))
    "wacapps/"))
 
+(defun dcjava-wacapps-apiplatform-link ()
+  "open the URL on source.corp.google.com for the current wacapps file & line."
+  (interactive)
+  (let ((fname (buffer-file-name)))
+    (save-match-data
+      (let ((smatch (string-match ".+/api_platform/\\(.+\\)" fname)))
+        (if smatch
+            (let* ((fsuffix (match-string 1 fname))
+                  (the-url
+                   (concat "https://source.corp.google.com/h/edge-internal/featureplatform/api_platform/+/master:"
+                           fsuffix
+                           ";l="
+                           (number-to-string (line-number-at-pos)))))
+              (message "open %s" fsuffix)
+              (browse-url the-url)))))))
+
+
 (defun dcjava-insure-trailing-slash (path)
   "Insure the given path ends with a slash. This is useful with
 `default-directory'. Setting `default-directory' to a value that
@@ -493,20 +540,19 @@ the shell find command. "
   (let* ((wacapps-dir (dcjava-wacapps-dir))
          (api-platform-src-root (concat wacapps-dir "api_platform/"))
          (cps-src-root (concat wacapps-dir "cps/"))
-         (filenames (and classname
+         (filename (and classname
                     (or
                      (dcjava-find-java-source-in-dir api-platform-src-root classname)
                      (dcjava-find-java-source-in-dir cps-src-root classname)))))
 
-    (if filenames
-        (let ((numfiles (length filenames)))
-          (if (and (eq numfiles 1))
-              (if (file-exists-p (car filenames))
-                  (progn (find-file (car filenames))
-                         (message "open file %s" (car filenames)))
-                (message "E_NOEXIST %s" classname))
-            (dcjava-find-file-from-choice filenames)))
+    (if filename
+        (if (file-exists-p filename)
+            (progn (find-file filename)
+                   (message "open file %s" filename))
+          (message "E_NOEXIST %s" classname))
+      ;;(dcjava-find-file-from-choice filenames)))
       (message "no file for class %s" classname))))
+
 
 
 (defun dcjava-find-wacapps-java-source-for-class-at-point ()
@@ -587,19 +633,13 @@ at the top of the source file."
                              output-goes-to-current-buffer
                              output-replaces-current-content)))
 
-;; (defun dcjava-gformat-buffer ()
-;;   "runs google-java-format on the current buffer"
-;;   (interactive)
-;;   (let ((command (concat "java -jar " dcjava-location-of-gformat-jar " -")))
-;;     (dcjava-shell-command-on-buffer command))
-;;   )
 (defun dcjava-gformat-buffer ()
   "runs google-java-format on the current buffer"
   (interactive)
-  (let ((command (concat "google-java-format" " -"
-                         " --assume-filename "
-                         (file-name-nondirectory (buffer-file-name)))))
+  (let ((command (concat "java -jar " dcjava-location-of-gformat-jar " -")))
     (dcjava-shell-command-on-buffer command))
+  ;; (let ((command (concat "google-java-format -")))
+  ;;   (dcjava-shell-command-on-buffer command))
   )
 
 (provide 'dcjava)

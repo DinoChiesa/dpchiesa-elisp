@@ -683,3 +683,16 @@ javax.json.stream.JsonParser
 java.util.Deque
 java.util.ArrayDeque
 java.util.concurrent.ThreadLocalRandom
+java.net.http.HttpHeaders
+java.util.jar.Manifest
+java.util.jar.Attributes
+express.Express
+io.javalin.http.Context
+java.security.spec.RSAPrivateKeySpec
+com.nimbusds.jose.JWEDecrypter
+com.nimbusds.jose.crypto.ECDHDecrypter
+com.apigee.flow.message.TransportMessage
+io.javalin.Javalin
+com.nimbusds.jose.crypto.AESEncrypter
+com.nimbusds.jose.crypto.AESDecrypter
+java.time.temporal.ChronoField.NANO_OF_SECOND
